@@ -19,6 +19,10 @@
 
 AI agents increasingly send emails, issue refunds, mutate databases, and run shell commands. Schema validation can prove that a tool call is well-formed, but it cannot prove that the action matches what the user actually intended.
 
+<p align="center">
+  <img src="docs/assets/authorization-flow.svg" alt="A user request and an agent's proposed action enter ActionGate, which returns ALLOW, REVIEW, or BLOCK after checking hard rules and meaning." width="100%" />
+</p>
+
 ActionGate combines both kinds of control:
 
 | Code decides | TypeSafe Jev supplies semantic evidence |
@@ -116,30 +120,9 @@ That is why agent authorization needs both deterministic code and semantic evide
 
 ## How it works
 
-```text
-AI agent proposes a tool call
-              │
-              ▼
-      schema + API identity
-              │
-              ▼
- deterministic hard rules ───────────────► BLOCK
-              │
-              ▼
- minimal structured decision state
-              │
-              ▼
- TypeSafe Jev semantic signals via OpenRouter
-              │
-              ▼
- deterministic thresholds + precedence
-              │
-              ▼
-       ALLOW · REVIEW · BLOCK
-              │
-              ▼
- sanitized, idempotent audit record
-```
+<p align="center">
+  <img src="docs/assets/trust-model.svg" alt="ActionGate treats agent input as untrusted, combines deterministic guardrails with Jev semantic evidence, and produces a deterministic decision with named reasons and a sanitized audit trail." width="100%" />
+</p>
 
 ActionGate asks all six narrow Jev questions in one request: alignment, target match, policy conflict, sensitive-data exposure, scope expansion, and missing intent. It never asks one vague “is this safe?” question and never uses generated prose as an authorization reason.
 

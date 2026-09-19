@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 470" width="980" height="470" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+  <title id="title">ActionGate trust model</title>
+  <desc id="description">Agent input is treated as untrusted. Deterministic guardrails retain authority while TypeSafe Jev contributes semantic evidence. A deterministic decision and sanitized audit record leave the authorization boundary.</desc>
+  <rect width="980" height="470" fill="#fbfbfd"/>
+  <style>
+    .heading { font-size:20px; font-weight:650; fill:#15213b }
+    .subheading { font-size:12px; fill:#667085 }
+    .label { font-size:11px; font-weight:650; fill:#667085; letter-spacing:.08em }
+    .title { font-size:14px; font-weight:650; fill:#15213b }
+    .body { font-size:12px; fill:#667085 }
+    .small { font-size:11px; fill:#667085 }
+    .panel { fill:#fff; stroke:#e0e4eb; stroke-width:1.3 }
+    .untrusted { fill:#fff5f3; stroke:#de9388; stroke-width:1.3 }
+    .rules { fill:#fff8ec; stroke:#dba84b; stroke-width:1.3 }
+    .semantic { fill:#f1efff; stroke:#9482d6; stroke-width:1.3 }
+    .decision { fill:#eef3ff; stroke:#6f83d8; stroke-width:1.5 }
+    .output { fill:#eef9f2; stroke:#66a77a; stroke-width:1.3 }
+    .arrow { stroke:#9aa4b2; stroke-width:1.6; fill:none; marker-end:url(#arrow) }
+    .boundary { stroke:#6f83d8; stroke-width:1.2; stroke-dasharray:5 5; fill:none }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#9aa4b2"/>
+    </marker>
+  </defs>
+
+  <text x="36" y="40" class="heading">Who is trusted to decide what?</text>
+  <text x="36" y="62" class="subheading">Semantic evidence informs the decision. Deterministic policy keeps authority.</text>
+
+  <text x="36" y="102" class="label">UNTRUSTED INPUT</text>
+  <rect x="36" y="116" width="200" height="254" rx="13" class="untrusted"/>
+  <text x="136" y="148" class="title" text-anchor="middle">AI agent</text>
+  <text x="136" y="169" class="body" text-anchor="middle">Can propose, never approve</text>
+
+  <rect x="56" y="194" width="160" height="48" rx="8" class="panel"/>
+  <text x="136" y="215" class="title" text-anchor="middle">Conversation</text>
+  <text x="136" y="232" class="small" text-anchor="middle">What was said</text>
+
+  <rect x="56" y="254" width="160" height="48" rx="8" class="panel"/>
+  <text x="136" y="275" class="title" text-anchor="middle">Agent reasoning</text>
+  <text x="136" y="292" class="small" text-anchor="middle">Why it chose the action</text>
+
+  <rect x="56" y="314" width="160" height="36" rx="8" class="panel"/>
+  <text x="136" y="337" class="title" text-anchor="middle">Proposed action</text>
+
+  <path d="M240 243 H292" class="arrow"/>
+
+  <rect x="278" y="92" width="444" height="302" rx="17" class="boundary"/>
+  <rect x="300" y="82" width="178" height="24" rx="12" fill="#fbfbfd"/>
+  <text x="389" y="99" class="label" text-anchor="middle">ACTIONGATE TRUST BOUNDARY</text>
+
+  <rect x="304" y="124" width="186" height="142" rx="12" class="rules"/>
+  <text x="397" y="153" class="title" text-anchor="middle">Deterministic guardrails</text>
+  <text x="397" y="180" class="body" text-anchor="middle">Is identity verified?</text>
+  <text x="397" y="200" class="body" text-anchor="middle">Is permission present?</text>
+  <text x="397" y="220" class="body" text-anchor="middle">Are hard limits satisfied?</text>
+  <text x="397" y="240" class="body" text-anchor="middle">Is this a safe retry?</text>
+
+  <rect x="510" y="124" width="186" height="142" rx="12" class="semantic"/>
+  <text x="603" y="153" class="title" text-anchor="middle">Jev semantic evidence</text>
+  <text x="603" y="180" class="body" text-anchor="middle">Does intent align?</text>
+  <text x="603" y="200" class="body" text-anchor="middle">Is the target correct?</text>
+  <text x="603" y="220" class="body" text-anchor="middle">Did scope expand?</text>
+  <text x="603" y="240" class="body" text-anchor="middle">Is exposure necessary?</text>
+
+  <path d="M397 270 V298 H472" class="arrow"/>
+  <path d="M603 270 V298 H528" class="arrow"/>
+
+  <rect x="358" y="302" width="284" height="66" rx="11" class="decision"/>
+  <text x="500" y="328" class="title" text-anchor="middle">Deterministic decision</text>
+  <text x="500" y="348" class="body" text-anchor="middle">Hard failures always win</text>
+
+  <path d="M726 243 H774" class="arrow"/>
+
+  <text x="778" y="102" class="label">TRUSTED OUTPUT</text>
+  <rect x="778" y="116" width="166" height="254" rx="13" class="output"/>
+  <text x="861" y="148" class="title" text-anchor="middle">Clear outcome</text>
+
+  <rect x="798" y="176" width="126" height="40" rx="8" class="panel"/>
+  <text x="861" y="201" class="title" text-anchor="middle">ALLOW</text>
+  <rect x="798" y="226" width="126" height="40" rx="8" class="panel"/>
+  <text x="861" y="251" class="title" text-anchor="middle">REVIEW</text>
+  <rect x="798" y="276" width="126" height="40" rx="8" class="panel"/>
+  <text x="861" y="301" class="title" text-anchor="middle">BLOCK</text>
+  <text x="861" y="338" class="small" text-anchor="middle">Named reasons</text>
+  <text x="861" y="354" class="small" text-anchor="middle">Sanitized audit trail</text>
+
+  <rect x="36" y="414" width="908" height="34" rx="8" fill="#fff" stroke="#d7dce6" stroke-width="1.2"/>
+  <text x="490" y="436" class="body" text-anchor="middle">A strong semantic score can support an action. It can never override failed authentication, missing permission, or a hard limit.</text>
+</svg>
