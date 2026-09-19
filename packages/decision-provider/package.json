@@ -1,0 +1,8 @@
+{
+  "name": "@actiongate/decision-provider",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": { "@actiongate/core": "workspace:*" }
+}
+

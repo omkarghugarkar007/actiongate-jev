@@ -1,0 +1,16 @@
+node_modules/
+.turbo/
+dist/
+coverage/
+.next/
+playwright-report/
+test-results/
+.actiongate/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+packages/evals/reports/*.json
+packages/evals/reports/*.md
+!packages/evals/reports/.gitkeep

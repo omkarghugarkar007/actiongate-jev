@@ -1,0 +1,32 @@
+{
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13-20260917",
+  "answers": {
+    "action_matches_request": {
+      "type": "noul",
+      "noul": 0.83
+    },
+    "alignment": {
+      "type": "choice",
+      "choice": "exact",
+      "probabilities": {
+        "partial": 0.22,
+        "unrelated": 0,
+        "conflicting": 0,
+        "exact": 0.78
+      },
+      "confidence": 0.71
+    }
+  },
+  "usage": {
+    "inputTokens": 469,
+    "outputTokens": 67,
+    "costUsd": 0.000019698
+  },
+  "metadata": {
+    "upstreamProvider": "TypeSafe",
+    "endpoint": "https://openrouter.ai/api/alpha/decisions",
+    "capturedAt": "2026-09-19T06:29:52.758Z",
+    "latencyMs": 824
+  }
+}

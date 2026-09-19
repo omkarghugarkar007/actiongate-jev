@@ -1,0 +1,11 @@
+{
+  "name": "@actiongate/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@actiongate/core": "workspace:*",
+    "@actiongate/decision-provider": "workspace:*"
+  }
+}
+

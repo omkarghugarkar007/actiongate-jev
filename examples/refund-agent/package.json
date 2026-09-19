@@ -1,0 +1,8 @@
+{
+  "name": "@actiongate/example-refund-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@actiongate/sdk": "workspace:*" }
+}
+

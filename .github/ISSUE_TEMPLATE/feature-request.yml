@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose an integration, policy capability, or developer-experience improvement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What agent workflow or authorization problem are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the desired API, behavior, or integration.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Highest affected risk class
+      options:
+        - READ_ONLY
+        - REVERSIBLE_WRITE
+        - EXTERNAL_COMMUNICATION
+        - FINANCIAL
+        - DESTRUCTIVE
+        - CREDENTIAL_OR_SECRET
+        - Not applicable
+    validations:
+      required: true
+  - type: textarea
+    id: evaluation
+    attributes:
+      label: How should this be evaluated?
+      description: Include expected decisions, failure behavior, and relevant safety metrics.
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to help implement or test this feature.
+

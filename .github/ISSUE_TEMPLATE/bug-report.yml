@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible problem in ActionGate
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve ActionGate. Remove secrets and customer data before submitting.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect instead?
+      placeholder: A concise description of the problem.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Authorization engine
+        - TypeSafe Jev / OpenRouter provider
+        - API
+        - TypeScript SDK
+        - Dashboard
+        - Database / Redis
+        - Evaluation tooling
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include the smallest sanitized request, test, or repository that reproduces the issue.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: ActionGate commit/version, Node.js, pnpm, OS, provider, and requested/resolved Jev model.
+      placeholder: "ActionGate: main@abc123; Node: 22.x; provider: fake/openrouter"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Do not include API keys, authorization headers, raw customer data, or credentials.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed secrets and customer data.
+          required: true
+        - label: I searched existing issues for duplicates.
+          required: true
+        - label: This is not a vulnerability report. Security issues follow SECURITY.md.
+          required: true
+

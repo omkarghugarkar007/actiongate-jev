@@ -1,0 +1,81 @@
+{
+  "name": "actiongate-jev",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Open-source runtime authorization for AI-agent tool calls using deterministic policy and TypeSafe Jev through OpenRouter.",
+  "author": "Omkar Ghugarkar",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/omkarghugarkar007/actiongate-jev#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omkarghugarkar007/actiongate-jev.git"
+  },
+  "bugs": {
+    "url": "https://github.com/omkarghugarkar007/actiongate-jev/issues"
+  },
+  "keywords": [
+    "typesafe-ai",
+    "jev",
+    "openrouter",
+    "ai-agents",
+    "agent-security",
+    "tool-calling",
+    "authorization",
+    "guardrails",
+    "mcp",
+    "typescript"
+  ],
+  "packageManager": "pnpm@10.27.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && pnpm --filter @actiongate/web build",
+    "dev": "concurrently -n api,web -c cyan,magenta \"pnpm dev:api\" \"pnpm dev:web\"",
+    "dev:api": "tsx watch apps/api/src/server.ts",
+    "dev:web": "pnpm --filter @actiongate/web dev",
+    "start": "tsx apps/api/src/server.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --exclude '**/*.integration.test.ts'",
+    "test:integration": "vitest run apps/api/test/api.integration.test.ts",
+    "test:jev:live": "vitest run --config vitest.live.config.ts",
+    "e2e": "playwright test",
+    "jev:smoke": "tsx scripts/jev-smoke.ts",
+    "cost:track": "tsx scripts/track-openrouter-cost.ts",
+    "eval": "tsx packages/evals/src/cli.ts",
+    "eval:generate": "tsx scripts/generate-eval-fixtures.ts",
+    "refund:demo": "tsx examples/refund-agent/src/demo.ts",
+    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate",
+    "db:seed": "tsx scripts/seed.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/sensible": "^6.0.3",
+    "dotenv": "^17.2.2",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.6.0",
+    "ioredis": "^5.7.0",
+    "pg": "^8.16.3",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.35.0",
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.3.1",
+    "@types/pg": "^8.15.5",
+    "concurrently": "^9.2.1",
+    "drizzle-kit": "^0.31.4",
+    "eslint": "^9.35.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.42.0",
+    "vitest": "^3.2.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.23"
+    }
+  }
+}
