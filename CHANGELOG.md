@@ -4,6 +4,8 @@ All notable changes to ActionGate will be documented here. The project follows [
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-19
+
 ### Added
 
 - Runtime `ALLOW`, `REVIEW`, and `BLOCK` authorization engine
@@ -20,3 +22,5 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Risk-aware fail-safe behavior for provider errors
 - Strict provider response validation and secret redaction
 
+[Unreleased]: https://github.com/omkarghugarkar007/actiongate-jev/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/omkarghugarkar007/actiongate-jev/releases/tag/v0.1.0
