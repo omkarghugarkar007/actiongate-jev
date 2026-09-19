@@ -7,7 +7,7 @@ Start with the [integration guide](integration-guide.md) to protect an agent too
 | [Integration guide](integration-guide.md) | REST and TypeScript SDK setup, rollout modes, response handling, and production checklist |
 | [Architecture](architecture.md) | Components, request flow, provider boundary, and decision composition |
 | [Threat model](threat-model.md) | Assets, trust boundaries, abuse cases, mitigations, and current limitations |
-| [Roadmap](../ROADMAP.md) | Planned durability, integrations, observability, and release milestones |
-| [Engineering plan](../actiongate_jev_engineering_plan.md) | Original product and implementation specification |
+| [Roadmap](roadmap.md) | Planned durability, integrations, observability, and release milestones |
+| [Engineering plan](engineering-plan.md) | Original product and implementation specification |
 
 For a runnable integration, see the [refund-agent example](../examples/refund-agent/). For API routes and the shortest setup path, return to the [project README](../README.md).

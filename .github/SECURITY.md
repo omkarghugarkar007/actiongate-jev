@@ -4,4 +4,4 @@ Please do not open a public issue for a suspected vulnerability. Use [GitHub pri
 
 The maintainer will acknowledge a valid report as soon as practical, coordinate remediation privately, and publish an advisory when users have an actionable upgrade or mitigation.
 
-This repository is an early MVP and is not yet a hardened control plane for production financial or destructive actions. Use mock/sandbox tools until the deployment requirements in `docs/threat-model.md` are complete.
+This repository is an early MVP and is not yet a hardened control plane for production financial or destructive actions. Use mock/sandbox tools until the deployment requirements in [`docs/threat-model.md`](../docs/threat-model.md) are complete.

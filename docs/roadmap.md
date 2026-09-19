@@ -29,4 +29,3 @@ ActionGate is developed in public. Priorities are ordered around establishing a 
 - [ ] Additional separately calibrated semantic providers
 
 Community proposals are welcome. Open a feature request with the use case, risk class, desired behavior, and how success should be evaluated.
-

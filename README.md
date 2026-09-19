@@ -126,7 +126,7 @@ That is why agent authorization needs both deterministic code and semantic evide
 
 ActionGate asks all six narrow Jev questions in one request: alignment, target match, policy conflict, sensitive-data exposure, scope expansion, and missing intent. It never asks one vague “is this safe?” question and never uses generated prose as an authorization reason.
 
-Read the [architecture](docs/architecture.md), [threat model](docs/threat-model.md), and [engineering plan](actiongate_jev_engineering_plan.md) for the complete design.
+Read the [architecture](docs/architecture.md), [threat model](docs/threat-model.md), and [engineering plan](docs/engineering-plan.md) for the complete design.
 
 ## TypeSafe Jev through OpenRouter
 
@@ -239,15 +239,15 @@ The repository includes unit, provider-contract, API integration, browser E2E, l
 
 ActionGate is an independent community project and is not affiliated with or endorsed by TypeSafe AI or OpenRouter. TypeSafe, Jev, and OpenRouter are names of their respective owners.
 
-The current API defaults to in-memory decision and policy repositories for a zero-dependency demo. PostgreSQL migrations and Redis infrastructure are included; production storage adapters, hashed tenant keys, OpenTelemetry exporters, and a credential-enforcing execution proxy are tracked in the [roadmap](ROADMAP.md).
+The current API defaults to in-memory decision and policy repositories for a zero-dependency demo. PostgreSQL migrations and Redis infrastructure are included; production storage adapters, hashed tenant keys, OpenTelemetry exporters, and a credential-enforcing execution proxy are tracked in the [roadmap](docs/roadmap.md).
 
 ## Contributing
 
-Ideas, integrations, policy examples, adversarial cases, and provider feedback are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), browse [good first issues](https://github.com/omkarghugarkar007/actiongate-jev/labels/good%20first%20issue), or start a [discussion](https://github.com/omkarghugarkar007/actiongate-jev/discussions).
+Ideas, integrations, policy examples, adversarial cases, and provider feedback are welcome. Read the [contribution guide](.github/CONTRIBUTING.md), browse [good first issues](https://github.com/omkarghugarkar007/actiongate-jev/labels/good%20first%20issue), or start a [discussion](https://github.com/omkarghugarkar007/actiongate-jev/discussions).
 
 If ActionGate helps you build safer AI agents, **star the repository**—it helps other developers searching for TypeSafe Jev and AI-agent authorization discover the project.
 
-Security reports should follow [SECURITY.md](SECURITY.md), not public issues.
+Security reports should follow the [security policy](.github/SECURITY.md), not public issues.
 
 ## License
 
