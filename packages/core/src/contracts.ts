@@ -56,6 +56,39 @@ export const AuthorizationRequestSchema = z.object({
 
 export type AuthorizationRequest = z.infer<typeof AuthorizationRequestSchema>;
 
+export const ActionGrantSchema = z.object({
+  token: z.string().min(1).max(8192),
+  grantId: z.string().uuid(),
+  expiresAt: z.string().datetime()
+}).strict();
+export type ActionGrant = z.infer<typeof ActionGrantSchema>;
+
+export const ActionGrantConsumeRequestSchema = z.object({
+  token: z.string().min(1).max(8192),
+  tenantId: z.string().min(1).max(128),
+  environment: z.enum(["development", "staging", "production"]),
+  actor: z.object({
+    agentId: z.string().min(1).max(128),
+    userId: z.string().max(255).optional(),
+    sessionId: z.string().max(255).optional()
+  }).strict(),
+  proposedAction: z.object({
+    tool: z.string().min(1).max(128),
+    operation: z.string().min(1).max(128),
+    arguments: z.record(z.string(), z.unknown()),
+    riskClass: RiskClassSchema
+  }).strict()
+}).strict();
+export type ActionGrantConsumeRequest = z.infer<typeof ActionGrantConsumeRequestSchema>;
+
+export const ActionGrantConsumeResponseSchema = z.object({
+  grantId: z.string().uuid(),
+  decisionId: z.string().uuid(),
+  status: z.literal("CONSUMED"),
+  consumedAt: z.string().datetime()
+}).strict();
+export type ActionGrantConsumeResponse = z.infer<typeof ActionGrantConsumeResponseSchema>;
+
 export type Reason = {
   code: string;
   message: string;
@@ -83,6 +116,7 @@ export interface AuthorizationResponse {
   timing: { totalMs: number; deterministicMs: number; semanticMs?: number };
   policy: { id: string; version: string };
   createdAt: string;
+  grant?: ActionGrant;
 }
 
 export type NoulQuestion = {

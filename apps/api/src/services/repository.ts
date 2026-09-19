@@ -1,4 +1,4 @@
-import type { AuthorizationResponse, Policy } from "@actiongate/core";
+import { ActionGrantError, type ActionGrantClaims, type AuthorizationResponse, type Policy } from "@actiongate/core";
 
 export interface AuditRecord { response: AuthorizationResponse; fingerprint: string; tenantId: string; sanitizedRequest: unknown }
 export interface DecisionRepository {
@@ -6,6 +6,45 @@ export interface DecisionRepository {
   saveIdempotent(tenantId: string, environment: string, key: string, record: AuditRecord): Promise<void>;
   list(tenantId: string): Promise<AuditRecord[]>;
   get(tenantId: string, id: string): Promise<AuditRecord | undefined>;
+}
+
+export interface GrantRecord {
+  claims: ActionGrantClaims;
+  tokenHash: string;
+  consumedAt?: string;
+}
+
+export interface GrantRepository {
+  findByDecision(decisionId: string): Promise<GrantRecord | undefined>;
+  saveIfAbsent(record: GrantRecord): Promise<GrantRecord>;
+  consume(grantId: string, tokenHash: string, now: Date): Promise<GrantRecord>;
+}
+
+export class InMemoryGrantRepository implements GrantRepository {
+  private readonly byId = new Map<string, GrantRecord>();
+  private readonly idByDecision = new Map<string, string>();
+
+  async findByDecision(decisionId: string) {
+    const grantId = this.idByDecision.get(decisionId);
+    return grantId ? this.byId.get(grantId) : undefined;
+  }
+
+  async saveIfAbsent(record: GrantRecord) {
+    const existingId = this.idByDecision.get(record.claims.decisionId);
+    if (existingId) return this.byId.get(existingId)!;
+    this.idByDecision.set(record.claims.decisionId, record.claims.grantId);
+    this.byId.set(record.claims.grantId, record);
+    return record;
+  }
+
+  async consume(grantId: string, tokenHash: string, now: Date) {
+    const record = this.byId.get(grantId);
+    if (!record || record.tokenHash !== tokenHash) throw new ActionGrantError("GRANT_NOT_FOUND");
+    if (now.getTime() >= record.claims.expiresAt * 1000) throw new ActionGrantError("GRANT_EXPIRED");
+    if (record.consumedAt) throw new ActionGrantError("GRANT_ALREADY_CONSUMED");
+    record.consumedAt = now.toISOString();
+    return record;
+  }
 }
 
 export class InMemoryDecisionRepository implements DecisionRepository {
@@ -27,4 +66,3 @@ export class InMemoryPolicyRepository {
     return policy;
   }
 }
-

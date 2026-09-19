@@ -1,6 +1,6 @@
 # Integrating ActionGate
 
-This guide takes an application from a proposed AI-agent tool call to an ActionGate decision. Start with the fake provider and Shadow Mode; connect TypeSafe Jev through OpenRouter only after the local flow works.
+This guide takes an application from a proposed AI-agent tool call to a one-time Action Grant. Start with the fake provider and Shadow Mode; connect TypeSafe Jev through OpenRouter only after the local flow works.
 
 ## 1. Start ActionGate locally
 
@@ -12,6 +12,13 @@ pnpm dev:api
 ```
 
 The default API key is `ag_test_local` and the default provider is deterministic and offline. These defaults are for development only.
+
+The development signing secret is also intentionally public. Set a unique value of at least 32 bytes before deployment:
+
+```env
+ACTIONGATE_GRANT_SECRET=replace-with-a-random-secret-of-at-least-32-bytes
+ACTIONGATE_GRANT_TTL_SECONDS=30
+```
 
 Verify the service:
 
@@ -56,39 +63,21 @@ curl --request POST http://localhost:8080/v1/authorize \
   }'
 ```
 
-Shadow Mode always returns operational `ALLOW`; inspect `wouldHaveDecision` to see what enforcement would do.
+Shadow Mode always returns operational `ALLOW`; inspect `wouldHaveDecision` to see what enforcement would do. Shadow decisions never receive an Action Grant because shadow mode is observational.
 
 ## 3. Use the TypeScript SDK
 
 The SDK currently ships as the workspace package `@actiongate/sdk`. Until the first npm release, consume it from this monorepo, a workspace dependency, or use the REST API directly.
 
 ```ts
-import { ActionGate, ActionBlockedError } from "@actiongate/sdk";
+import { ActionGate } from "@actiongate/sdk";
 
 const gate = new ActionGate({
   apiKey: process.env.ACTIONGATE_API_KEY!,
   baseUrl: process.env.ACTIONGATE_URL ?? "http://localhost:8080"
 });
 
-try {
-  const authorization = await gate.authorize(request);
-
-  if (authorization.decision === "REVIEW") {
-    return queueForHumanApproval(authorization);
-  }
-
-  if (authorization.decision === "BLOCK") {
-    throw new ActionBlockedError(authorization);
-  }
-
-  return executeTool();
-} catch (error) {
-  // Network failure is not authorization. Apply your application's safe failure policy.
-  throw error;
-}
-```
-
-The `wrapTool` helper ensures execution occurs only after `ALLOW`:
+Use `wrapTool` for the complete enforced lifecycle. It authorizes the exact inputs, requires a grant, consumes the grant, and calls `execute` only after consumption succeeds:
 
 ```ts
 const guardedRefund = gate.wrapTool({
@@ -114,6 +103,47 @@ const guardedRefund = gate.wrapTool({
   })
 });
 ```
+
+For `mode: "shadow"`, the wrapper remains observational: it executes after the decision without asking for a grant. Never use shadow mode as an enforcement boundary.
+
+### REST grant lifecycle
+
+An enforced `ALLOW` response includes a short-lived grant:
+
+```json
+{
+  "decision": "ALLOW",
+  "mode": "enforce",
+  "policy": { "id": "support-agent-default", "version": "1.0.0" },
+  "grant": {
+    "token": "ag1.<payload>.<signature>",
+    "grantId": "0f4b4512-c8b9-46f8-a756-817f95dcaaf4",
+    "expiresAt": "2026-09-19T10:00:30.000Z"
+  }
+}
+```
+
+Present the token with the exact same action immediately before execution:
+
+```bash
+curl --request POST http://localhost:8080/v1/grants/consume \
+  --header 'Authorization: Bearer ag_test_local' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "token": "ag1.<payload>.<signature>",
+    "tenantId": "demo",
+    "environment": "development",
+    "actor": { "agentId": "support-agent" },
+    "proposedAction": {
+      "tool": "refund_payment",
+      "operation": "refund",
+      "arguments": { "transactionId": "txn_duplicate", "amountCents": 4900 },
+      "riskClass": "FINANCIAL"
+    }
+  }'
+```
+
+A grant is valid only once. Mutation returns `403`, an invalid signature `401`, replay `409`, and expiry `410`. A consumed grant gives at-most-once authorization, not exactly-once execution: if the process fails after consumption but before the side effect, obtain a new authorization with a new idempotency key after reconciling downstream state.
 
 ## 4. Connect TypeSafe Jev through OpenRouter
 
@@ -169,7 +199,8 @@ Do not allow the agent to lower the registered risk class.
 
 | Decision | Caller behavior |
 |---|---|
-| `ALLOW` | Execute using the caller's credential and record the result |
+| enforced `ALLOW` | Consume the Action Grant with the exact action, then execute |
+| shadow `ALLOW` | Observe `wouldHaveDecision`; this is intentionally not enforcement |
 | `REVIEW` | Pause and request human/user confirmation |
 | `BLOCK` | Do not execute; surface the deterministic reason code |
 
@@ -178,11 +209,11 @@ Do not execute from a model probability directly. Use only the composed ActionGa
 ## Production checklist
 
 - Replace the development API key and store only a strong hash.
-- Use durable PostgreSQL audit storage and Redis idempotency locks.
+- Replace the development grant secret and plan key rotation.
+- Use durable PostgreSQL audit/grant storage and transactional or Redis-backed atomic consumption.
 - Keep policy versions immutable.
 - Configure TLS, tenant isolation, rate limiting, and retention.
 - Export latency, provider-error, unsafe-allow, override, and cost metrics.
-- Keep credentials with the executor or behind an execution proxy.
+- Put credentials behind the guarded executor, gateway, or credential broker; direct credential access can bypass an SDK wrapper.
 - Run provider-backed evaluation on representative, reviewed cases.
 - Read the [threat model](threat-model.md).
-

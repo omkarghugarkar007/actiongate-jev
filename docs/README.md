@@ -6,6 +6,7 @@ Start with the [integration guide](integration-guide.md) to protect an agent too
 |---|---|
 | [Integration guide](integration-guide.md) | REST and TypeScript SDK setup, rollout modes, response handling, and production checklist |
 | [Architecture](architecture.md) | Components, request flow, provider boundary, and decision composition |
+| [Product plan](PLANNING.md) | Product thesis, moat, delivery phases, acceptance gates, and living checklist |
 | [Threat model](threat-model.md) | Assets, trust boundaries, abuse cases, mitigations, and current limitations |
 | [Roadmap](roadmap.md) | Planned durability, integrations, observability, and release milestones |
 | [Engineering plan](engineering-plan.md) | Original product and implementation specification |

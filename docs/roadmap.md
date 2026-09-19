@@ -4,7 +4,11 @@ ActionGate is developed in public. Priorities are ordered around establishing a 
 
 ## Now — durable MVP
 
+- [x] Signed, expiring, exact-action grants
+- [x] Single-process atomic consumption and SDK enforcement
 - [ ] PostgreSQL-backed audit and policy repositories
+- [ ] PostgreSQL-backed grants with cross-instance atomic consumption
+- [ ] Signing-key IDs, rotation, and grant revocation
 - [ ] Redis distributed idempotency locks
 - [ ] Hashed, scoped, revocable tenant API keys
 - [ ] Persistent human overrides and labeled eval export
@@ -22,10 +26,11 @@ ActionGate is developed in public. Priorities are ordered around establishing a 
 
 ## Later — stronger enforcement
 
-- [ ] Signed, expiring action grants
 - [ ] Credential broker and execution proxy
 - [ ] MCP tool gateway
 - [ ] Organization policy inheritance and approver roles
 - [ ] Additional separately calibrated semantic providers
 
 Community proposals are welcome. Open a feature request with the use case, risk class, desired behavior, and how success should be evaluated.
+
+The detailed strategy, acceptance gates, and living checklist are in the [product plan](PLANNING.md).

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { AuthorizationRequest } from "./contracts.js";
+import type { ActionGrantConsumeRequest, AuthorizationRequest } from "./contracts.js";
 
 const SECRET_KEY = /^(password|secret|token|api[_-]?key|authorization|cookie|private[_-]?key)$/i;
 
@@ -19,15 +19,52 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(value);
 }
 
-export function actionFingerprint(req: AuthorizationRequest, policyVersion: string): string {
+export interface ActionBinding {
+  tenantId: string;
+  environment: AuthorizationRequest["environment"];
+  agentId: string;
+  userId?: string;
+  sessionId?: string;
+  proposedAction: AuthorizationRequest["proposedAction"];
+}
+
+export function actionBindingFingerprint(binding: ActionBinding, policyVersion: string): string {
   return createHash("sha256").update(canonicalJson({
-    tenantId: req.tenantId,
-    environment: req.environment,
-    agentId: req.actor.agentId,
-    tool: req.proposedAction.tool.trim().toLowerCase(),
-    operation: req.proposedAction.operation.trim().toLowerCase(),
-    arguments: req.proposedAction.arguments,
+    tenantId: binding.tenantId,
+    environment: binding.environment,
+    agentId: binding.agentId,
+    userId: binding.userId ?? null,
+    sessionId: binding.sessionId ?? null,
+    tool: binding.proposedAction.tool.trim().toLowerCase(),
+    operation: binding.proposedAction.operation.trim().toLowerCase(),
+    arguments: binding.proposedAction.arguments,
+    riskClass: binding.proposedAction.riskClass,
     policyVersion
   })).digest("hex");
 }
 
+export function authorizationRequestBinding(req: AuthorizationRequest): ActionBinding {
+  return {
+    tenantId: req.tenantId,
+    environment: req.environment,
+    agentId: req.actor.agentId,
+    ...(req.actor.userId ? { userId: req.actor.userId } : {}),
+    ...(req.actor.sessionId ? { sessionId: req.actor.sessionId } : {}),
+    proposedAction: req.proposedAction
+  };
+}
+
+export function grantConsumeBinding(req: ActionGrantConsumeRequest): ActionBinding {
+  return {
+    tenantId: req.tenantId,
+    environment: req.environment,
+    agentId: req.actor.agentId,
+    ...(req.actor.userId ? { userId: req.actor.userId } : {}),
+    ...(req.actor.sessionId ? { sessionId: req.actor.sessionId } : {}),
+    proposedAction: req.proposedAction
+  };
+}
+
+export function actionFingerprint(req: AuthorizationRequest, policyVersion: string): string {
+  return actionBindingFingerprint(authorizationRequestBinding(req), policyVersion);
+}

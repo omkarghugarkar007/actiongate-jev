@@ -27,4 +27,5 @@ jobs:
       - run: pnpm jev:smoke
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      - run: pnpm eval --dataset core-v1 --model typesafe/jev-1.13 --profile financial-v1
+      - name: Validate evaluation dataset integrity
+        run: pnpm eval --dataset core-v1

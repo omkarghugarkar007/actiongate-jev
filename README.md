@@ -4,7 +4,7 @@
 
 # ActionGate
 
-**Open-source runtime authorization for AI agents, powered by deterministic policy and [TypeSafe Jev](https://docs.typesafe.ai/concepts/system-one) through [OpenRouter](https://openrouter.ai/typesafe/jev-1.13).** ActionGate evaluates a proposed tool call before it creates a side effect and returns `ALLOW`, `REVIEW`, or `BLOCK` with an auditable, deterministic reason.
+**Open-source runtime authorization and single-use action permits for AI agents, powered by deterministic policy and [TypeSafe Jev](https://docs.typesafe.ai/concepts/system-one) through [OpenRouter](https://openrouter.ai/typesafe/jev-1.13).** ActionGate evaluates a proposed tool call, binds an approval to that exact action, and prevents expired, changed, or replayed permits from reaching execution.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/omkarghugarkar007/actiongate-jev/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/omkarghugarkar007/actiongate-jev/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/omkarghugarkar007/actiongate-jev?style=flat-square)](LICENSE)
@@ -13,7 +13,7 @@
 [![Jev](https://img.shields.io/badge/TypeSafe_Jev-1.13-6C7CFF?style=flat-square)](https://openrouter.ai/typesafe/jev-1.13)
 [![GitHub stars](https://img.shields.io/github/stars/omkarghugarkar007/actiongate-jev?style=flat-square)](https://github.com/omkarghugarkar007/actiongate-jev/stargazers)
 
-> **Early public MVP:** use mock or sandbox tools. ActionGate decides; your application owns execution and credentials. See the [security boundary](docs/threat-model.md) before production use.
+> **Early public MVP:** use mock or sandbox tools. Action Grants enforce the SDK path in one process; production still needs durable shared storage and a gateway or credential broker that makes bypass impossible. See the [security boundary](docs/threat-model.md).
 
 ## Why ActionGate?
 
@@ -33,6 +33,20 @@ ActionGate combines both kinds of control:
 | Idempotency, duplicates, and rate limits | Is sensitive information exposed unnecessarily? |
 
 **Jev supplies evidence. Code owns authority.** A positive model score never overrides a deterministic security failure.
+
+Calling Jev directly produces a structured semantic signal. ActionGate adds the security lifecycle around that signal:
+
+| Direct Jev call | ActionGate |
+|---|---|
+| Evaluates semantic questions | Combines semantic evidence with hard policy |
+| Returns structured answers | Returns `ALLOW`, `REVIEW`, or `BLOCK` with named reasons |
+| Does not control later execution | Issues a signed, short-lived Action Grant only for enforced `ALLOW` |
+| Does not bind a result to later inputs | Binds tenant, environment, agent, user, session, tool, operation, arguments, risk, and policy |
+| Does not track one-time use | Atomically rejects mutation, expiry, and replay |
+
+<p align="center">
+  <img src="docs/assets/action-grant-flow.svg" alt="An agent proposes an action, ActionGate decides whether it is allowed, an exact-action permit is created only for allow, and the executor consumes the permit once before running the tool." width="100%" />
+</p>
 
 ## Five-minute quick start
 
@@ -71,38 +85,35 @@ const gate = new ActionGate({
   baseUrl: process.env.ACTIONGATE_URL!
 });
 
-const result = await gate.authorize({
-  requestId: crypto.randomUUID(),
-  idempotencyKey: crypto.randomUUID(),
-  tenantId: "acme",
-  environment: "production",
-  mode: "enforce",
-  actor: { agentId: "support-agent" },
-  userIntent: {
-    text: "Refund the duplicate $49 charge.",
-    source: "user_message"
-  },
-  proposedAction: {
-    tool: "refund_payment",
-    operation: "refund",
-    arguments: { transactionId: "txn_8923", amountCents: 4900 },
-    riskClass: "FINANCIAL"
-  },
-  deterministicFacts: {
-    authenticated: true,
-    authorizedByRbac: true,
-    amountCents: 4900,
-    currency: "USD"
-  }
+const guardedRefund = gate.wrapTool({
+  name: "refund_payment",
+  operation: "refund",
+  riskClass: "FINANCIAL",
+  execute: async (input) => refundPayment(input.transactionId, input.amountCents),
+  buildRequest: async ({ input, runtime }) => ({
+    requestId: crypto.randomUUID(),
+    idempotencyKey: runtime.idempotencyKey,
+    tenantId: "acme",
+    environment: "production",
+    mode: "enforce",
+    actor: { agentId: "support-agent", userId: runtime.userId },
+    userIntent: { text: runtime.userMessage, source: "user_message" },
+    deterministicFacts: {
+      authenticated: true,
+      authorizedByRbac: runtime.canRefund,
+      amountCents: input.amountCents,
+      currency: "USD"
+    }
+  })
 });
 
-if (result.decision !== "ALLOW") {
-  throw new Error(`ActionGate: ${result.decision}`);
-}
-
-// ActionGate never executes the customer tool.
-await refundPayment("txn_8923", 4900);
+await guardedRefund(
+  { transactionId: "txn_8923", amountCents: 4900 },
+  { idempotencyKey: crypto.randomUUID(), userId: "user_42", userMessage: "Refund the duplicate $49 charge.", canRefund: true }
+);
 ```
+
+The wrapper authorizes the exact arguments, requires an Action Grant for enforced `ALLOW`, consumes it once, and only then invokes the tool. Authorization or consumption failure prevents execution.
 
 Changing the amount to `49000` produces:
 
@@ -126,7 +137,7 @@ That is why agent authorization needs both deterministic code and semantic evide
 
 ActionGate asks all six narrow Jev questions in one request: alignment, target match, policy conflict, sensitive-data exposure, scope expansion, and missing intent. It never asks one vague “is this safe?” question and never uses generated prose as an authorization reason.
 
-Read the [architecture](docs/architecture.md), [threat model](docs/threat-model.md), and [engineering plan](docs/engineering-plan.md) for the complete design.
+Read the [architecture](docs/architecture.md), [threat model](docs/threat-model.md), and [living product plan](docs/PLANNING.md) for the complete design and acceptance gates.
 
 ## TypeSafe Jev through OpenRouter
 
@@ -167,7 +178,9 @@ The snapshot stays in the gitignored `.actiongate/` directory. Pricing is never 
 - **Strict provider contracts** — malformed or incomplete Jev responses are rejected.
 - **Auditable reasons** — reason text comes from named rules and signals, not model prose.
 - **Replay protection** — identical idempotency retries return the original decision; changed payloads conflict.
-- **Evaluation tooling** — versioned thresholds, a reproducible 500-case starter dataset, and safety-focused metrics.
+- **Exact-action grants** — enforced allows receive a signed permit bound to the tenant, agent, user/session, tool, operation, arguments, risk class, and policy.
+- **One-time consumption** — altered, expired, unknown, and replayed permits fail closed before SDK execution.
+- **Honest evaluation boundaries** — dataset integrity, semantic quality, enforcement security, reliability, and performance are measured separately.
 
 ## Common use cases
 
@@ -190,7 +203,7 @@ packages/
   decision-provider/      OpenRouter Jev and deterministic fake providers
   sdk-js/                 TypeScript client and tool wrapper
   db/                     Drizzle schema and PostgreSQL migrations
-  evals/                  500-case dataset and evaluation CLI
+  evals/                  Starter dataset and integrity validation CLI
 examples/
   curl/                   Copy-paste REST authorization request
   refund-agent/           Safe, in-memory end-to-end example
@@ -204,6 +217,7 @@ docs/                     Integration, architecture, and threat model
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/v1/authorize` | Evaluate a proposed action |
+| `POST` | `/v1/grants/consume` | Consume an exact-action grant once before execution |
 | `GET` | `/v1/decisions` | List sanitized audit decisions |
 | `GET` | `/v1/decisions/:id` | Inspect one decision and its signals |
 | `GET` | `/v1/policies` | List immutable policy versions |
@@ -233,13 +247,13 @@ docker compose -f infra/docker-compose.yml up -d postgres redis
 pnpm db:migrate
 ```
 
-The repository includes unit, provider-contract, API integration, browser E2E, live Jev, migration, load, and adversarial test paths. The 500-case default evaluation is a **label-baseline integrity run**, not a claim of model accuracy; production thresholds require provider-backed calibration on representative data.
+The repository includes unit, provider-contract, API integration, browser E2E, live Jev, migration, load, and adversarial test paths. `pnpm eval` validates dataset structure and explicitly produces no accuracy score. The generated 500-case starter set is synthetic and marked for human review; production thresholds require provider-backed evaluation on representative, independently reviewed cases.
 
 ## Project status and roadmap
 
 ActionGate is an independent community project and is not affiliated with or endorsed by TypeSafe AI or OpenRouter. TypeSafe, Jev, and OpenRouter are names of their respective owners.
 
-The current API defaults to in-memory decision and policy repositories for a zero-dependency demo. PostgreSQL migrations and Redis infrastructure are included; production storage adapters, hashed tenant keys, OpenTelemetry exporters, and a credential-enforcing execution proxy are tracked in the [roadmap](docs/roadmap.md).
+The current API defaults to in-memory decision, grant, and policy repositories for a zero-dependency demo. The PostgreSQL schema includes hashed Action Grant storage, but a durable adapter and distributed atomic consumption are still required for multi-instance production. A credential-enforcing gateway is also required when callers could otherwise access tools directly. These boundaries and the ordered work are tracked in the [product plan](docs/PLANNING.md).
 
 ## Contributing
 

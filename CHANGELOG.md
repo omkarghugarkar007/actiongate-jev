@@ -4,6 +4,25 @@ All notable changes to ActionGate will be documented here. The project follows [
 
 ## [Unreleased]
 
+### Added
+
+- Signed, short-lived Action Grants for enforced `ALLOW` decisions
+- Authenticated one-time grant consumption with replay, expiry, mutation, and unknown-token rejection
+- SDK guarded execution that consumes a grant immediately before invoking a tool
+- PostgreSQL Action Grant schema and migration using token hashes rather than raw tokens
+- Living product plan, enforcement architecture diagram, and grant lifecycle documentation
+
+### Changed
+
+- Canonical action fingerprints now bind risk class plus optional user and session identity
+- The default evaluation command reports dataset integrity only and no longer presents label replay as accuracy
+
+### Security
+
+- Raw Action Grant tokens are excluded from decision audit APIs
+- Production startup rejects the development grant-signing secret
+- Enforced SDK calls fail closed when a grant is missing or consumption fails
+
 ## [0.1.0] - 2026-09-19
 
 ### Added
