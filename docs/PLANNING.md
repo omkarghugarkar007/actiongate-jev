@@ -2,6 +2,8 @@
 
 > Living strategy, architecture, and delivery checklist. Update this file when a milestone ships or product assumptions change.
 
+Last reconciled: **2026-09-19** against the implementation on `main`.
+
 ## Product thesis
 
 Jev is a strong structured semantic decision model. A direct Jev call can answer questions such as whether a proposed action matches user intent, expands scope, or has enough evidence. That is necessary, but it is not an authorization system.
@@ -18,6 +20,21 @@ ActionGate's durable job is to own the complete authorization lifecycle around t
 **Positioning:** Jev supplies evidence. ActionGate creates and enforces the permit.
 
 This follows established authorization architecture: policy decision points are separate from policy enforcement points in [OPA](https://www.openpolicyagent.org/docs/deploy), while [Cedar](https://docs.cedarpolicy.com/) and [AWS Verified Permissions](https://docs.aws.amazon.com/verifiedpermissions/latest/userguide/terminology.html) evaluate a principal, action, resource, and context. Agent tools add a semantic problem because model-selected tools can cause real side effects; the [MCP server specification](https://modelcontextprotocol.io/specification/draft/server/index) treats tools as model-controlled, and [MCP authorization guidance](https://apps.extensions.modelcontextprotocol.io/api/documents/authorization.html) places enforcement at the HTTP boundary before the tool handler runs.
+
+## Status at a glance
+
+| Area | Status | What that means today |
+| --- | --- | --- |
+| Exact-action enforcement | Complete foundation | Signed, expiring grants are bound to the full action and consumed once before execution. |
+| Shared runtime state | Complete for Redis | Decisions, idempotency leases, grants, and consumption state survive API restarts and work across replicas. |
+| TypeScript enforcement integrations | Partial | The SDK wrapper and embeddable MCP gateway are implemented; a standalone authenticated proxy is not. |
+| Tenant identity and access control | Not production-ready | The API still uses one configured bearer key and accepts caller-supplied tenant context. |
+| Policy and tool control plane | Partial | Policies are immutable but in-process; the MCP gateway owns its local tool registry, but there is no durable tenant registry. |
+| Human review and incident response | Not implemented | Overrides are not persisted; approval, denial, revocation, escalation, and notification workflows remain. |
+| Semantic quality evidence | Not established | The generated dataset validates plumbing only; it is not a reviewed accuracy benchmark. |
+| Production operations | Not implemented | Metrics, traces, retention, backup/restore validation, key rotation, and a security review remain. |
+
+**Production readiness: no.** The current release is suitable for development, sandbox evaluation, and guarded prototypes. The P0 items in the remaining-work section are required before recommending real high-impact multi-tenant use.
 
 ## Why use ActionGate instead of calling Jev directly?
 
@@ -36,7 +53,9 @@ This follows established authorization architecture: policy decision points are 
 
 ActionGate is not valuable if it remains a nicer prompt wrapper. It becomes valuable when tool credentials or the tool endpoint require an Action Grant, making bypass materially harder and policy centrally operable.
 
-## Moat
+## Moat being built
+
+The capabilities below describe the intended durable advantage. Completed and remaining work is tracked explicitly in the delivery plan.
 
 ### 1. Enforcement moat
 
@@ -82,16 +101,20 @@ ActionGate is not valuable if it remains a nicer prompt wrapper. It becomes valu
 
 ## Current reality
 
-The prototype now has deterministic prechecks, a typed Jev evidence battery, immutable in-process policies, shadow mode, sanitized audit records, signed Action Grants, optional Redis-backed cross-instance idempotency and replay protection, an SDK guarded executor, and an embeddable MCP tool gateway.
+The prototype now has deterministic prechecks, a typed Jev evidence battery, immutable in-process policies, shadow mode, sanitized audit records, signed Action Grants, optional Redis-backed cross-instance idempotency and replay protection, an SDK guarded executor, and an embeddable MCP tool gateway. PostgreSQL schemas and migrations exist, but the API runtime is not wired to PostgreSQL repositories.
 
 It is not yet a production authorization plane:
 
-- memory remains the zero-dependency default, while production must explicitly enable shared Redis storage;
+- memory remains the zero-dependency development default, while production startup requires shared Redis storage;
 - Redis state is durable only to the degree that the deployment configures persistence, replication, backups, authentication, and TLS;
 - the current Redis adapter retains records indefinitely; tenant retention and deletion controls remain required;
+- one static bearer key protects every route, and tenant identity still comes from request bodies or query parameters rather than authenticated key context;
+- policy mutation, decision reads, and overrides do not yet have tenant-scoped roles;
+- policies and overrides are process-local; the current override endpoint returns a record but does not persist it;
 - code with direct access to downstream credentials can bypass the SDK wrapper;
-- callers submit their tool identity and risk class, although the policy rejects mismatches; a durable authenticated registry is still needed;
+- the embeddable MCP gateway derives tool metadata from its local server-owned registry, but direct API callers still submit tool identity and risk class; a durable authenticated registry is needed;
 - review, approval, and grant revocation are not durable workflows;
+- signing grants uses one secret without key IDs or an overlapping rotation window;
 - the existing generated evaluation dataset validates metric plumbing more than real semantic quality;
 - the embeddable gateway protects registered handlers, but a standalone authenticated network proxy and credential broker are not implemented.
 
@@ -114,19 +137,19 @@ These limitations should stay visible until the corresponding acceptance criteri
 
 Exit criteria:
 
-- zero grants for `BLOCK`, `REVIEW`, or shadow-mode outcomes;
-- zero accepted requests after changing any bound action field;
-- zero accepted signature mutations;
-- zero successful replays;
-- SDK never executes if authorization or consumption fails;
-- audit APIs never return a raw grant token.
+- [x] Zero grants for `BLOCK`, `REVIEW`, or shadow-mode outcomes.
+- [x] Zero accepted requests after changing any bound action field.
+- [x] Zero accepted signature mutations.
+- [x] Zero successful replays.
+- [x] SDK never executes if authorization or consumption fails.
+- [x] Audit APIs never return a raw grant token.
 
 ### Phase 2 — durable control plane
 
 - [x] Redis-backed decisions, idempotency leases, grant records, and atomic cross-instance consumption.
 - [x] Preserve decision and consumption state across API restarts.
 - [x] Fail production startup when configured with process-local storage.
-- [ ] PostgreSQL repositories for decisions, grants, policies, reviews, and overrides.
+- [ ] Wire PostgreSQL repositories into the API for decisions, policies, reviews, overrides, and long-term audit reporting.
 - [x] Store only token hashes and non-secret grant claims.
 - [ ] Encrypt sensitive evidence fields.
 - [x] Redis transaction for cross-instance grant consumption and idempotency.
@@ -136,15 +159,19 @@ Exit criteria:
 
 Exit criteria:
 
-- concurrent consumption across multiple API instances produces exactly one success;
-- restart does not lose decisions, grants, reviews, or idempotency state;
-- cross-tenant reads and consumes fail closed.
+- [x] Concurrent grant consumption across multiple API instances produces exactly one success.
+- [x] Redis-backed API restart does not lose decisions, grants, consumption markers, or idempotency state.
+- [ ] Policies, reviews, overrides, and long-term audit records survive restart.
+- [ ] Authenticated tenant context—not caller input—scopes every read, write, and grant operation.
+- [ ] Cross-tenant reads, policy mutations, overrides, and consumes fail closed in integration tests.
 
 ### Phase 3 — server-owned policy and tool registry
 
-- [ ] Register tools, operations, schemas, owners, risk classes, and data sensitivity centrally.
-- [ ] Validate arguments against registered schemas before evaluating them.
-- [ ] Derive risk from the registry; reject caller attempts to downgrade it.
+- [x] Provide a server-owned registry inside the embeddable MCP gateway.
+- [x] Normalize and validate MCP arguments before authorization and execution.
+- [ ] Register tools, operations, JSON Schemas, owners, risk classes, and data sensitivity in a durable tenant-scoped control plane.
+- [ ] Make the authorization API derive tool metadata from that registry instead of trusting caller-supplied risk.
+- [ ] Reject unknown tools, invalid arguments, and downgrade attempts consistently across REST, SDK, MCP, and proxy integrations.
 - [ ] Policy linter for contradictory rules, missing defaults, unreachable branches, and unsafe fail-open behavior.
 - [ ] Policy simulation against historical sanitized traffic before activation.
 - [ ] Signed policy bundles and controlled promotion across environments.
@@ -156,13 +183,17 @@ Exit criteria:
 - [ ] Revalidate current policy and exact action before issuing an approval grant.
 - [ ] Require two-person approval for configurable high-impact operations.
 - [ ] Notifications and webhook delivery with signed payloads and retries.
+- [ ] Persist overrides as immutable audit events rather than returning process-local acknowledgements.
+- [ ] Revoke unconsumed grants and disable affected tools during incident response.
 
 ### Phase 5 — enforcement integrations
 
+- [x] TypeScript client and guarded tool executor.
 - [x] Embeddable MCP authorization gateway that consumes a grant before invoking the tool handler.
 - [ ] Standalone MCP network proxy with transport authentication and deployment templates.
 - [ ] HTTP tool proxy and sidecar mode.
 - [ ] Credential broker issuing narrow, short-lived downstream credentials.
+- [ ] Publish versioned SDK and MCP gateway packages with semantic-versioning and migration guidance.
 - [ ] Python SDK and framework adapters.
 - [ ] Reference deployments demonstrating that direct tool access is unavailable.
 
@@ -173,6 +204,16 @@ Exit criteria:
 - [ ] Detect provider/model drift before promotion.
 - [ ] Privacy-preserving regression corpus built from operator-approved examples.
 - [ ] Explain which deterministic rule or semantic signal changed an outcome.
+
+### Phase 7 — production operations and trust
+
+- [ ] Emit tenant-safe metrics and traces for decisions, provider calls, Redis operations, grants, reviews, latency, and cost.
+- [ ] Define service-level objectives and alerts for authorization availability, unsafe allows, review volume, provider errors, and replay attempts.
+- [ ] Add per-tenant quotas and rate limits rather than one process-wide limit.
+- [ ] Validate Redis backup, restore, replication, and failover procedures.
+- [ ] Add automated secret scanning, container scanning, an SBOM, release provenance, and signed release artifacts.
+- [ ] Perform an external security review and remediate findings before a production-ready claim.
+- [ ] Publish deployment and incident-response runbooks.
 
 ## Benchmark specification
 
@@ -238,12 +279,53 @@ Prioritize a feature when it does at least one of the following:
 
 Deprioritize generic dashboards, model-provider breadth, and decorative integrations until the enforcement and durable-state milestones are complete.
 
-## Near-term backlog
+## Priority-ordered work remaining
 
-- [x] Complete Phase 1 and publish its threat-model delta.
-- [x] Add a transactional Redis repository for shared grant and replay state.
-- [ ] Build the server-owned tool registry before adding more risk categories.
-- [x] Implement the embeddable MCP gateway as the first guarded-handler reference integration.
-- [ ] Package the gateway as a standalone authenticated network service.
-- [ ] Replace the generated evaluation set with reviewed, versioned cases and annotator guidance.
-- [x] Add a public security policy and private disclosure process.
+### P0 — required before real multi-tenant use
+
+1. **Tenant-bound authentication and authorization**
+   - hash and scope API keys to tenant, environment, and role;
+   - derive tenant context from the authenticated key;
+   - remove caller-selected tenant access from decision-list and decision-detail routes;
+   - authorize policy writes, overrides, reviews, and grant consumption by role;
+   - prove cross-tenant denial in API, Redis, SDK, and gateway integration tests.
+2. **Durable server-owned tool and policy registry**
+   - store tool identity, operation, schema, owner, risk, and data sensitivity per tenant;
+   - validate arguments before semantic evaluation;
+   - derive risk and policy from the registry on every integration path;
+   - reject unknown tools and all caller downgrade attempts.
+3. **Key lifecycle and incident response**
+   - add signing-key IDs and overlapping rotation windows;
+   - revoke individual grants, keys, tools, and operations;
+   - preserve immutable incident evidence.
+4. **Durable administrative state and data governance**
+   - wire PostgreSQL repositories for policies, reviews, overrides, and long-term audits;
+   - add encryption for sensitive evidence;
+   - implement retention, deletion, export, backup, and restore controls.
+
+### P1 — make bypass materially harder
+
+1. Ship the MCP gateway as an authenticated network service.
+2. Add an HTTP proxy/sidecar and credential broker.
+3. Publish a reference deployment where the guarded boundary is the only path to the tool credential.
+4. Implement durable review, approval, expiry, escalation, and two-person workflows.
+5. Publish versioned SDK and gateway packages with stable public APIs.
+
+### P2 — prove quality and operate it safely
+
+1. Replace generated evaluation cases with independently reviewed, versioned examples.
+2. Run provider-backed calibration by risk class and publish confidence intervals rather than one aggregate score.
+3. Add metrics, traces, SLOs, alerts, per-tenant quotas, and drift detection.
+4. Test backup, restore, failover, signing-key rotation, and dependency outages.
+5. Complete supply-chain hardening and an external security review.
+
+## Recommended next release
+
+Target **v0.2: tenant-safe registry** before adding more providers or decorative integrations. It is complete only when:
+
+- an API key resolves exactly one tenant, environment scope, and role set;
+- tenant IDs supplied by callers cannot expand access;
+- every action references a durable registered tool and server-owned risk class;
+- cross-tenant decision reads, policy writes, overrides, and grant consumption fail closed;
+- policies and overrides survive restart;
+- CI includes the tenant-isolation and risk-downgrade test matrix.
