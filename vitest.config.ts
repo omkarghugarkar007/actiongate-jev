@@ -9,6 +9,7 @@ export default defineConfig({
       "@actiongate/core": `${root}packages/core/src/index.ts`,
       "@actiongate/decision-provider": `${root}packages/decision-provider/src/index.ts`,
       "@actiongate/sdk": `${root}packages/sdk-js/src/index.ts`,
+      "@actiongate/mcp-gateway": `${root}packages/mcp-gateway/src/index.ts`,
       "@actiongate/db": `${root}packages/db/src/index.ts`
     }
   },

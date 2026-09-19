@@ -82,17 +82,18 @@ ActionGate is not valuable if it remains a nicer prompt wrapper. It becomes valu
 
 ## Current reality
 
-The prototype now has deterministic prechecks, a typed Jev evidence battery, immutable in-process policies, idempotent requests, shadow mode, sanitized audit records, signed Action Grants, single-process replay protection, and an SDK guarded executor.
+The prototype now has deterministic prechecks, a typed Jev evidence battery, immutable in-process policies, shadow mode, sanitized audit records, signed Action Grants, optional Redis-backed cross-instance idempotency and replay protection, an SDK guarded executor, and an embeddable MCP tool gateway.
 
 It is not yet a production authorization plane:
 
-- storage is in memory even though a database schema exists;
-- Action Grant state and atomicity are not shared across processes;
+- memory remains the zero-dependency default, while production must explicitly enable shared Redis storage;
+- Redis state is durable only to the degree that the deployment configures persistence, replication, backups, authentication, and TLS;
+- the current Redis adapter retains records indefinitely; tenant retention and deletion controls remain required;
 - code with direct access to downstream credentials can bypass the SDK wrapper;
 - callers submit their tool identity and risk class, although the policy rejects mismatches; a durable authenticated registry is still needed;
-- review, approval, revocation, and grant consumption are not durable workflows;
+- review, approval, and grant revocation are not durable workflows;
 - the existing generated evaluation dataset validates metric plumbing more than real semantic quality;
-- there is no gateway or credential broker, so raw tool access can bypass the SDK.
+- the embeddable gateway protects registered handlers, but a standalone authenticated network proxy and credential broker are not implemented.
 
 These limitations should stay visible until the corresponding acceptance criteria pass.
 
@@ -122,9 +123,13 @@ Exit criteria:
 
 ### Phase 2 — durable control plane
 
+- [x] Redis-backed decisions, idempotency leases, grant records, and atomic cross-instance consumption.
+- [x] Preserve decision and consumption state across API restarts.
+- [x] Fail production startup when configured with process-local storage.
 - [ ] PostgreSQL repositories for decisions, grants, policies, reviews, and overrides.
-- [ ] Store only token hashes and non-secret claims; encrypt sensitive evidence fields.
-- [ ] Redis or database transaction for cross-instance grant consumption and idempotency.
+- [x] Store only token hashes and non-secret grant claims.
+- [ ] Encrypt sensitive evidence fields.
+- [x] Redis transaction for cross-instance grant consumption and idempotency.
 - [ ] Tenant-scoped API key hashes, roles, rotation, revocation, and last-used metadata.
 - [ ] Grant-signing key rotation with key IDs and overlapping verification windows.
 - [ ] Retention, deletion, and audit-export controls.
@@ -154,7 +159,8 @@ Exit criteria:
 
 ### Phase 5 — enforcement integrations
 
-- [ ] MCP authorization gateway that consumes a grant before invoking the tool handler.
+- [x] Embeddable MCP authorization gateway that consumes a grant before invoking the tool handler.
+- [ ] Standalone MCP network proxy with transport authentication and deployment templates.
 - [ ] HTTP tool proxy and sidecar mode.
 - [ ] Credential broker issuing narrow, short-lived downstream credentials.
 - [ ] Python SDK and framework adapters.
@@ -235,8 +241,9 @@ Deprioritize generic dashboards, model-provider breadth, and decorative integrat
 ## Near-term backlog
 
 - [x] Complete Phase 1 and publish its threat-model delta.
-- [ ] Replace in-memory grant state with a transactional repository.
+- [x] Add a transactional Redis repository for shared grant and replay state.
 - [ ] Build the server-owned tool registry before adding more risk categories.
-- [ ] Implement the MCP gateway as the first non-bypassable reference integration.
+- [x] Implement the embeddable MCP gateway as the first guarded-handler reference integration.
+- [ ] Package the gateway as a standalone authenticated network service.
 - [ ] Replace the generated evaluation set with reviewed, versioned cases and annotator guidance.
-- [ ] Add a public security policy and disclosure process before calling the project production-ready.
+- [x] Add a public security policy and private disclosure process.

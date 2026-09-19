@@ -7,9 +7,10 @@ ActionGate is developed in public. Priorities are ordered around establishing a 
 - [x] Signed, expiring, exact-action grants
 - [x] Single-process atomic consumption and SDK enforcement
 - [ ] PostgreSQL-backed audit and policy repositories
-- [ ] PostgreSQL-backed grants with cross-instance atomic consumption
+- [x] Redis-backed grants with cross-instance atomic consumption
+- [ ] PostgreSQL-backed grants and audit records for long-term reporting
 - [ ] Signing-key IDs, rotation, and grant revocation
-- [ ] Redis distributed idempotency locks
+- [x] Redis distributed idempotency leases and durable decision records
 - [ ] Hashed, scoped, revocable tenant API keys
 - [ ] Persistent human overrides and labeled eval export
 - [ ] OpenTelemetry traces and Prometheus-compatible metrics
@@ -27,7 +28,8 @@ ActionGate is developed in public. Priorities are ordered around establishing a 
 ## Later — stronger enforcement
 
 - [ ] Credential broker and execution proxy
-- [ ] MCP tool gateway
+- [x] Embeddable MCP tool gateway
+- [ ] Standalone authenticated MCP network proxy
 - [ ] Organization policy inheritance and approver roles
 - [ ] Additional separately calibrated semantic providers
 

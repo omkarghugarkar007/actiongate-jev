@@ -17,16 +17,22 @@ services:
     ports: ["${REDIS_PORT:-6379}:6379"]
     command: ["redis-server", "--appendonly", "yes"]
     volumes: ["actiongate-redis:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   api:
     build: { context: "..", dockerfile: Dockerfile }
     env_file: ../.env
     environment:
       DATABASE_URL: postgres://actiongate:actiongate@postgres:5432/actiongate
       REDIS_URL: redis://redis:6379
+      ACTIONGATE_STORAGE: redis
     ports: ["8080:8080"]
     depends_on:
       postgres: { condition: service_healthy }
-      redis: { condition: service_started }
+      redis: { condition: service_healthy }
   web:
     build: { context: "..", dockerfile: Dockerfile }
     command: ["pnpm", "dev:web"]

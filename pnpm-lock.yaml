@@ -82,6 +82,9 @@ importers:
       '@actiongate/decision-provider':
         specifier: workspace:*
         version: link:../../packages/decision-provider
+      ioredis:
+        specifier: ^5.7.0
+        version: 5.11.1
 
   apps/web:
     dependencies:
@@ -129,6 +132,12 @@ importers:
       '@actiongate/decision-provider':
         specifier: workspace:*
         version: link:../decision-provider
+
+  packages/mcp-gateway:
+    dependencies:
+      '@actiongate/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/sdk-js:
     dependencies:

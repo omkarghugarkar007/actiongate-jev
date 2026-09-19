@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@actiongate/core": "workspace:*",
-    "@actiongate/decision-provider": "workspace:*"
+    "@actiongate/decision-provider": "workspace:*",
+    "ioredis": "^5.7.0"
   }
 }
-

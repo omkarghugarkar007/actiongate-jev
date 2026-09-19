@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { FakeDecisionProvider } from "@actiongate/decision-provider";
-import { ActionGrantSigner, DEFAULT_POLICY, type AuthorizationRequest } from "@actiongate/core";
+import { ActionGrantSigner, DEFAULT_POLICY, type AuthorizationRequest, type DecisionProvider } from "@actiongate/core";
 import { buildApp } from "../src/app.js";
 
 const apps: ReturnType<typeof buildApp>[] = [];
@@ -22,6 +22,25 @@ describe("POST /v1/authorize", () => {
     await app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: body });
     const conflict = await app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: { ...body, proposedAction: { ...body.proposedAction, arguments: { amountCents: 5000 } } } });
     expect(conflict.statusCode).toBe(409);
+  });
+  it("rejects a different payload racing on the same in-flight key", async () => {
+    const fake = FakeDecisionProvider.allow();
+    let calls = 0;
+    const provider: DecisionProvider = {
+      async evaluate(request) {
+        calls += 1;
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        return fake.evaluate(request);
+      }
+    };
+    const app = buildApp({ provider, apiKey: "ag_test_123" }); apps.push(app);
+    const changed = { ...body, proposedAction: { ...body.proposedAction, arguments: { amountCents: 5000 } } };
+    const responses = await Promise.all([
+      app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: body }),
+      app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: changed })
+    ]);
+    expect(responses.map((response) => response.statusCode).sort()).toEqual([200, 409]);
+    expect(calls).toBe(1);
   });
   it("requires authentication", async () => { const app = buildApp({ apiKey: "ag_test_123" }); apps.push(app); expect((await app.inject({ method: "GET", url: "/v1/policies" })).statusCode).toBe(401); });
   it("rejects malformed input and mismatched header keys", async () => {

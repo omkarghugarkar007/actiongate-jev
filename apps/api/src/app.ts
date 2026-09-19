@@ -2,12 +2,14 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import sensible from "@fastify/sensible";
+import { Redis } from "ioredis";
 import { ActionGrantConsumeRequestSchema, ActionGrantError, ActionGrantSigner, AuthorizationEngine, AuthorizationRequestSchema, DEFAULT_POLICY, type DecisionProvider, type Policy } from "@actiongate/core";
 import { FakeDecisionProvider, OpenRouterJevProvider } from "@actiongate/decision-provider";
 import { config } from "./config.js";
-import { AuthorizationService, IdempotencyConflictError } from "./services/authorization-service.js";
+import { AuthorizationService, IdempotencyBusyError, IdempotencyConflictError } from "./services/authorization-service.js";
 import { ActionGrantService } from "./services/action-grant-service.js";
-import { InMemoryDecisionRepository, InMemoryGrantRepository, InMemoryPolicyRepository } from "./services/repository.js";
+import { RedisDecisionRepository, RedisGrantRepository } from "./services/redis-repository.js";
+import { InMemoryDecisionRepository, InMemoryGrantRepository, InMemoryPolicyRepository, type DecisionRepository, type GrantRepository } from "./services/repository.js";
 
 export interface BuildAppOptions {
   provider?: DecisionProvider;
@@ -17,21 +19,52 @@ export interface BuildAppOptions {
   clock?: () => number;
   logger?: boolean;
   rateLimitMax?: number;
+  storage?: "memory" | "redis";
+  redisUrl?: string;
+  redisPrefix?: string;
+  redisClient?: Redis;
+  idempotencyLeaseMs?: number;
+  idempotencyWaitMs?: number;
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
   const app = Fastify({ logger: options.logger === false ? false : { redact: ["req.headers.authorization", "req.body.token", "req.body.proposedAction.arguments.password", "req.body.proposedAction.arguments.token"] } });
   const provider = options.provider ?? createProvider();
-  const decisions = new InMemoryDecisionRepository();
-  const grants = new InMemoryGrantRepository();
+  const storage = options.storage ?? config.ACTIONGATE_STORAGE;
+  let ownedRedis: Redis | undefined;
+  let redis = options.redisClient;
+  if (storage === "redis" && !redis) {
+    ownedRedis = new Redis(options.redisUrl ?? config.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 });
+    redis = ownedRedis;
+  }
+  const repositoryOptions = {
+    prefix: options.redisPrefix ?? config.ACTIONGATE_REDIS_PREFIX,
+    idempotencyLeaseMs: options.idempotencyLeaseMs ?? config.ACTIONGATE_IDEMPOTENCY_LEASE_MS
+  };
+  const decisions: DecisionRepository = redis ? new RedisDecisionRepository(redis, repositoryOptions) : new InMemoryDecisionRepository();
+  const grants: GrantRepository = redis ? new RedisGrantRepository(redis, repositoryOptions) : new InMemoryGrantRepository();
   const policies = new InMemoryPolicyRepository([structuredClone(DEFAULT_POLICY)]);
-  const service = new AuthorizationService(new AuthorizationEngine(provider, { timeoutMs: config.JEV_TIMEOUT_MS, failOpenReadOnly: config.failOpenReadOnly }), decisions);
+  const service = new AuthorizationService(
+    new AuthorizationEngine(provider, { timeoutMs: config.JEV_TIMEOUT_MS, failOpenReadOnly: config.failOpenReadOnly }),
+    decisions,
+    options.idempotencyWaitMs ?? config.ACTIONGATE_IDEMPOTENCY_WAIT_MS
+  );
   const grantService = new ActionGrantService(new ActionGrantSigner({
     secret: options.grantSecret ?? config.ACTIONGATE_GRANT_SECRET,
     ttlSeconds: options.grantTtlSeconds ?? config.ACTIONGATE_GRANT_TTL_SECONDS,
     ...(options.clock ? { clock: options.clock } : {})
   }), grants, options.clock ?? Date.now);
   const expectedKey = options.apiKey ?? config.ACTIONGATE_API_KEY;
+
+  if (ownedRedis) {
+    app.addHook("onClose", async () => {
+      if (["wait", "end"].includes(ownedRedis!.status)) ownedRedis!.disconnect();
+      else {
+        try { await ownedRedis!.quit(); }
+        catch { ownedRedis!.disconnect(); }
+      }
+    });
+  }
 
   app.register(cors, { origin: config.APP_URL });
   app.register(sensible);
@@ -42,7 +75,13 @@ export function buildApp(options: BuildAppOptions = {}) {
   });
 
   app.get("/health", async () => ({ status: "ok" }));
-  app.get("/ready", async () => ({ status: "ready", provider: config.DECISION_PROVIDER }));
+  app.get("/ready", async (_request, reply) => {
+    if (decisions instanceof RedisDecisionRepository) {
+      try { await decisions.ping(); }
+      catch { return reply.code(503).send({ status: "not_ready", storage }); }
+    }
+    return { status: "ready", provider: config.DECISION_PROVIDER, storage };
+  });
 
   app.post("/v1/authorize", async (request, reply) => {
     const parsed = AuthorizationRequestSchema.safeParse(request.body);
@@ -57,6 +96,7 @@ export function buildApp(options: BuildAppOptions = {}) {
     }
     catch (error) {
       if (error instanceof IdempotencyConflictError) return reply.code(409).send({ error: { code: "IDEMPOTENCY_CONFLICT" } });
+      if (error instanceof IdempotencyBusyError) return reply.code(503).header("Retry-After", "1").send({ error: { code: "IDEMPOTENCY_BUSY" } });
       throw error;
     }
   });

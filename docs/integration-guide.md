@@ -76,6 +76,7 @@ const gate = new ActionGate({
   apiKey: process.env.ACTIONGATE_API_KEY!,
   baseUrl: process.env.ACTIONGATE_URL ?? "http://localhost:8080"
 });
+```
 
 Use `wrapTool` for the complete enforced lifecycle. It authorizes the exact inputs, requires a grant, consumes the grant, and calls `execute` only after consumption succeeds:
 
@@ -145,7 +146,43 @@ curl --request POST http://localhost:8080/v1/grants/consume \
 
 A grant is valid only once. Mutation returns `403`, an invalid signature `401`, replay `409`, and expiry `410`. A consumed grant gives at-most-once authorization, not exactly-once execution: if the process fails after consumption but before the side effect, obtain a new authorization with a new idempotency key after reconciling downstream state.
 
-## 4. Connect TypeSafe Jev through OpenRouter
+## 4. Enable shared Redis enforcement
+
+Memory mode is convenient for local exploration but covers only one API process. For multiple replicas or restart persistence:
+
+```bash
+docker compose -f infra/docker-compose.yml up -d redis
+```
+
+```env
+ACTIONGATE_STORAGE=redis
+REDIS_URL=redis://localhost:6379
+ACTIONGATE_REDIS_PREFIX=actiongate
+ACTIONGATE_IDEMPOTENCY_LEASE_MS=15000
+ACTIONGATE_IDEMPOTENCY_WAIT_MS=10000
+```
+
+Redis mode provides:
+
+- first-write-wins decision storage;
+- distributed idempotency leases and conflict detection;
+- the same decision and grant for identical retries across instances;
+- atomic one-time consumption across API replicas;
+- decision and consumption state across process restarts.
+
+The lease must remain longer than the maximum semantic-provider request. Production startup validates that it exceeds `JEV_TIMEOUT_MS`. Repository failures fail closed.
+
+The included local Redis uses append-only persistence. A production service also requires authentication, TLS, replication, backups, monitoring, and private networking.
+
+The current adapter retains decision and grant records indefinitely to prevent an old idempotency key or decision from minting a fresh permit. Define and implement tenant-specific archival/deletion policy before storing production traffic long-term.
+
+## 5. Put MCP tools behind the gateway
+
+Use `@actiongate/mcp-gateway` when the tool handler should be unreachable until grant consumption succeeds. The gateway owns the registered operation and risk class, and can retain downstream credentials in server-only runtime state.
+
+The combined `authorizeAndCall` path keeps the grant away from the model. The split `callWithGrant` path accepts it through MCP `_meta`, never through tool arguments. See the [MCP gateway guide](mcp-gateway.md) for both patterns.
+
+## 6. Connect TypeSafe Jev through OpenRouter
 
 Set server-only environment variables:
 
@@ -166,7 +203,7 @@ RUN_LIVE_JEV_TESTS=true pnpm test:jev:live
 pnpm cost:track
 ```
 
-## 5. Add a tool policy
+## 7. Add a tool policy
 
 Tool risk is server-owned. Add the tool to the policy/registry before accepting agent requests:
 
@@ -185,7 +222,7 @@ send_email: {
 
 Do not allow the agent to lower the registered risk class.
 
-## 6. Roll out safely
+## 8. Roll out safely
 
 1. Start with sandbox tools and the fake provider.
 2. Enable Jev in Shadow Mode.
@@ -210,10 +247,11 @@ Do not execute from a model probability directly. Use only the composed ActionGa
 
 - Replace the development API key and store only a strong hash.
 - Replace the development grant secret and plan key rotation.
-- Use durable PostgreSQL audit/grant storage and transactional or Redis-backed atomic consumption.
+- Enable Redis storage for shared decisions, idempotency, and atomic consumption.
+- Operate Redis with persistence, authentication, TLS, replication, backups, and monitoring.
 - Keep policy versions immutable.
 - Configure TLS, tenant isolation, rate limiting, and retention.
 - Export latency, provider-error, unsafe-allow, override, and cost metrics.
-- Put credentials behind the guarded executor, gateway, or credential broker; direct credential access can bypass an SDK wrapper.
+- Keep raw handlers and credentials private to the guarded executor or MCP gateway; any separately exposed path bypasses enforcement.
 - Run provider-backed evaluation on representative, reviewed cases.
 - Read the [threat model](threat-model.md).

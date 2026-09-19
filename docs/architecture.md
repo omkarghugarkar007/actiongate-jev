@@ -33,10 +33,11 @@ Precedence is: hard deterministic block, critical semantic-hazard block, determi
 - `DecisionProvider` isolates OpenRouter's alpha Decisions API from core authorization logic.
 - `DecisionRepository` isolates audit/idempotency storage.
 - `GrantRepository` isolates issuance and atomic one-time consumption.
+- Redis repositories use atomic scripts for distributed idempotency claims, first-write-wins decisions, grant creation, and grant consumption.
 - immutable policy documents select a risk-specific threshold profile.
 - state builders whitelist relevant resources rather than serializing arbitrary application context.
 - raw grant tokens are returned only to the authorization caller and are not copied into decision audit records.
-- tool execution remains outside the API; the SDK wrapper provides the current guarded execution boundary.
+- tool execution remains outside the API; the SDK wrapper and MCP gateway provide guarded execution boundaries.
 
 ## Grant lifecycle
 
@@ -48,8 +49,16 @@ Precedence is: hard deterministic block, critical semantic-hazard block, determi
 
 Consumption is deliberately fail-closed. It provides at-most-once authorization, not exactly-once side effects: a process failure after consumption requires downstream reconciliation before requesting a new authorization.
 
+## Storage modes
+
+Memory mode is the zero-dependency development default. Its idempotency and replay guarantees cover one process only.
+
+Redis mode persists sanitized decision records, idempotency mappings, grant claims, token hashes, and consumption markers. Short-lived leases ensure that concurrent identical requests across replicas produce one provider evaluation and one decision. A conflicting fingerprint using the same key fails immediately. Atomic grant consumption produces exactly one successful consumer across instances.
+
+The grant token itself is never stored. Redis contains its SHA-256 hash and non-secret signed claims. Production durability depends on Redis persistence, replication, backups, authentication, TLS, and network isolation.
+
 ## Current and target enforcement boundary
 
-Today, the TypeScript wrapper consumes a grant immediately before it invokes the supplied function. This prevents accidental execution after a failed decision and blocks mutation or replay inside the integration. It cannot stop code that possesses a downstream credential from bypassing the wrapper entirely.
+The TypeScript wrapper consumes a grant immediately before it invokes the supplied function. The MCP gateway goes further: it owns the registered operation and risk class, keeps the tool handler and its downstream credential private, and consumes before invoking that handler. Its combined flow keeps the grant out of model-visible state entirely.
 
-The target boundary is a gateway or credential broker where the tool is not directly reachable without a valid grant. Durable PostgreSQL grant state and transactional cross-instance consumption are required before multi-instance production. See the [product plan](PLANNING.md) for the ordered milestones and release gates.
+Neither integration can protect a credential or raw handler exposed elsewhere. The next boundary is a standalone authenticated proxy or credential broker where the tool is not directly reachable without a valid grant. See the [MCP gateway guide](mcp-gateway.md) and [product plan](PLANNING.md).

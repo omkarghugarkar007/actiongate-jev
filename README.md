@@ -13,7 +13,7 @@
 [![Jev](https://img.shields.io/badge/TypeSafe_Jev-1.13-6C7CFF?style=flat-square)](https://openrouter.ai/typesafe/jev-1.13)
 [![GitHub stars](https://img.shields.io/github/stars/omkarghugarkar007/actiongate-jev?style=flat-square)](https://github.com/omkarghugarkar007/actiongate-jev/stargazers)
 
-> **Early public MVP:** use mock or sandbox tools. Action Grants enforce the SDK path in one process; production still needs durable shared storage and a gateway or credential broker that makes bypass impossible. See the [security boundary](docs/threat-model.md).
+> **Early public MVP:** use mock or sandbox tools. Redis provides shared decision and grant state, and the MCP gateway can protect registered handlers. Production still requires hardened tenant authentication, key rotation, and a deployment where raw tool credentials cannot bypass the gateway. See the [security boundary](docs/threat-model.md).
 
 ## Why ActionGate?
 
@@ -75,6 +75,19 @@ pnpm refund:demo
 
 The demo cannot move real money. For REST, SDK, and deployment examples, follow the [integration guide](docs/integration-guide.md).
 
+For shared state across API instances, start Redis and enable durable mode:
+
+```bash
+docker compose -f infra/docker-compose.yml up -d redis
+```
+
+```env
+ACTIONGATE_STORAGE=redis
+REDIS_URL=redis://localhost:6379
+```
+
+Redis mode shares decisions, idempotency leases, grants, and one-time consumption state across instances and restarts. The included Compose profile enables append-only persistence; production Redis also needs authentication, TLS, replication, backups, and network isolation.
+
 ## Protect an agent tool
 
 ```ts
@@ -114,6 +127,8 @@ await guardedRefund(
 ```
 
 The wrapper authorizes the exact arguments, requires an Action Grant for enforced `ALLOW`, consumes it once, and only then invokes the tool. Authorization or consumption failure prevents execution.
+
+For MCP tools, use the [MCP gateway](docs/mcp-gateway.md) to keep the raw handler and its downstream credential behind the grant-consumption boundary.
 
 Changing the amount to `49000` produces:
 
@@ -180,6 +195,8 @@ The snapshot stays in the gitignored `.actiongate/` directory. Pricing is never 
 - **Replay protection** — identical idempotency retries return the original decision; changed payloads conflict.
 - **Exact-action grants** — enforced allows receive a signed permit bound to the tenant, agent, user/session, tool, operation, arguments, risk class, and policy.
 - **One-time consumption** — altered, expired, unknown, and replayed permits fail closed before SDK execution.
+- **Cross-instance enforcement** — Redis-backed Lua transactions allow one consumer across API replicas and preserve idempotent decisions across restarts.
+- **MCP execution boundary** — the gateway derives server-owned tool risk, consumes the permit, and only then exposes the handler to execution.
 - **Honest evaluation boundaries** — dataset integrity, semantic quality, enforcement security, reliability, and performance are measured separately.
 
 ## Common use cases
@@ -202,6 +219,7 @@ packages/
   core/                   Contracts, hard rules, state, thresholds, composition
   decision-provider/      OpenRouter Jev and deterministic fake providers
   sdk-js/                 TypeScript client and tool wrapper
+  mcp-gateway/            Guarded MCP tool registry and execution boundary
   db/                     Drizzle schema and PostgreSQL migrations
   evals/                  Starter dataset and integrity validation CLI
 examples/
@@ -235,6 +253,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm test:integration
+pnpm test:redis
 pnpm build
 pnpm e2e
 pnpm audit --prod
@@ -253,7 +272,7 @@ The repository includes unit, provider-contract, API integration, browser E2E, l
 
 ActionGate is an independent community project and is not affiliated with or endorsed by TypeSafe AI or OpenRouter. TypeSafe, Jev, and OpenRouter are names of their respective owners.
 
-The current API defaults to in-memory decision, grant, and policy repositories for a zero-dependency demo. The PostgreSQL schema includes hashed Action Grant storage, but a durable adapter and distributed atomic consumption are still required for multi-instance production. A credential-enforcing gateway is also required when callers could otherwise access tools directly. These boundaries and the ordered work are tracked in the [product plan](docs/PLANNING.md).
+The API defaults to in-memory repositories for a zero-dependency demo. Redis mode provides durable shared decisions, distributed idempotency leases, and atomic cross-instance grant consumption. The embeddable MCP gateway protects registered handlers when downstream credentials remain private to that gateway. Durable policies, tenant-scoped API keys, signing-key rotation, review workflows, and a standalone authenticated proxy remain on the [product plan](docs/PLANNING.md).
 
 ## Contributing
 

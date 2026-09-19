@@ -11,6 +11,9 @@ All notable changes to ActionGate will be documented here. The project follows [
 - SDK guarded execution that consumes a grant immediately before invoking a tool
 - PostgreSQL Action Grant schema and migration using token hashes rather than raw tokens
 - Living product plan, enforcement architecture diagram, and grant lifecycle documentation
+- Redis-backed decisions, distributed idempotency leases, and atomic cross-instance grant consumption
+- Embeddable MCP gateway with combined authorize-and-call and split metadata-grant flows
+- Cross-instance restart, race, mutation, replay, and gateway integration tests
 
 ### Changed
 
@@ -22,6 +25,8 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Raw Action Grant tokens are excluded from decision audit APIs
 - Production startup rejects the development grant-signing secret
 - Enforced SDK calls fail closed when a grant is missing or consumption fails
+- Production refuses process-local storage, and Redis repository failures fail closed
+- The MCP gateway derives tool operation and risk from its server-owned registry before executing
 
 ## [0.1.0] - 2026-09-19
 
