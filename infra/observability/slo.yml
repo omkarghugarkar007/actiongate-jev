@@ -1,0 +1,92 @@
+# ActionGate SLOs and alerts.
+#
+# Two principles:
+#  1. Safety is not traded against availability. An unsafe allow is not "one bad
+#     request"; it is the failure the product exists to prevent, so its objective
+#     is absolute rather than a percentage of traffic.
+#  2. Every alert names what an operator should do. An alert with no action is
+#     noise that trains people to ignore the next one.
+slos:
+  - name: authorization_availability
+    objective: 99.9
+    window: 30d
+    indicator: Share of /v1/authorize requests returning a decision rather than 5xx.
+    query: |
+      1 - (sum(rate(actiongate_http_errors_total{route="/v1/authorize"}[5m]))
+           / sum(rate(actiongate_decisions_total[5m])))
+
+  - name: authorization_latency
+    objective: 99.0
+    window: 30d
+    indicator: Share of authorizations completing within 2s end to end.
+    query: |
+      sum(rate(actiongate_decision_duration_ms_bucket{le="2500"}[5m]))
+      / sum(rate(actiongate_decision_duration_ms_count[5m]))
+
+  - name: unsafe_allows
+    objective: 100.0
+    window: 30d
+    indicator: >
+      Confirmed unsafe allows. Measured from reviewer corrections, not from the
+      model's own confidence. There is no acceptable rate; any occurrence is an
+      incident.
+    query: sum(increase(actiongate_unsafe_allows_total[30d])) == 0
+
+alerts:
+  - name: UnsafeAllowRecorded
+    severity: critical
+    expr: increase(actiongate_unsafe_allows_total[5m]) > 0
+    for: 0m
+    summary: A reviewer confirmed an action was allowed that should not have been.
+    action: >
+      Treat as an incident. Disable the tool with POST /v1/incidents/disable-tools,
+      revoke outstanding grants with POST /v1/incidents/revoke-grants, then record
+      the case as a regression example before changing any threshold.
+
+  - name: ProviderErrorRate
+    severity: warning
+    expr: |
+      sum(rate(actiongate_provider_errors_total[5m]))
+      / sum(rate(actiongate_decisions_total[5m])) > 0.05
+    for: 10m
+    summary: More than 5% of decisions are hitting a provider failure.
+    action: >
+      Risk-aware fallback is already blocking financial and destructive actions,
+      so the visible symptom is review volume, not unsafe allows. Check the
+      provider status and JEV_TIMEOUT_MS before touching policy.
+
+  - name: ReviewQueueGrowing
+    severity: warning
+    expr: sum(increase(actiongate_reviews_total[1h])) > 100
+    for: 30m
+    summary: Review volume is above what the on-call rota can absorb.
+    action: >
+      Look at which risk class and tool are driving it. Do not lower thresholds
+      to reduce the queue without a calibration run showing the unsafe-allow rate
+      did not move.
+
+  - name: GrantReplayAttempts
+    severity: warning
+    expr: sum(rate(actiongate_grant_rejections_total{reason="GRANT_ALREADY_CONSUMED"}[5m])) > 0.1
+    for: 5m
+    summary: Grants are being presented more than once.
+    action: >
+      Usually a client retrying without a fresh authorization. Confirm the caller
+      is not reusing an idempotency key across different payloads. Sustained
+      unexplained replay is an incident.
+
+  - name: StorageUnavailable
+    severity: critical
+    expr: min(up{job="actiongate-redis"}) == 0 or min(up{job="actiongate-postgres"}) == 0
+    for: 2m
+    summary: Redis or PostgreSQL is unreachable.
+    action: >
+      ActionGate fails closed, so authorizations will be denied rather than
+      waved through. Restore the dependency; see docs/runbooks.md.
+
+  - name: TenantQuotaSaturation
+    severity: info
+    expr: sum(rate(actiongate_quota_rejections_total[5m])) by (tenant) > 0.5
+    for: 15m
+    summary: A tenant is being rate limited or has exhausted its cost budget.
+    action: Confirm the traffic is legitimate before raising the quota.

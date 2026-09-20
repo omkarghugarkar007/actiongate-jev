@@ -567,6 +567,23 @@
         }
       }
     },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus metrics with tenant identifiers hashed",
+        "operationId": "getMetrics",
+        "description": "Requires role: audit_exporter or policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prometheus text exposition"
+          }
+        }
+      }
+    },
     "/v1/authorize": {
       "post": {
         "summary": "Decide a proposed action and issue a grant for an enforced allow",
@@ -613,6 +630,16 @@
           },
           "409": {
             "description": "Idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Tenant rate limit or provider-cost budget exhausted",
             "content": {
               "application/json": {
                 "schema": {

@@ -39,7 +39,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --exclude '**/*.integration.test.ts'",
-    "test:integration": "vitest run apps/api/test/api.integration.test.ts apps/api/test/mcp.integration.test.ts apps/api/test/mcp-proxy.integration.test.ts apps/api/test/p0.integration.test.ts apps/api/test/p1.integration.test.ts",
+    "test:integration": "vitest run apps/api/test/api.integration.test.ts apps/api/test/mcp.integration.test.ts apps/api/test/mcp-proxy.integration.test.ts apps/api/test/p0.integration.test.ts apps/api/test/p1.integration.test.ts apps/api/test/telemetry.integration.test.ts",
     "test:redis": "RUN_REDIS_TESTS=true vitest run apps/api/test/redis.integration.test.ts",
     "test:postgres": "RUN_POSTGRES_TESTS=true vitest run apps/api/test/postgres.integration.test.ts",
     "test:jev:live": "RUN_LIVE_JEV_TESTS=true vitest run --config vitest.live.config.ts",
@@ -61,7 +61,9 @@
     "packages:check": "tsx scripts/check-package-exports.ts",
     "eval:dataset": "tsx scripts/build-eval-dataset.ts",
     "eval:calibrate": "tsx packages/evals/src/cli.ts calibrate",
-    "eval:drift": "tsx packages/evals/src/cli.ts drift"
+    "eval:drift": "tsx packages/evals/src/cli.ts drift",
+    "drill:dependency": "tsx scripts/dependency-drill.ts",
+    "sbom": "tsx scripts/generate-sbom.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

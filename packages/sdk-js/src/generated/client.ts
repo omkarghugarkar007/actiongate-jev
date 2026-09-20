@@ -32,6 +32,11 @@ export class ActionGateApiClient {
     return this.request("GET", `/ready`, undefined);
   }
 
+  /** Prometheus metrics with tenant identifiers hashed */
+  async getMetrics(): Promise<ApiResult> {
+    return this.request("GET", `/metrics`, undefined);
+  }
+
   /** Decide a proposed action and issue a grant for an enforced allow */
   async postAuthorize(body: unknown): Promise<ApiResult> {
     return this.request("POST", `/v1/authorize`, undefined, body);

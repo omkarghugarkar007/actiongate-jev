@@ -69,16 +69,18 @@ These reduce friction without touching the enforcement boundary, so they do not 
 
 ## P2 — evidence, reliability, and production assurance
 
-- [ ] Replace generated cases with versioned, independently reviewed semantic examples and annotator guidance
-- [ ] Add provider-backed calibration, threshold sweeps, confidence intervals, and per-risk reports
-- [ ] Detect model, battery, policy, and dataset drift before promotion
-- [ ] Emit tenant-safe metrics/traces for decisions, providers, stores, grants, reviews, latency, and cost
-- [ ] Define SLOs and alerts; add per-tenant quotas and rate limits
-- [ ] Automate Redis/PostgreSQL backup, restore, replication, failover, and dependency-loss drills
-- [ ] Add signed/tamper-evident audit exports
-- [ ] Add container scanning, SBOM, release provenance, and signed artifacts
-- [ ] Publish deployment, migration, key-rotation, retention, restore, and incident runbooks
-- [ ] Complete an external security review and remediate findings
+Engineering complete. Two items need people rather than code and are marked as such.
+
+- [~] Replace generated cases with versioned, independently reviewed semantic examples and annotator guidance — *schema, provenance, annotator guidance, seed cases, and the gate that excludes unreviewed labels are shipped. The independent review itself is outstanding and cannot be done by the authors of the cases.*
+- [x] Add provider-backed calibration, threshold sweeps, confidence intervals, and per-risk reports
+- [x] Detect model, battery, policy, and dataset drift before promotion
+- [x] Emit tenant-safe metrics/traces for decisions, providers, stores, grants, reviews, latency, and cost
+- [x] Define SLOs and alerts; add per-tenant quotas and rate limits
+- [x] Automate Redis/PostgreSQL backup, restore, replication, failover, and dependency-loss drills
+- [x] Add signed/tamper-evident audit exports
+- [x] Add container scanning, SBOM, release provenance, and signed artifacts
+- [x] Publish deployment, migration, key-rotation, retention, restore, and incident runbooks
+- [ ] Complete an external security review and remediate findings — *outstanding by definition: requires a reviewer outside this project.*
 
 ## P3 — connector catalog
 

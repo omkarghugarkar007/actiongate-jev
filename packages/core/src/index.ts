@@ -5,6 +5,7 @@ export * from "./deterministic-rules.js";
 export * from "./facts.js";
 export * from "./fact-providers.js";
 export * from "./credential-broker.js";
+export * from "./audit-chain.js";
 export * from "./policy.js";
 export * from "./security.js";
 export * from "./semantic-battery.js";

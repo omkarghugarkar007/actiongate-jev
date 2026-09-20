@@ -1,0 +1,81 @@
+name: Release
+
+# Supply-chain hardening for a tagged release: scan the image, publish an SBOM,
+# and attach build provenance so a consumer can verify where an artifact came
+# from. Nothing here is a substitute for the external security review that
+# docs/PLANNING.md still lists as outstanding.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  supply-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with: { version: 10.27.0 }
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build publishable packages
+        run: |
+          pnpm build:packages
+          pnpm packages:check
+
+      - name: Generate SBOM
+        run: pnpm sbom
+
+      - name: Build container image
+        run: docker build -t actiongate:${{ github.sha }} .
+
+      - name: Scan image for known vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: actiongate:${{ github.sha }}
+          format: sarif
+          output: trivy-image.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Upload scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-image.sarif
+          category: container-image
+
+      - name: Pack package tarballs
+        run: |
+          mkdir -p dist/packages
+          for dir in core decision-provider connector-manifest proxy-core sdk-js mcp-gateway mcp-proxy http-proxy; do
+            (cd "packages/$dir" && pnpm pack --pack-destination ../../dist/packages)
+          done
+          ls -l dist/packages
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/packages/*.tgz
+            dist/sbom.cdx.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist/packages/*.tgz
+            dist/sbom.cdx.json
+            trivy-image.sarif

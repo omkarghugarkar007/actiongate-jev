@@ -18,6 +18,7 @@ import {
   PolicySchema,
   RiskClassSchema,
   redactSecrets,
+  signExport,
   type AuthorizationRequest,
   type DecisionProvider,
   type Policy
@@ -38,6 +39,8 @@ import {
 import { PostgresControlPlaneRepository } from "./services/postgres-control-plane.js";
 import { RedisDecisionRepository, RedisGrantRepository } from "./services/redis-repository.js";
 import type { WebhookNotifier } from "./services/webhooks.js";
+import { Telemetry } from "./services/telemetry.js";
+import { QuotaEnforcer, type TenantQuota } from "./services/quota.js";
 import { InMemoryDecisionRepository, InMemoryGrantRepository, type DecisionRepository, type GrantRepository } from "./services/repository.js";
 
 const EnvironmentSchema = z.enum(["development", "staging", "production"]);
@@ -121,6 +124,11 @@ export interface BuildAppOptions {
   credentialIssuer?: CredentialIssuer;
   /** Signed outbound notifications for decisions, reviews, and incidents. */
   notifier?: WebhookNotifier;
+  /** Per-tenant rate limits and provider-cost budgets. */
+  quotas?: Readonly<Record<string, TenantQuota>>;
+  defaultQuota?: TenantQuota;
+  /** Salt for hashing tenant ids in metric labels. Defaults to the grant secret. */
+  metricsSalt?: string;
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
@@ -254,6 +262,11 @@ export function buildApp(options: BuildAppOptions = {}) {
   const audit = (principal: AuthPrincipal, eventType: string, objectId: string, payload: unknown) => controlPlane!.appendAuditEvent({
     tenantId: principal.tenantId, eventType, objectId, actorKeyId: principal.keyId, payload: redactSecrets(payload)
   });
+  // Reuses the evidence key ring: an export attestation is audit evidence.
+  const exportKeyEntry = evidenceKeyEntries.find((key) => key.id === (evidenceActiveKeyId ?? evidenceKeyEntries[0]?.id)) ?? evidenceKeyEntries[0];
+  const exportKey = exportKeyEntry ? { id: exportKeyEntry.id, secret: exportKeyEntry.secret } : undefined;
+  const telemetry = new Telemetry(options.metricsSalt ?? grantSecret);
+  const quotas = new QuotaEnforcer(options.quotas ?? {}, options.defaultQuota ?? {}, options.clock ?? Date.now);
   const credentialIssuer = options.credentialIssuer;
   const notifier = options.notifier;
   /** Delivery is best-effort: a failing destination must never fail a decision. */
@@ -263,6 +276,12 @@ export function buildApp(options: BuildAppOptions = {}) {
   };
 
   app.get("/health", async () => ({ status: "ok" }));
+  app.get("/metrics", async (request, reply) => {
+    // Role-gated: a scrape endpoint still exposes operational shape, and tenant
+    // series are hashed rather than named.
+    if (!hasRole(request, reply, "audit_exporter", "policy_admin")) return;
+    return reply.header("Content-Type", "text/plain; version=0.0.4").send(telemetry.render());
+  });
   app.get("/ready", async (_request, reply) => {
     try {
       if (decisions instanceof RedisDecisionRepository) await decisions.ping();
@@ -279,6 +298,21 @@ export function buildApp(options: BuildAppOptions = {}) {
     if (!scopeRequest(principal, parsed.data.tenantId, parsed.data.environment, reply)) return;
     const headerKey = request.headers["idempotency-key"];
     if (headerKey && headerKey !== parsed.data.idempotencyKey) return reply.code(409).send({ error: { code: "IDEMPOTENCY_CONFLICT", message: "Header and body idempotency keys differ." } });
+    const tenantLabel = telemetry.tenantLabel(principal.tenantId);
+
+    // Quotas are checked before the registry lookup and before any provider
+    // spend, so an over-quota tenant costs nothing.
+    const rateDecision = quotas.checkAuthorize(principal.tenantId);
+    if (!rateDecision.allowed) {
+      telemetry.increment("actiongate_quota_rejections_total", "Requests rejected by a tenant quota.", { tenant: tenantLabel, reason: rateDecision.reason ?? "RATE_LIMIT" });
+      return reply.code(429).header("Retry-After", String(rateDecision.retryAfterSeconds ?? 60)).send({ error: { code: rateDecision.reason } });
+    }
+    const costDecision = quotas.checkCostBudget(principal.tenantId);
+    if (!costDecision.allowed) {
+      telemetry.increment("actiongate_quota_rejections_total", "Requests rejected by a tenant quota.", { tenant: tenantLabel, reason: "COST_BUDGET" });
+      return reply.code(429).header("Retry-After", String(costDecision.retryAfterSeconds ?? 3600)).send({ error: { code: "COST_BUDGET" } });
+    }
+
     const tool = await registeredAction(principal, parsed.data.proposedAction, reply);
     if (!tool) return;
     if (parsed.data.policyVersion && parsed.data.policyVersion !== tool.policyVersion) return reply.code(403).send({ error: { code: "POLICY_VERSION_MISMATCH" } });
@@ -295,8 +329,23 @@ export function buildApp(options: BuildAppOptions = {}) {
     };
     try {
       const response = await service.authorize(authorizedRequest, policy);
+      const labels = { tenant: tenantLabel, decision: response.decision, risk: response.riskClass, mode: response.mode };
+      telemetry.increment("actiongate_decisions_total", "Authorization decisions by outcome, risk, and mode.", labels);
+      telemetry.observe("actiongate_decision_duration_ms", "End-to-end authorization latency in milliseconds.", response.timing.totalMs, { tenant: tenantLabel });
+      if (response.timing.semanticMs != null) {
+        telemetry.observe("actiongate_provider_duration_ms", "Decision-provider latency in milliseconds.", response.timing.semanticMs, { tenant: tenantLabel, provider: response.model?.provider ?? "none" });
+      }
+      if (response.model?.usage?.costUsd) {
+        quotas.recordCost(principal.tenantId, response.model.usage.costUsd);
+        telemetry.increment("actiongate_provider_cost_usd_total", "Provider cost in USD.", { tenant: tenantLabel, provider: response.model.provider }, response.model.usage.costUsd);
+      }
+      if (response.reasons.some((reason) => reason.code.startsWith("JEV_"))) {
+        telemetry.increment("actiongate_provider_errors_total", "Decision-provider failures by tenant.", { tenant: tenantLabel });
+      }
       await audit(principal, "decision.created", response.decisionId, { request: authorizedRequest, response });
-      return await grantService.attachGrant(authorizedRequest, response);
+      const withGrant = await grantService.attachGrant(authorizedRequest, response);
+      if (withGrant.grant) telemetry.increment("actiongate_grants_issued_total", "Action Grants issued.", { tenant: tenantLabel, risk: response.riskClass });
+      return withGrant;
     } catch (error) {
       if (error instanceof IdempotencyConflictError) return reply.code(409).send({ error: { code: "IDEMPOTENCY_CONFLICT" } });
       if (error instanceof IdempotencyBusyError) return reply.code(503).header("Retry-After", "1").send({ error: { code: "IDEMPOTENCY_BUSY" } });
@@ -315,9 +364,15 @@ export function buildApp(options: BuildAppOptions = {}) {
     const consumeRequest = { ...parsed.data, tenantId: principal.tenantId, environment: principal.environment, proposedAction: { ...parsed.data.proposedAction, tool: tool.name, operation: tool.operation, riskClass: tool.riskClass } };
     try {
       const consumed = await grantService.consume(consumeRequest);
+      telemetry.increment("actiongate_grants_consumed_total", "Action Grants consumed.", { tenant: telemetry.tenantLabel(principal.tenantId), risk: tool.riskClass });
       await audit(principal, "grant.consumed", consumed.grantId, consumed);
       return consumed;
-    } catch (error) { return grantErrorResponse(error, reply); }
+    } catch (error) {
+      if (error instanceof ActionGrantError) {
+        telemetry.increment("actiongate_grant_rejections_total", "Grant consumption rejections by reason.", { tenant: telemetry.tenantLabel(principal.tenantId), reason: error.code });
+      }
+      return grantErrorResponse(error, reply);
+    }
   });
 
   app.post("/v1/grants/:id/revoke", async (request, reply) => {
@@ -451,6 +506,7 @@ export function buildApp(options: BuildAppOptions = {}) {
       expiresAt: parsed.data.expiresAt,
       createdBy: principal.keyId
     });
+    telemetry.increment("actiongate_reviews_total", "Reviews raised.", { tenant: telemetry.tenantLabel(principal.tenantId) });
     await audit(principal, "review.created", review.id, review);
     return reply.code(201).send(review);
   });
@@ -560,6 +616,7 @@ export function buildApp(options: BuildAppOptions = {}) {
       ...(parsed.data.externalRef ? { externalRef: parsed.data.externalRef } : {}),
       recordedBy: principal.keyId
     });
+    telemetry.increment("actiongate_executions_total", "Execution outcomes recorded.", { tenant: telemetry.tenantLabel(principal.tenantId), status: parsed.data.status });
     await audit(principal, `execution.${parsed.data.status.toLowerCase()}`, record.id, record);
     void notify({ type: `execution.${parsed.data.status.toLowerCase()}`, tenantId: principal.tenantId, objectId: record.id, payload: record });
     return reply.code(201).send(record);
@@ -637,8 +694,21 @@ export function buildApp(options: BuildAppOptions = {}) {
   app.get("/v1/audit/export", async (request, reply) => {
     if (!hasRole(request, reply, "audit_exporter")) return;
     const principal = getPrincipal(request);
-    const [decisionRecords, events] = await Promise.all([decisions.list(principal.tenantId), controlPlane.listAuditEvents(principal.tenantId)]);
-    return { tenantId: principal.tenantId, exportedAt: new Date().toISOString(), decisions: decisionRecords, events };
+    const [decisionRecords, events] = await Promise.all([decisions.list(principal.tenantId), controlPlane!.listAuditEvents(principal.tenantId)]);
+    const payload = { tenantId: principal.tenantId, exportedAt: new Date().toISOString(), decisions: decisionRecords, events };
+    if (!exportKey) return payload;
+    // Hash-chained and signed, so a recipient can detect an altered export
+    // without trusting whoever handed it over.
+    return {
+      ...payload,
+      attestation: signExport({
+        tenantId: principal.tenantId,
+        entries: [...decisionRecords, ...events],
+        keyId: exportKey.id,
+        secret: exportKey.secret,
+        exportedAt: payload.exportedAt
+      })
+    };
   });
   app.delete("/v1/audit/retention", async (request, reply) => {
     if (!hasRole(request, reply, "audit_exporter", "policy_admin")) return;
