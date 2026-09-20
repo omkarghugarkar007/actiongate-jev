@@ -23,6 +23,6 @@
       "@actiongate/db": ["packages/db/src/index.ts"]
     }
   },
-  "include": ["apps/**/*.ts", "packages/**/*.ts", "examples/**/*.ts", "scripts/**/*.ts", "*.ts"],
+  "include": ["apps/**/*.ts", "packages/**/*.ts", "examples/**/*.ts", "scripts/**/*.ts", "infra/**/*.ts", "*.ts"],
   "exclude": ["node_modules", "dist", "apps/web"]
 }

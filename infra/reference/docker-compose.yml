@@ -1,0 +1,108 @@
+# Reference topology: the guarded proxy is the only service the agent can reach.
+#
+# Two networks. `edge` is where callers live and is the only one with a published
+# port. `internal` holds ActionGate, its stores, and the tool service, and is
+# marked internal so Docker gives it no route out and no published ports.
+#
+# The proxy is the only service on both networks. An agent on `edge` therefore
+# cannot resolve or reach the upstream tool at all: the only path to a side
+# effect runs through authorization and grant consumption.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: actiongate
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-actiongate}
+      POSTGRES_DB: actiongate
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U actiongate"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: { context: "../..", dockerfile: Dockerfile }
+    command: ["./node_modules/.bin/drizzle-kit", "migrate"]
+    environment:
+      DATABASE_URL: postgres://actiongate:${POSTGRES_PASSWORD:-actiongate}@postgres:5432/actiongate
+    networks: [internal]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  seed:
+    build: { context: "../..", dockerfile: Dockerfile }
+    command: ["./node_modules/.bin/tsx", "scripts/seed.ts"]
+    environment:
+      DATABASE_URL: postgres://actiongate:${POSTGRES_PASSWORD:-actiongate}@postgres:5432/actiongate
+      ACTIONGATE_SEED_TENANT: ${ACTIONGATE_TENANT_ID:-tenant-1}
+      ACTIONGATE_EVIDENCE_KEYS: ${ACTIONGATE_EVIDENCE_KEYS}
+      ACTIONGATE_EVIDENCE_ACTIVE_KID: ${ACTIONGATE_EVIDENCE_ACTIVE_KID}
+    networks: [internal]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  # No published ports. Reachable only from `internal`.
+  actiongate:
+    build: { context: "../..", dockerfile: Dockerfile }
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://actiongate:${POSTGRES_PASSWORD:-actiongate}@postgres:5432/actiongate
+      REDIS_URL: redis://redis:6379
+      ACTIONGATE_STORAGE: redis
+      ACTIONGATE_CONTROL_PLANE: postgres
+      DECISION_PROVIDER: ${DECISION_PROVIDER:-fake}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ACTIONGATE_GRANT_KEYS: ${ACTIONGATE_GRANT_KEYS}
+      ACTIONGATE_GRANT_ACTIVE_KID: ${ACTIONGATE_GRANT_ACTIVE_KID}
+      ACTIONGATE_EVIDENCE_KEYS: ${ACTIONGATE_EVIDENCE_KEYS}
+      ACTIONGATE_EVIDENCE_ACTIVE_KID: ${ACTIONGATE_EVIDENCE_ACTIVE_KID}
+    networks: [internal]
+    depends_on:
+      redis: { condition: service_healthy }
+      seed: { condition: service_completed_successfully }
+
+  # The protected side effect. No published ports, `internal` only.
+  upstream-tool:
+    build: { context: "../..", dockerfile: Dockerfile }
+    command: ["./node_modules/.bin/tsx", "infra/reference/upstream-tool.ts"]
+    environment:
+      UPSTREAM_TOKEN: ${UPSTREAM_TOKEN:?set UPSTREAM_TOKEN}
+      PORT: "9000"
+    networks: [internal]
+
+  # The only service on both networks, and the only published port.
+  http-proxy:
+    build: { context: "../..", dockerfile: Dockerfile }
+    command: ["./node_modules/.bin/tsx", "scripts/run-http-proxy.ts"]
+    environment:
+      PORT: "8090"
+      ACTIONGATE_URL: http://actiongate:8080
+      ACTIONGATE_API_KEY: ${ACTIONGATE_API_KEY:?set ACTIONGATE_API_KEY}
+      ACTIONGATE_TENANT_ID: ${ACTIONGATE_TENANT_ID:-tenant-1}
+      ACTIONGATE_ENVIRONMENT: production
+      ACTIONGATE_PROXY_TOKEN: ${ACTIONGATE_PROXY_TOKEN:?set ACTIONGATE_PROXY_TOKEN}
+      UPSTREAM_URL: http://upstream-tool:9000
+      UPSTREAM_TOKEN: ${UPSTREAM_TOKEN}
+      ACTIONGATE_PROXY_ROUTES: >-
+        [{"method":"GET","path":"/orders/:orderId","tool":"get_order"},
+         {"method":"POST","path":"/refunds","tool":"refund_payment"}]
+    ports: ["8090:8090"]
+    networks: [edge, internal]
+    depends_on: [actiongate, upstream-tool]
+
+networks:
+  edge:
+  internal:
+    # No route out, no published ports, not reachable from the host.
+    internal: true

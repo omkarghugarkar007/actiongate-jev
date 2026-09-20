@@ -35,9 +35,9 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Key/evidence lifecycle | P0 complete | Signing and encryption key IDs support active-key rotation overlap; sensitive evidence is encrypted at rest. |
 | Data governance | P0 complete at application layer | Tenant export plus cutoff-based Redis minimization and PostgreSQL evidence deletion are role-gated. |
 | TypeScript integrations | Partial | REST, workspace TypeScript wrapper, embeddable MCP gateway, and standalone MCP proxy exist; packages are not published. |
-| Non-bypassable network boundary | Partial | The standalone MCP proxy holds the upstream credential and consumes a grant before forwarding. An HTTP reverse proxy and credential broker remain. |
+| Non-bypassable network boundary | Shipped | MCP proxy, HTTP reverse proxy, and credential broker all consume before forwarding. A reference topology publishes only the proxy; everything else is on an unreachable network. |
 | Trusted facts | Shipped | Server-side providers resolve RBAC, spend, duplicate, and allowlist facts. Provenance and freshness are recorded, and `requireTrustedFacts` refuses caller-asserted facts. |
-| Human approval | Partial | Durable authenticated review/resolve records exist; approval does not yet re-evaluate and mint a fresh grant. |
+| Human approval | Shipped | Review queue with claim and escalation. Approval re-evaluates the exact action against current policy and registry and mints a fresh grant; two-person approval requires distinct reviewers. |
 | Semantic quality evidence | Not established | Generated cases validate plumbing; they are not an independently reviewed model-quality benchmark. |
 | Production operations | Not complete | Telemetry, quotas, failover drills, supply-chain provenance, and external security review remain. |
 | Adoption friction | Holding budget | Tier 0 runs with no key, no database, and no container; tiers 1-3 are additive. Packaging is the main remaining friction. |
@@ -169,19 +169,19 @@ A capability that cannot degrade down this ladder is not finished. A capability 
 ### Network enforcement products
 
 - [x] Ship a standalone authenticated MCP proxy with upstream/downstream tool mapping.
-- [ ] Ship an HTTP reverse proxy/sidecar with declarative routes and request normalization.
-- [ ] Add a credential broker that exchanges a consumed grant for a narrow, short-lived downstream credential or signed request.
-- [ ] Publish a reference topology where the guarded boundary is the only route to the tool credential.
-- [ ] Add signed execution-result receipts that distinguish authorized, attempted, completed, failed, and reversed.
+- [x] Ship an HTTP reverse proxy/sidecar with declarative routes and request normalization.
+- [x] Add a credential broker that exchanges a consumed grant for a narrow, short-lived downstream credential or signed request.
+- [x] Publish a reference topology where the guarded boundary is the only route to the tool credential.
+- [x] Add signed execution-result receipts that distinguish authorized, attempted, completed, failed, and reversed.
 
 ### Complete review and incident workflow
 
-- [ ] Add list/claim/escalate APIs for a real review queue.
-- [ ] Revalidate current policy, registry, resource state, and exact action at approval time.
-- [ ] Mint a fresh short-lived approval grant rather than changing the original decision.
-- [ ] Add configurable two-person approval for high-impact tools.
-- [ ] Add signed notification webhooks with retries and dead-letter handling.
-- [ ] Add bulk incident actions for tool disablement and outstanding-grant revocation.
+- [x] Add list/claim/escalate APIs for a real review queue.
+- [x] Revalidate current policy, registry, resource state, and exact action at approval time.
+- [x] Mint a fresh short-lived approval grant rather than changing the original decision.
+- [x] Add configurable two-person approval for high-impact tools.
+- [x] Add signed notification webhooks with retries and dead-letter handling.
+- [x] Add bulk incident actions for tool disablement and outstanding-grant revocation.
 
 ### Trusted fact adapters
 

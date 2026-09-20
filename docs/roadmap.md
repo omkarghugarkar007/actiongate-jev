@@ -44,18 +44,18 @@ These apply to every phase below, not to a phase of their own.
 - [x] Real Redis/PostgreSQL restart, encryption, rotation, revocation, isolation, retention, and migration tests
 - [x] Committed live OpenRouter end-to-end gate that fails loudly rather than skipping silently
 
-## P1 — non-bypassable execution and complete review
+## P1 — non-bypassable execution and complete review: complete
 
 - [x] Package the gateway as a standalone MCP network proxy with authenticated transport
-- [ ] Add an HTTP reverse proxy/sidecar for applications that cannot embed the SDK
-- [ ] Add a credential broker for narrow, short-lived downstream credentials or signed requests
-- [ ] Publish a reference deployment where raw handlers and credentials are not directly reachable
+- [x] Add an HTTP reverse proxy/sidecar for applications that cannot embed the SDK
+- [x] Add a credential broker for narrow, short-lived downstream credentials or signed requests
+- [x] Publish a reference deployment where raw handlers and credentials are not directly reachable
 - [x] Add trusted server-side fact providers for identity, RBAC, resource state, spend, duplicates, and allowlists
-- [ ] Add review list/claim/escalation plus exact-action revalidation at approval time
-- [ ] Mint a fresh approval grant and add configurable two-person approval
-- [ ] Add signed notification webhooks, retries, and dead-letter handling
-- [ ] Add bulk incident tool-disable and outstanding-grant revocation
-- [ ] Record execution attempted/completed/failed/reversed separately from authorization
+- [x] Add review list/claim/escalation plus exact-action revalidation at approval time
+- [x] Mint a fresh approval grant and add configurable two-person approval
+- [x] Add signed notification webhooks, retries, and dead-letter handling
+- [x] Add bulk incident tool-disable and outstanding-grant revocation
+- [x] Record execution attempted/completed/failed/reversed separately from authorization
 
 ### Adoption track — runs alongside P1
 
