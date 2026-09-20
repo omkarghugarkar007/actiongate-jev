@@ -114,4 +114,4 @@ Call `gateway.callWithGrant(request, authenticatedContext, runtime)`. The tenant
 - Use Redis authentication, TLS, persistence, replication, backups, and network isolation in production.
 - Treat consumption as at-most-once authorization. Reconcile downstream state before requesting another permit after an execution timeout.
 
-The package is currently a workspace package. A standalone network proxy and published package remain roadmap items.
+The package is currently consumed from the workspace because registry names are unresolved. For a network boundary, the shipped `@actiongate/mcp-proxy` package provides an authenticated standalone proxy that owns the upstream credential; see [guarding an MCP server](guard-an-mcp-server.md).

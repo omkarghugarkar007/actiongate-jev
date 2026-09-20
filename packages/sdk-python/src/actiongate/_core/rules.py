@@ -3,8 +3,7 @@
 Ported from `@actiongate/core`. The invariant that matters most: a configured
 hard rule must be *affirmatively* satisfied. An absent, untrusted, or stale fact
 means the control could not be evaluated, which fails closed. "Require RBAC" is
-never satisfied by the caller staying silent, nor — when the tool demands trusted
-facts — by the caller vouching for itself.
+never satisfied by the caller staying silent or by the caller vouching for itself.
 """
 
 from __future__ import annotations
@@ -82,15 +81,12 @@ def run_deterministic_rules(
     facts = facts or {}
     attribution = attribution or {}
     hits: list[tuple[str, Decision, str | None]] = []
-    require_trusted = bool(tool and tool.hard_rules.require_trusted_facts)
     max_age_ms = (tool.hard_rules.max_fact_age_seconds * 1000) if tool and tool.hard_rules.max_fact_age_seconds else None
     now = now_ms if now_ms is not None else time.time() * 1000
 
     def status_of(name: str) -> FactStatus:
         if facts.get(name) is None:
             return "absent"
-        if not require_trusted:
-            return "ok"
         record = attribution.get(name)
         # With no attribution the fact can only have come from the caller.
         if record is None or record.provenance != "trusted":
@@ -142,8 +138,11 @@ def run_deterministic_rules(
             if facts.get("duplicate") is not False:
                 hits.append(("DUPLICATE_ACTION", "BLOCK", None))
         with_fact("duplicate", "DUPLICATE_FACT_MISSING", _dup)
-    if facts.get("resourceExists") is False:
-        hits.append(("RESOURCE_NOT_FOUND", "BLOCK", None))
+    if facts.get("resourceExists") is not None:
+        def _resource() -> None:
+            if facts.get("resourceExists") is False:
+                hits.append(("RESOURCE_NOT_FOUND", "BLOCK", None))
+        with_fact("resourceExists", "RESOURCE_FACT_MISSING", _resource)
     if rules and rules.max_amount_cents is not None:
         limit = rules.max_amount_cents
         def _amount() -> None:

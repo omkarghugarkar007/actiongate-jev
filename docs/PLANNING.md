@@ -37,14 +37,14 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Zero-infrastructure adoption | Shipped | `ActionGate.embedded()` in both SDKs needs no server, key, or base URL and keeps the same issue-and-consume guarantees. Cross-language fixtures keep the two cores in step. Its weaker boundary is stated in the API docs. |
 | TypeScript integrations | Shipped | SDK, MCP gateway, MCP proxy, and HTTP proxy build as versioned packages with declared exports, a generated OpenAPI 3.1 description, and a generated typed client. Nothing is published to a registry yet. |
 | Non-bypassable network boundary | Shipped | MCP proxy, HTTP reverse proxy, and credential broker all consume before forwarding. A reference topology publishes only the proxy; everything else is on an unreachable network. |
-| Trusted facts | Shipped | Server-side providers resolve RBAC, spend, duplicate, and allowlist facts. Provenance and freshness are recorded, and `requireTrustedFacts` refuses caller-asserted facts. |
+| Trusted facts | Shipped | Server-side providers resolve RBAC, spend, duplicate, and allowlist facts. Provenance and freshness are recorded, and caller-asserted facts never satisfy hard rules. |
 | Human approval | Shipped | Review queue with claim and escalation. Approval re-evaluates the exact action against current policy and registry and mints a fresh grant; two-person approval requires distinct reviewers. |
 | Semantic quality evidence | Not established | Generated cases validate plumbing; they are not an independently reviewed model-quality benchmark. |
-| Production operations | Not complete | Telemetry, quotas, failover drills, supply-chain provenance, and external security review remain. |
-| Adoption friction | Holding budget | Tier 0 runs with no key, no database, and no container; tiers 1-3 are additive. Packaging is the main remaining friction. |
+| Production operations | Not complete | Telemetry, quotas, failover drills, signed exports, SBOM, and release provenance ship; independent label review and an external security review remain. |
+| Adoption friction | Holding budget | Tier 0 runs with no key, no database, and no container; tiers 1-3 are additive. Registry naming is deliberately unresolved, so clone/workspace use is the supported path. |
 | Live provider evidence | Gate in place | `pnpm test:jev:live` exercises authorize, grant issue, single-use consume, and replay rejection against the real OpenRouter endpoint. |
 
-**Production-ready claim: no.** P0 application controls are complete and tested, but P1 enforcement-boundary work and P2 operational/security evidence are still required for high-impact production use.
+**Production-ready claim: no.** P0/P1 engineering controls and most P2 operational tooling are complete, but independently reviewed semantic evidence and an external security review are still required for high-impact production use.
 
 ## Why use ActionGate instead of calling Jev directly?
 
@@ -256,7 +256,7 @@ ready for the day a name is settled.
 
 - [x] Define a server-side fact-provider interface for identity, entitlements, resource state, spend, duplication, and allowlists.
 - [x] Mark the trust provenance and freshness of each fact in audit evidence.
-- [x] Reject high-impact authorization when required trusted facts are absent or stale (`requireTrustedFacts` plus `maxFactAgeSeconds`).
+- [x] Reject authorization whenever any fact-backed hard rule lacks fresh server-derived evidence. Caller `deterministicFacts` never satisfy hard rules; the legacy `requireTrustedFacts` field remains contract-compatible but cannot weaken this invariant.
 
 ### Adoption track (parallel to P1) — complete
 
@@ -270,13 +270,13 @@ Packaging and on-ramp work does not touch the enforcement boundary, so it does n
 
 P1 exit criteria:
 
-- [ ] A reference tool cannot be reached or credentialed without successful grant consumption.
-- [ ] Proxy mutation, replay, expiry, revocation, tenant mismatch, and dependency failure never reach the upstream handler.
-- [ ] Approval always uses current state and a new exact-action grant.
-- [ ] Demonstrated incident flow can disable a tool and revoke all relevant outstanding grants.
-- [ ] Every new enforcement surface has been exercised against the real OpenRouter endpoint, with resolved model, latency, and cost recorded.
-- [ ] Every new enforcement surface still runs at Tier 0 against the fake provider with no key, no database, and no container.
-- [ ] No new required configuration was added at Tier 0; anything beyond three settings at a higher tier ships a preset.
+- [x] A reference tool cannot be reached or credentialed without successful grant consumption.
+- [x] Proxy mutation, replay, expiry, revocation, tenant mismatch, and dependency failure never reach the upstream handler.
+- [x] Approval always uses current state and a new exact-action grant.
+- [x] Demonstrated incident flow can disable a tool and revoke all relevant outstanding grants.
+- [x] Every new enforcement surface has been exercised against the real OpenRouter endpoint, with resolved model, latency, and cost recorded.
+- [x] Every new enforcement surface still runs at Tier 0 against the fake provider with no key, no database, and no container.
+- [x] No new required configuration was added at Tier 0; anything beyond three settings at a higher tier ships a preset.
 
 ## P2 — prove semantic quality and production operations
 
@@ -284,22 +284,22 @@ P1 exit criteria:
 
 - [ ] Replace generated examples with versioned, independently reviewed cases and annotator guidance.
 - [ ] Add hard negative pairs, paraphrases, target swaps, scope creep, injection, and multilingual cases.
-- [ ] Report unsafe-allow rate, auto-allow precision/coverage, review/block rates, confusion matrices, and confidence intervals by risk.
+- [x] Report unsafe-allow rate, auto-allow precision/coverage, false-block rate, review/block rates, confusion matrices, and confidence intervals overall and by risk, tool/action type, case kind, and difficulty.
 - [ ] Run provider-backed threshold sweeps and freeze model, battery, policy, and dataset versions in each report.
 - [ ] Detect provider/model drift before promotion.
 
 ### Reliability and observability
 
-- [ ] Emit tenant-safe metrics/traces for decisions, providers, stores, grants, reviews, latency, and cost.
-- [ ] Define SLOs and alerts for availability, unsafe allows, review volume, provider errors, storage failures, and replay attempts.
-- [ ] Add per-tenant quotas and rate limits.
-- [ ] Test Redis/PostgreSQL backup, restore, replication, failover, and dependency loss in an automated environment.
-- [ ] Add encrypted export signing and tamper-evident audit chaining.
+- [x] Emit tenant-safe metrics/traces for decisions, providers, stores, grants, reviews, latency, and cost.
+- [x] Define SLOs and alerts for availability, unsafe allows, review volume, provider errors, storage failures, and replay attempts.
+- [x] Add per-tenant quotas and rate limits.
+- [x] Test Redis/PostgreSQL backup, restore, replication, failover, and dependency loss in an automated environment.
+- [x] Add encrypted export signing and tamper-evident audit chaining.
 
 ### Supply chain and assurance
 
-- [ ] Add secret scanning, container scanning, SBOM generation, release provenance, and signed artifacts.
-- [ ] Publish deployment, key-rotation, retention, migration, restore, and incident runbooks.
+- [x] Add secret scanning, container scanning, SBOM generation, release provenance, and signed artifacts.
+- [x] Publish deployment, key-rotation, retention, migration, restore, and incident runbooks.
 - [ ] Complete an external security review and remediate findings before any production-ready claim.
 
 ## P3 — connector catalog
@@ -328,7 +328,7 @@ Primary metric: **unauthorized acceptances**. Release gate: `0`.
 
 ### B. Semantic safety
 
-Use independently reviewed cases stratified by risk and difficulty. Report unsafe-allow rate, auto-allow precision, safe-task coverage, review/block rates, confusion matrix, confidence intervals, and all model/policy/battery/dataset versions.
+Use independently reviewed cases stratified by risk, tool/action type, and difficulty. Report unsafe-allow rate, auto-allow precision, safe-task coverage, false-block rate, review/block rates, confusion matrix, confidence intervals, and all model/policy/battery/dataset versions.
 
 Fixture replay and generated-label integrity are not semantic accuracy.
 

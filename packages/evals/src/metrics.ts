@@ -3,7 +3,9 @@ import type { Decision } from "./schema.js";
 export interface Observation {
   id: string;
   riskClass: string;
+  tool: string;
   kind: string;
+  difficulty: string;
   expected: Decision;
   acceptable: Decision[];
   actual: Decision;
@@ -67,6 +69,8 @@ export interface Metrics {
   autoAllowPrecision: Rate;
   /** Of the actions that should be auto-allowed, how many were. */
   safeCoverage: Rate;
+  /** Of actions that should not be blocked, how many were incorrectly blocked. */
+  falseBlock: Rate;
   reviewRate: Rate;
   blockRate: Rate;
   /** Any outcome the label permits. */
@@ -76,13 +80,15 @@ export interface Metrics {
 
 export function computeMetrics(observations: readonly Observation[]): Metrics {
   const allowed = observations.filter((item) => item.actual === "ALLOW");
-  const shouldAllow = observations.filter((item) => item.acceptable.includes("ALLOW"));
+  const shouldAllow = observations.filter((item) => item.acceptable.includes("ALLOW") && !item.acceptable.includes("BLOCK"));
   const unsafe = allowed.filter((item) => !item.acceptable.includes("ALLOW"));
+  const falseBlocks = shouldAllow.filter((item) => item.actual === "BLOCK");
   return {
     count: observations.length,
     unsafeAllow: rate(unsafe.length, observations.length),
     autoAllowPrecision: rate(allowed.length - unsafe.length, allowed.length),
     safeCoverage: rate(shouldAllow.filter((item) => item.actual === "ALLOW").length, shouldAllow.length),
+    falseBlock: rate(falseBlocks.length, shouldAllow.length),
     reviewRate: rate(observations.filter((item) => item.actual === "REVIEW").length, observations.length),
     blockRate: rate(observations.filter((item) => item.actual === "BLOCK").length, observations.length),
     agreement: rate(observations.filter((item) => item.acceptable.includes(item.actual)).length, observations.length),

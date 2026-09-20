@@ -24,7 +24,7 @@ import { createHttpProxyServer, FetchHttpUpstream } from "@actiongate/http-proxy
 const API = process.env.ACTIONGATE_URL ?? "http://localhost:8080";
 const WEB = process.env.WEB_URL ?? "http://localhost:3000";
 const KEY = process.env.ACTIONGATE_API_KEY;
-if (!KEY) throw new Error("ACTIONGATE_API_KEY is required (use the key printed by pnpm db:seed)");
+if (!KEY) throw new Error("ACTIONGATE_API_KEY is required (use the key file path reported by pnpm db:seed)");
 
 const results: { area: string; check: string; ok: boolean; detail: string }[] = [];
 const record = (area: string, check: string, ok: boolean, detail = "") => {
@@ -51,7 +51,6 @@ function refundBody(overrides: Record<string, unknown> = {}) {
     actor: { agentId: "verify-live" },
     userIntent: { text: "Refund the duplicate $49 charge on txn_5512.", source: "user_message" },
     proposedAction: { tool: "refund_payment", operation: "refund", arguments: { transactionId: "txn_5512", amountCents: 4900 }, riskClass: "FINANCIAL" },
-    deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD" },
     ...overrides
   };
 }
@@ -98,13 +97,19 @@ if (decision.grant) {
 const downgrade = await api("/v1/authorize", { method: "POST", body: JSON.stringify(refundBody({ proposedAction: { tool: "refund_payment", operation: "refund", arguments: { transactionId: "txn_5512", amountCents: 4900 }, riskClass: "READ_ONLY" } })) });
 record("API", "risk downgrade is refused", downgrade.status === 403, `HTTP ${downgrade.status}`);
 
-const noFacts = await api("/v1/authorize", { method: "POST", body: JSON.stringify({ ...refundBody(), deterministicFacts: undefined }) });
-record("API", "hard rules are not satisfied by silence", (noFacts.body as { decision?: string }).decision === "BLOCK",
-  String((noFacts.body as { reasons?: { code: string }[] }).reasons?.[0]?.code));
+const callerLie = await api("/v1/authorize", { method: "POST", body: JSON.stringify(refundBody({
+  deterministicFacts: { authenticated: false, authorizedByRbac: false, duplicate: true, amountCents: 999_999, currency: "EUR", resourceExists: false }
+})) });
+const callerLieResult = callerLie.body as { reasons?: { source: string }[]; signals?: { deterministic?: { factProvenance?: string } } };
+record("API", "caller fact lies are replaced by deployment facts",
+  callerLie.status === 200
+    && !callerLieResult.reasons?.some((reason) => reason.source === "DETERMINISTIC")
+    && String(callerLieResult.signals?.deterministic?.factProvenance).includes("deployment-facts"),
+  String(callerLieResult.signals?.deterministic?.factProvenance));
 
 // ------------------------------------------------------------- simulator
 console.log("\nSimulator");
-const simulated = await api("/v1/simulate", { method: "POST", body: JSON.stringify({ request: { actor: { agentId: "verify" }, userIntent: refundBody().userIntent, proposedAction: refundBody().proposedAction, deterministicFacts: refundBody().deterministicFacts } }) });
+const simulated = await api("/v1/simulate", { method: "POST", body: JSON.stringify({ request: { actor: { agentId: "verify" }, userIntent: refundBody().userIntent, proposedAction: refundBody().proposedAction } }) });
 record("Simulator", "returns a decision", simulated.status === 200, String((simulated.body as { decision?: string }).decision));
 record("Simulator", "issues no grant and stores nothing", !("grant" in (simulated.body as object)) && !JSON.stringify(simulated.body).includes("\"token\""));
 
@@ -179,8 +184,7 @@ console.log("\nTypeScript SDK");
       requestId: randomUUID(), idempotencyKey: randomUUID(),
       tenantId: refundBody().tenantId, environment: "development" as const, mode: "enforce" as const,
       actor: { agentId: "verify-sdk" },
-      userIntent: { text: "Refund the duplicate $49 charge on txn_5512.", source: "user_message" as const },
-      deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD" }
+      userIntent: { text: "Refund the duplicate $49 charge on txn_5512.", source: "user_message" as const }
     })
   });
   try {
@@ -199,8 +203,7 @@ console.log("\nTypeScript SDK");
       requestId: randomUUID(), idempotencyKey: randomUUID(),
       tenantId: refundBody().tenantId, environment: "development" as const, mode: "enforce" as const,
       actor: { agentId: "verify-sdk" },
-      userIntent: { text: "Refund the duplicate $49 charge on txn_5512.", source: "user_message" as const },
-      deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD" }
+      userIntent: { text: "Refund the duplicate $49 charge on txn_5512.", source: "user_message" as const }
     })
   });
   try { await swapped({ transactionId: "txn_NEVER_MENTIONED", amountCents: 4900 }, {}); } catch { /* denial is expected */ }
@@ -226,7 +229,6 @@ def build(arguments, runtime):
         "mode": "enforce",
         "actor": Actor(agent_id="verify-python"),
         "user_intent": UserIntent(text="Refund the duplicate $49 charge on txn_5512."),
-        "deterministic_facts": {"authenticated": True, "authorizedByRbac": True, "duplicate": False, "amountCents": 4900, "currency": "USD"},
     }
 
 asked = gate.wrap_tool(name="refund_payment", operation="refund", risk_class="FINANCIAL",
@@ -409,4 +411,3 @@ if (failed.length) {
   for (const failure of failed) console.log(`  ${failure.area} · ${failure.check} ${failure.detail}`);
   process.exitCode = 1;
 }
-

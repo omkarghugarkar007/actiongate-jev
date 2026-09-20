@@ -28,8 +28,8 @@ function sdkClient(gate: ScriptedGate) {
       try {
         const payload = url.endsWith("/v1/authorize") ? await gate.authorize(body) : await gate.consumeGrant(body);
         return new Response(JSON.stringify(payload), { status: 200, headers: { "Content-Type": "application/json" } });
-      } catch (error) {
-        return new Response(JSON.stringify({ error: { code: "UPSTREAM", message: String(error) } }), { status: 503 });
+      } catch {
+        return new Response(JSON.stringify({ error: { code: "UPSTREAM", message: "The authorization service rejected the request." } }), { status: 503 });
       }
     }) as unknown as typeof fetch
   });

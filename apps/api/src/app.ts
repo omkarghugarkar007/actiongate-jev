@@ -252,6 +252,8 @@ export function buildApp(options: BuildAppOptions = {}) {
     let validator = argumentValidators.get(cacheKey);
     if (!validator) {
       try {
+        const schemaIssue = closedObjectSchemaIssue(tool.argumentSchema);
+        if (schemaIssue) throw new Error(schemaIssue);
         const compiled = ajv.compile(tool.argumentSchema);
         argumentValidators.set(cacheKey, compiled);
         validator = compiled;
@@ -452,7 +454,11 @@ export function buildApp(options: BuildAppOptions = {}) {
     const principal = getPrincipal(request);
     const parsed = ToolInputSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: { code: "TOOL_INVALID", issues: parsed.error.issues } });
-    try { new Ajv({ allErrors: true, strict: true }).compile(parsed.data.argumentSchema); }
+    try {
+      const schemaIssue = closedObjectSchemaIssue(parsed.data.argumentSchema);
+      if (schemaIssue) throw new Error(schemaIssue);
+      new Ajv({ allErrors: true, strict: true }).compile(parsed.data.argumentSchema);
+    }
     catch (error) {
       return reply.code(400).send({ error: { code: "TOOL_SCHEMA_INVALID", message: error instanceof Error ? error.message : "Invalid JSON Schema" } });
     }
@@ -786,6 +792,24 @@ export function buildApp(options: BuildAppOptions = {}) {
   // Exposed so a deployment can push the same snapshot to a collector without a
   // second instrumentation path.
   return Object.assign(app, { telemetry });
+}
+
+/** Tool arguments cross the agent boundary, so every registry schema must be a
+ * closed top-level object. A permissive schema would silently turn new fields
+ * into executable input without an administrator explicitly registering them. */
+function closedObjectSchemaIssue(schema: Record<string, unknown>): string | undefined {
+  if (schema.type !== "object") return "Tool argument schemas must have type=object";
+  if (!schema.properties || typeof schema.properties !== "object" || Array.isArray(schema.properties)) {
+    return "Tool argument schemas must declare a properties object";
+  }
+  if (schema.additionalProperties !== false) return "Tool argument schemas must set additionalProperties=false";
+  if (schema.patternProperties !== undefined) return "Tool argument schemas must not use patternProperties";
+  if (schema.required !== undefined) {
+    if (!Array.isArray(schema.required) || schema.required.some((name) => typeof name !== "string" || !(name in (schema.properties as Record<string, unknown>)))) {
+      return "Tool argument schema required entries must name declared properties";
+    }
+  }
+  return undefined;
 }
 
 function grantErrorResponse(error: unknown, reply: FastifyReply) {

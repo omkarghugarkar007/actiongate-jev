@@ -5,7 +5,9 @@ function observation(overrides: Partial<Observation> & Pick<Observation, "expect
   return {
     id: overrides.id ?? Math.random().toString(36).slice(2),
     riskClass: overrides.riskClass ?? "FINANCIAL",
+    tool: overrides.tool ?? "refund_payment",
     kind: overrides.kind ?? "supported",
+    difficulty: overrides.difficulty ?? "medium",
     acceptable: overrides.acceptable ?? [overrides.expected],
     ...overrides
   } as Observation;
@@ -67,6 +69,18 @@ describe("computeMetrics", () => {
     const metrics = computeMetrics([observation({ expected: "BLOCK", actual: "BLOCK" })]);
     expect(metrics.autoAllowPrecision.rate).toBe(0);
     expect(Number.isNaN(metrics.autoAllowPrecision.rate)).toBe(false);
+  });
+
+  it("reports false blocks only across actions where ALLOW was acceptable", () => {
+    const metrics = computeMetrics([
+      observation({ expected: "ALLOW", actual: "BLOCK" }),
+      observation({ expected: "ALLOW", acceptable: ["ALLOW", "REVIEW"], actual: "REVIEW" }),
+      observation({ expected: "REVIEW", acceptable: ["ALLOW", "BLOCK"], actual: "BLOCK" }),
+      observation({ expected: "BLOCK", actual: "BLOCK" })
+    ]);
+    expect(metrics.falseBlock.numerator).toBe(1);
+    expect(metrics.falseBlock.denominator).toBe(2);
+    expect(metrics.falseBlock.rate).toBe(0.5);
   });
 });
 

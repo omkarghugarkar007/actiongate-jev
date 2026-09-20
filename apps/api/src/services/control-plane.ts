@@ -430,10 +430,26 @@ export function defaultToolRegistrations() {
 }
 
 function defaultArgumentSchema(name: string): Record<string, unknown> {
-  if (name === "refund_payment") return { type: "object", properties: { transactionId: { type: "string" }, amountCents: { type: "integer", minimum: 0 } }, required: ["amountCents"], additionalProperties: true };
-  if (name === "get_order") return { type: "object", properties: { orderId: { type: "string", minLength: 1 } }, required: ["orderId"], additionalProperties: false };
-  if (name === "send_email") return { type: "object", properties: { to: { type: "string", minLength: 1 }, body: { type: "string" } }, required: ["to", "body"], additionalProperties: false };
-  return { type: "object" };
+  const identifier = { type: "string", minLength: 1, maxLength: 128, pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" };
+  if (name === "refund_payment") return {
+    type: "object",
+    properties: { transactionId: identifier, amountCents: { type: "integer", minimum: 1, maximum: 10_000_000 } },
+    required: ["transactionId", "amountCents"],
+    additionalProperties: false
+  };
+  if (name === "get_order") return { type: "object", properties: { orderId: identifier }, required: ["orderId"], additionalProperties: false };
+  if (name === "send_email") return {
+    type: "object",
+    properties: {
+      to: { type: "string", minLength: 3, maxLength: 320, pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$" },
+      subject: { type: "string", minLength: 1, maxLength: 998 },
+      body: { type: "string", minLength: 1, maxLength: 10_000 }
+    },
+    required: ["to", "body"],
+    additionalProperties: false
+  };
+  if (name === "delete_record") return { type: "object", properties: { recordId: identifier }, required: ["recordId"], additionalProperties: false };
+  return { type: "object", properties: {}, additionalProperties: false };
 }
 
 function principalFromKey(record: StoredApiKey): AuthPrincipal {

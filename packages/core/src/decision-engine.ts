@@ -12,8 +12,8 @@ export interface AuthorizationEngineOptions {
   failOpenReadOnly?: boolean;
   /**
    * Server-side providers that resolve deterministic facts the deployment can
-   * vouch for. Facts they return override anything the caller claimed, and a
-   * tool with `requireTrustedFacts` accepts nothing else.
+   * vouch for. Facts they return override anything the caller claimed. Caller
+   * facts remain visible as untrusted evidence but can never satisfy a hard rule.
    */
   factProviders?: readonly TrustedFactProvider[];
 }

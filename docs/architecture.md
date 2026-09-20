@@ -17,11 +17,13 @@ The central rule is: **Jev supplies evidence; ActionGate creates and enforces th
 
 ```text
 application
-    │ proposed action + intent + deterministic facts
+    │ proposed action + intent (caller fact claims stay untrusted)
     ▼
 tenant authentication ──► roles, environment, tenant
     ▼
 server-owned registry ──► operation, schema, risk, owner, sensitivity, policy
+    ▼
+trusted fact providers ──► authentication, RBAC, resource, amount, duplicate, allowlist
     ▼
 argument validation + deterministic rules + idempotency
     │ hard failure stops here
@@ -44,9 +46,9 @@ Step by step:
 
 1. The bearer key is verified against a slow hash. Its record supplies the tenant, environment, and roles; request fields cannot select another tenant.
 2. The tenant registry resolves the tool. Caller-supplied operation and risk remain in the public contract for explicit binding, but they must exactly match server-owned values.
-3. The registered JSON Schema validates normalized arguments before any semantic-provider request.
+3. The registered JSON Schema must be a closed top-level object (`additionalProperties: false`) and validates normalized arguments before any semantic-provider request.
 4. The registered policy version supplies hard rules, semantic questions, and risk-specific thresholds.
-5. Hard authentication, RBAC, amount, currency, allowlist, duplicate, and availability rules run deterministically.
+5. Deployment-owned fact providers resolve authentication, RBAC, amount, currency, allowlist, duplicate, and availability evidence. Caller claims cannot satisfy a hard rule; missing, stale, or unavailable evidence blocks.
 6. Only a minimal, structured state is sent to the configured `DecisionProvider` for narrow intent, target, conflict, exposure, scope, and missing-intent evidence.
 7. Fixed precedence composes the outcome: hard block, critical semantic hazard, deterministic review, semantic uncertainty, then allow. A probability cannot override a failed hard rule.
 8. The runtime decision and an encrypted long-term audit event are recorded. Raw API keys and raw grant tokens are never stored in evidence.
@@ -101,10 +103,10 @@ This is **at-most-once authorization**, not exactly-once business execution. If 
 
 ## Current boundaries
 
-- Deterministic facts are supplied by the integrating application. A serious deployment must derive authentication, entitlements, resource state, and spend limits from trusted server-side adapters rather than agent-controlled text.
-- The current MCP gateway is embeddable, not yet a standalone authenticated network proxy.
-- Review records and authenticated resolution are durable, but approval does not yet re-evaluate the action and mint a fresh approval grant. Two-person approval, escalation, and notifications are P1.
+- `deterministicFacts` in a request is untrusted evidence and cannot satisfy a hard rule. A deployment must configure trusted providers for every fact-backed rule it enables; without them, authorization fails closed.
+- The standalone authenticated MCP proxy and HTTP sidecar own the downstream credential and consume before forwarding. The credential broker provides the same boundary for downstreams that verify short-lived signed requests. They isolate only when agents cannot route around them.
+- Review approval replays the stored sanitized action against the current registry, policy, and trusted facts. It creates a new decision and fresh grant only after revalidation; claim, escalation, distinct-reviewer approval, signed notifications, and dead letters are implemented.
 - The local Compose stack does not provide production Redis/PostgreSQL authentication, TLS, replication, backups, or secret management.
-- Per-tenant quotas, full telemetry, restore/failover drills, supply-chain provenance, and an external security review remain.
+- Independently reviewed semantic labels and an external security review remain outstanding. Restore/failover evidence is local reference evidence, not a managed-service availability guarantee.
 
 Read the [threat model](threat-model.md), [product plan](PLANNING.md), and [roadmap](roadmap.md) before deploying high-impact tools.

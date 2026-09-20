@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   AuthorizationEngine,
   DEFAULT_POLICY,
+  FunctionFactProvider,
   THRESHOLD_PROFILES,
   type AuthorizationRequest,
   type DecisionProvider,
@@ -29,6 +30,7 @@ export interface ProfileReport {
   thresholds: Record<string, number>;
   overall: Metrics;
   byRisk: Record<string, Metrics>;
+  byTool: Record<string, Metrics>;
   byKind: Record<string, Metrics>;
   byDifficulty: Record<string, Metrics>;
 }
@@ -119,7 +121,15 @@ export async function calibrate(options: CalibrationOptions): Promise<Calibratio
       // Every profile for this case sees the same provider answers.
       const provider = new SingleCaseProvider(options.provider, () => { providerCalls += 1; });
       for (const profile of profiles) {
-        const engine = new AuthorizationEngine(provider, { timeoutMs: 15_000 });
+        // Dataset facts are injected by the harness as trusted fixture state;
+        // they are never copied into the caller-controlled request envelope.
+        const fixtureFacts = item.input.deterministicFacts as AuthorizationRequest["deterministicFacts"];
+        const engine = new AuthorizationEngine(provider, {
+          timeoutMs: 15_000,
+          ...(fixtureFacts ? {
+            factProviders: [new FunctionFactProvider({ name: "eval-fixture", resolve: () => fixtureFacts })]
+          } : {})
+        });
         const started = performance.now();
         const response = await engine.authorize(toRequest(item), withProfile(policy, item, profile));
         if (profile === profiles[0]) latencies.push(performance.now() - started);
@@ -136,7 +146,9 @@ export async function calibrate(options: CalibrationOptions): Promise<Calibratio
         perProfile.get(profile)!.push({
           id: item.id,
           riskClass: item.riskClass,
+          tool: item.input.proposedAction.tool,
           kind: item.kind,
+          difficulty: item.difficulty,
           expected: item.expectedDecision,
           acceptable: item.acceptableDecisions,
           actual: response.decision
@@ -174,8 +186,9 @@ export async function calibrate(options: CalibrationOptions): Promise<Calibratio
         thresholds: THRESHOLD_PROFILES[profile] as unknown as Record<string, number>,
         overall: computeMetrics(observations),
         byRisk: stratify(observations, (item) => item.riskClass),
+        byTool: stratify(observations, (item) => item.tool),
         byKind: stratify(observations, (item) => item.kind),
-        byDifficulty: stratify(observations, (item) => item.riskClass)
+        byDifficulty: stratify(observations, (item) => item.difficulty)
       };
     }),
     qualityClaimSupported: !options.includeUnreviewed && usable.length > 0,
@@ -202,8 +215,7 @@ function toRequest(item: EvalCase): AuthorizationRequest {
     actor: { agentId: "eval-harness" },
     userIntent: { text: item.input.userIntent, source: "user_message" },
     proposedAction: { ...item.input.proposedAction, riskClass: item.riskClass },
-    ...(item.input.resources ? { context: { resources: item.input.resources } } : {}),
-    ...(item.input.deterministicFacts ? { deterministicFacts: item.input.deterministicFacts as AuthorizationRequest["deterministicFacts"] } : {})
+    ...(item.input.resources ? { context: { resources: item.input.resources } } : {})
   };
 }
 

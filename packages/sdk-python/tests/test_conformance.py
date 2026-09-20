@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT / "packages/sdk-python/src"))
 
 from actiongate._core.grants import action_binding_fingerprint, canonical_json  # noqa: E402
 from actiongate._core.policy import DEFAULT_POLICY, THRESHOLD_PROFILES  # noqa: E402
-from actiongate._core.rules import run_deterministic_rules  # noqa: E402
+from actiongate._core.rules import FactAttribution, run_deterministic_rules  # noqa: E402
 
 FIXTURES = json.loads((ROOT / "fixtures/conformance/cross-language.json").read_text())
 EXPECTED = json.loads((ROOT / "fixtures/conformance/expected.json").read_text())
@@ -48,8 +48,12 @@ def test_fingerprints_match_typescript(case):
 
 @pytest.mark.parametrize("case", FIXTURES["deterministicRules"], ids=lambda case: case["name"])
 def test_deterministic_rules_match(case):
+    attribution = {
+        name: FactAttribution("trusted", "conformance")
+        for name, value in (case["facts"] or {}).items() if value is not None
+    }
     result = run_deterministic_rules(
-        case["proposedAction"], case["facts"], DEFAULT_POLICY.tools.get(case["tool"])
+        case["proposedAction"], case["facts"], DEFAULT_POLICY.tools.get(case["tool"]), attribution
     )
     assert result.decision == case["expectedDecision"]
     assert [reason.code for reason in result.reasons] == case["expectedCodes"]

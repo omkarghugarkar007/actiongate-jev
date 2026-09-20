@@ -4,8 +4,9 @@
 
 # ActionGate
 
-**Runtime authorization and single-use permits for AI agent actions.** ActionGate
-evaluates a proposed tool call with deterministic policy plus [TypeSafe Jev](https://docs.typesafe.ai/concepts/system-one)
+**Open-source Jev tool-calling authorization for AI agents.** ActionGate is a
+runtime security gateway that evaluates a proposed tool call with deterministic
+policy plus [TypeSafe Jev](https://docs.typesafe.ai/concepts/system-one)
 through [OpenRouter](https://openrouter.ai/typesafe/jev-1.13), binds approval to
 that exact action, and refuses expired, changed, or replayed permits.
 
@@ -16,7 +17,8 @@ that exact action, and refuses expired, changed, or replayed permits.
 [![Jev](https://img.shields.io/badge/TypeSafe_Jev-1.13-6C7CFF?style=flat-square)](https://openrouter.ai/typesafe/jev-1.13)
 
 > **Early public release.** Use mock or sandbox tools while evaluating it. No
-> external security review has happened yet — see the [threat model](docs/threat-model.md).
+> external security review has happened yet — see the [threat model](docs/threat-model.md)
+> and the [independent-review tracker](https://github.com/omkarghugarkar007/actiongate-jev/issues/9).
 
 ---
 
@@ -56,15 +58,25 @@ Dashboard on [:3000](http://localhost:3000), simulator on
 Then `pnpm refund:demo` runs a guarded refund that cannot move real money.
 
 For live decisions, set `DECISION_PROVIDER=openrouter` and `OPENROUTER_API_KEY`.
+For tools with hard rules, also point `ACTIONGATE_FACT_PROVIDER_URL` at a
+deployment-owned fact service; the fake Tier 0 server uses only a labeled local
+fixture, and non-demo deployments fail closed without trusted evidence.
 
 ## Guard a tool
 
 ### TypeScript
 
 ```ts
+import { FunctionFactProvider } from "@actiongate/core";
 import { ActionGate } from "@actiongate/sdk";
 
-const gate = ActionGate.embedded();   // reads OPENROUTER_API_KEY
+const gate = ActionGate.embedded({
+  // Read hard-rule evidence from application state, never agent input.
+  factProviders: [new FunctionFactProvider({
+    name: "payments",
+    resolve: ({ request }) => paymentFacts(request.proposedAction.arguments)
+  })]
+});
 
 const guardedRefund = gate.wrapTool({
   name: "refund_payment",
@@ -108,7 +120,10 @@ Same thing, no server:
 ```python
 from actiongate import ActionGate, Actor, UserIntent, ActionBlockedError
 
-gate = ActionGate.embedded()          # reads OPENROUTER_API_KEY
+gate = ActionGate.embedded(
+    fact_providers=[("payments", lambda request, _tool:
+        payment_facts(request["proposedAction"]["arguments"]))]
+)
 
 def _refund(arguments, runtime):            # keep private
     return payments.refund(arguments["transactionId"], arguments["amountCents"])
@@ -207,9 +222,9 @@ policy conflict, sensitive-data exposure, scope expansion, missing intent — ne
 one vague "is this safe?", and never uses model prose as an authorization reason.
 
 Identity comes from a hashed tenant key. Tool operation, schema, risk, and policy
-come from a server-owned registry. Deterministic facts such as RBAC and spend can
-be resolved by [server-side providers](docs/integrations.md#trusted-facts) rather
-than accepted from the caller, so an agent cannot vouch for itself. Only an
+come from a server-owned registry. Deterministic facts such as RBAC and spend
+must be resolved by [server-side providers](docs/integrations.md#trusted-facts);
+request-body claims cannot satisfy a hard rule, so an agent cannot vouch for itself. Only an
 enforced `ALLOW` produces a grant, and it is consumed once before the side effect.
 
 Full design: [architecture](docs/architecture.md) · [threat model](docs/threat-model.md) ·
@@ -237,7 +252,10 @@ browser. Nothing in it is mocked.
 
 Semantic quality is measured separately and honestly: `pnpm eval:calibrate`
 refuses unreviewed labels, and `pnpm eval:drift` blocks a promotion that raises
-the unsafe-allow rate. See the [annotator guidance](docs/annotation-guide.md).
+the unsafe-allow rate. Reports include unsafe allow, auto-allow precision,
+review rate, and false-block rate by tool/action type. See the
+[annotator guidance](docs/annotation-guide.md) and the
+[500–1,000-case independent benchmark issue](https://github.com/omkarghugarkar007/actiongate-jev/issues/8).
 
 ## Status
 
@@ -260,6 +278,8 @@ this as an early public release.
 
 ActionGate is an independent community project, not affiliated with or endorsed
 by TypeSafe AI or OpenRouter.
+
+Built and maintained by [Omkar Ghugarkar](https://github.com/omkarghugarkar007).
 
 ## Contributing
 

@@ -1,10 +1,23 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { FakeDecisionProvider } from "@actiongate/decision-provider";
-import { ActionGrantSigner, DEFAULT_POLICY, type AuthorizationRequest, type DecisionProvider } from "@actiongate/core";
-import { buildApp } from "../src/app.js";
+import { ActionGrantSigner, DEFAULT_POLICY, FunctionFactProvider, type AuthorizationRequest, type DecisionProvider } from "@actiongate/core";
+import { buildApp as createApp, type BuildAppOptions } from "../src/app.js";
+
+const trustedFacts = new FunctionFactProvider({
+  name: "test-system",
+  resolve: ({ request }) => ({
+    authenticated: true,
+    authorizedByRbac: true,
+    duplicate: false,
+    amountCents: Number(request.proposedAction.arguments.amountCents ?? 0),
+    currency: "USD",
+    resourceExists: true
+  })
+});
+const buildApp = (options: BuildAppOptions = {}) => createApp({ ...options, factProviders: options.factProviders ?? [trustedFacts] });
 
 const apps: ReturnType<typeof buildApp>[] = [];
-const body = { requestId: "req-api", idempotencyKey: "idem-api-001", tenantId: "tenant-1", environment: "development", mode: "enforce", actor: { agentId: "agent" }, userIntent: { text: "Refund the duplicate charge", source: "user_message" }, proposedAction: { tool: "refund_payment", operation: "refund", arguments: { amountCents: 4900 }, riskClass: "FINANCIAL" }, deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD" } };
+const body = { requestId: "req-api", idempotencyKey: "idem-api-001", tenantId: "tenant-1", environment: "development", mode: "enforce", actor: { agentId: "agent" }, userIntent: { text: "Refund the duplicate charge", source: "user_message" }, proposedAction: { tool: "refund_payment", operation: "refund", arguments: { transactionId: "txn_1", amountCents: 4900 }, riskClass: "FINANCIAL" }, deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD" } };
 afterEach(async () => Promise.all(apps.splice(0).map((app) => app.close())));
 
 describe("POST /v1/authorize", () => {
@@ -20,7 +33,7 @@ describe("POST /v1/authorize", () => {
   it("rejects a key reused for another body", async () => {
     const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: "ag_test_123" }); apps.push(app);
     await app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: body });
-    const conflict = await app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: { ...body, proposedAction: { ...body.proposedAction, arguments: { amountCents: 5000 } } } });
+    const conflict = await app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: { ...body, proposedAction: { ...body.proposedAction, arguments: { transactionId: "txn_1", amountCents: 5000 } } } });
     expect(conflict.statusCode).toBe(409);
   });
   it("rejects a different payload racing on the same in-flight key", async () => {
@@ -34,7 +47,7 @@ describe("POST /v1/authorize", () => {
       }
     };
     const app = buildApp({ provider, apiKey: "ag_test_123" }); apps.push(app);
-    const changed = { ...body, proposedAction: { ...body.proposedAction, arguments: { amountCents: 5000 } } };
+    const changed = { ...body, proposedAction: { ...body.proposedAction, arguments: { transactionId: "txn_1", amountCents: 5000 } } };
     const responses = await Promise.all([
       app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: body }),
       app.inject({ method: "POST", url: "/v1/authorize", headers: { authorization: "Bearer ag_test_123" }, payload: changed })
@@ -49,16 +62,26 @@ describe("POST /v1/authorize", () => {
     expect((await app.inject({ method: "POST", url: "/v1/authorize", headers, payload: {} })).statusCode).toBe(400);
     expect((await app.inject({ method: "POST", url: "/v1/authorize", headers: { ...headers, "idempotency-key": "different-key" }, payload: body })).statusCode).toBe(409);
   });
-  it("persists sanitized decisions for detail retrieval and includes provider cost", async () => {
+  it("persists token-free decisions for detail retrieval and includes provider cost", async () => {
     const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: "ag_test_123" }); apps.push(app);
     const headers = { authorization: "Bearer ag_test_123" };
-    const created = await app.inject({ method: "POST", url: "/v1/authorize", headers, payload: { ...body, proposedAction: { ...body.proposedAction, arguments: { amountCents: 4900, token: "must-not-persist" } } } });
+    const created = await app.inject({ method: "POST", url: "/v1/authorize", headers, payload: body });
     const decision = created.json();
     expect(decision.model.usage.inputTokens).toBe(100);
     const detail = await app.inject({ method: "GET", url: `/v1/decisions/${decision.decisionId}?tenantId=tenant-1`, headers });
     expect(detail.statusCode).toBe(200);
-    expect(JSON.stringify(detail.json())).not.toContain("must-not-persist");
     expect(JSON.stringify(detail.json())).not.toContain(decision.grant.token);
+  });
+  it("rejects undeclared action arguments before evaluation or persistence", async () => {
+    const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: "ag_test_123" }); apps.push(app);
+    const headers = { authorization: "Bearer ag_test_123" };
+    const response = await app.inject({
+      method: "POST", url: "/v1/authorize", headers,
+      payload: { ...body, idempotencyKey: "idem-extra-field", proposedAction: { ...body.proposedAction, arguments: { ...body.proposedAction.arguments, token: "must-not-persist" } } }
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe("ACTION_ARGUMENTS_INVALID");
+    expect((await app.inject({ method: "GET", url: "/v1/decisions", headers })).json().data).toHaveLength(0);
   });
   it("returns operational ALLOW with a shadow BLOCK finding", async () => {
     const app = buildApp({ provider: FakeDecisionProvider.scopeExpansion(), apiKey: "ag_test_123" }); apps.push(app);
@@ -94,7 +117,7 @@ describe("POST /v1/grants/consume", () => {
     const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: "ag_test_123" }); apps.push(app);
     const authorized = (await app.inject({ method: "POST", url: "/v1/authorize", headers, payload: body })).json();
     const changed = grantConsumption(authorized.grant.token);
-    changed.proposedAction.arguments = { amountCents: 5000 };
+    changed.proposedAction.arguments = { transactionId: "txn_1", amountCents: 5000 };
     const mismatch = await app.inject({ method: "POST", url: "/v1/grants/consume", headers, payload: changed });
     expect(mismatch.statusCode).toBe(403);
     expect(mismatch.json().error.code).toBe("GRANT_BINDING_MISMATCH");

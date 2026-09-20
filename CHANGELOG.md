@@ -23,18 +23,19 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Signed notification webhooks with a replay window, bounded retries, destination allowlisting, and dead letters
 - A reference deployment where the guarded proxy is the only reachable service, with a topology test
 - Versioned publishable packages, a generated OpenAPI 3.1 description, a generated typed client, validated connector manifests, and one-screen quickstarts
-- Dataset label provenance, provider-backed calibration with confidence intervals, and a drift gate that blocks promotion on any increase in unsafe allows
+- Dataset label provenance, provider-backed calibration with confidence intervals, per-tool false-block reporting, and a drift gate that blocks promotion on any increase in unsafe allows
 - Tenant-safe Prometheus metrics with hashed tenant labels, per-tenant rate limits and provider-cost budgets, and an OTLP exporter
 - Hash-chained, signed audit exports, a dependency-loss and restore drill, SLOs and alerts, a CycloneDX SBOM, and a release workflow with image scanning and build provenance
 - Runbooks for deployment, migration, key rotation, retention, restore, and incidents
 - Python SDK, adapter conformance suite, generated connector catalog, framework and webhook adapters, six guarded examples, secret resolution, and a non-persisting policy simulator
 - Trusted fact providers: a server-side interface plus function and HTTP adapters that resolve deterministic facts ActionGate can vouch for
-- Fact provenance and freshness in decision evidence, with `requireTrustedFacts` and `maxFactAgeSeconds` hard rules
+- Fact provenance and freshness in decision evidence, with mandatory trusted evidence for hard rules and optional `maxFactAgeSeconds`
 
 ### Changed
 
 - Canonical action fingerprints now bind risk class plus optional user and session identity
 - The default evaluation command reports dataset integrity only and no longer presents label replay as accuracy
+- Every registered tool schema must be a closed top-level object; default schemas also constrain identifiers, amounts, email recipients, and body lengths
 
 ### Security
 
@@ -45,8 +46,9 @@ All notable changes to ActionGate will be documented here. The project follows [
 - The MCP gateway derives tool operation and risk from its server-owned registry before executing
 - **Hard rules are now satisfied affirmatively rather than by silence.** A configured rule whose deterministic fact was absent used to pass: omitting `deterministicFacts` entirely returned `ALLOW` with a grant for a `FINANCIAL` tool carrying `requireAuthenticatedUser`, `requireRbac`, and `denyDuplicate`. A control that cannot be evaluated now blocks, with `AUTH_FACT_MISSING`, `RBAC_FACT_MISSING`, `DUPLICATE_FACT_MISSING`, `AMOUNT_FACT_MISSING`, `CURRENCY_FACT_MISSING`, and `DESTINATION_FACT_MISSING` distinguishing an unverifiable control from an explicit denial
 - The MCP proxy refuses methods it does not handle instead of forwarding them, and strips `_meta` so a model cannot smuggle a grant upstream
-- A tool with `requireTrustedFacts` no longer accepts facts the caller asserted about itself, closing the remaining "agent vouches for its own RBAC" path; a trusted fact resolved longer ago than `maxFactAgeSeconds` is rejected as stale
+- Caller-supplied `deterministicFacts` can no longer satisfy any fact-backed hard rule, regardless of the legacy `requireTrustedFacts` setting, closing the remaining "agent vouches for its own RBAC" path; a trusted fact resolved longer ago than `maxFactAgeSeconds` is rejected as stale
 - Trusted facts override contradicting caller claims, and a fact provider that fails contributes nothing, so the rule it would have satisfied fails closed
+- The release workflow pins the known-safe immutable Trivy action commit, and database seeding writes a one-time bootstrap key to a gitignored mode-0600 file instead of terminal logs
 
 ## [0.1.0] - 2026-09-19
 

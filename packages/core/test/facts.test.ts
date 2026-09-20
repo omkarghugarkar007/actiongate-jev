@@ -72,7 +72,7 @@ describe("composeFacts", () => {
   });
 });
 
-describe("requireTrustedFacts", () => {
+describe("mandatory trusted facts", () => {
   const policy = trustedRefundPolicy();
   const tool = policy.tools.refund_payment!;
 
@@ -104,10 +104,13 @@ describe("requireTrustedFacts", () => {
     expect(result.signals.factProvenance).toBe("authenticated=identity,authorizedByRbac=identity,duplicate=caller");
   });
 
-  it("leaves tools without the rule accepting caller facts", () => {
+  it("does not let the legacy policy flag make caller facts authoritative", () => {
     const composed = composeFacts(SATISFIED, []);
-    const result = runDeterministicRules({ ...request(), deterministicFacts: composed.facts }, DEFAULT_POLICY.tools.refund_payment!, { attribution: composed.attribution, now: NOW });
-    expect(result.decision).toBeUndefined();
+    const base = DEFAULT_POLICY.tools.refund_payment!;
+    const toolWithLegacyOptOut = { ...base, hardRules: { ...base.hardRules, requireTrustedFacts: false } };
+    const result = runDeterministicRules({ ...request(), deterministicFacts: composed.facts }, toolWithLegacyOptOut, { attribution: composed.attribution, now: NOW });
+    expect(result.decision).toBe("BLOCK");
+    expect(result.reasons.map((reason) => reason.code)).toContain("FACT_NOT_TRUSTED");
   });
 });
 
@@ -145,6 +148,56 @@ describe("AuthorizationEngine with fact providers", () => {
     const result = await engine.authorize(request({ deterministicFacts: SATISFIED }), trustedRefundPolicy());
     expect(result.decision).toBe("BLOCK");
     expect(result.reasons.map((reason) => reason.code)).toContain("RBAC_DENIED");
+  });
+
+  it("cannot be lied through deterministicFacts for any consequential check", async () => {
+    const base = DEFAULT_POLICY.tools.refund_payment!;
+    const policy: Policy = {
+      ...DEFAULT_POLICY,
+      tools: {
+        ...DEFAULT_POLICY.tools,
+        refund_payment: {
+          ...base,
+          hardRules: { ...base.hardRules, requireAllowlistedDestination: true }
+        }
+      }
+    };
+    const callerClaims = {
+      authenticated: true,
+      authorizedByRbac: true,
+      duplicate: false,
+      amountCents: 1,
+      currency: "USD",
+      destinationAllowlisted: true,
+      resourceExists: true
+    } as const;
+    const engine = new AuthorizationEngine(FakeDecisionProvider.allow(), {
+      factProviders: [new FunctionFactProvider({
+        name: "system-of-record",
+        resolve: () => ({
+          authenticated: false,
+          authorizedByRbac: false,
+          duplicate: true,
+          amountCents: 49_000,
+          currency: "EUR",
+          destinationAllowlisted: false,
+          resourceExists: false
+        })
+      })]
+    });
+
+    const result = await engine.authorize(request({ deterministicFacts: callerClaims }), policy);
+    expect(result.decision).toBe("BLOCK");
+    expect(result.reasons.map((reason) => reason.code)).toEqual(expect.arrayContaining([
+      "AUTH_REQUIRED",
+      "RBAC_DENIED",
+      "DUPLICATE_ACTION",
+      "RESOURCE_NOT_FOUND",
+      "AMOUNT_EXCEEDS_LIMIT",
+      "INVALID_CURRENCY",
+      "DESTINATION_NOT_ALLOWED"
+    ]));
+    expect(String(result.signals.deterministic.factProvenance)).not.toContain("caller");
   });
 
   it("fails closed and explains itself when a provider is unavailable", async () => {

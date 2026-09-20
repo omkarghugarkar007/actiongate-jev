@@ -10,9 +10,9 @@ export interface ToolPolicy {
     allowedCurrencies?: string[];
     requireAuthenticatedUser?: boolean;
     requireRbac?: boolean;
-    /** Reject facts the caller asserted about itself; only provider-resolved facts count. */
+    /** @deprecated All facts used by hard rules are server-resolved. Retained for contract compatibility. */
     requireTrustedFacts?: boolean;
-    /** Reject a trusted fact observed longer ago than this. Requires requireTrustedFacts. */
+    /** Reject a trusted fact observed longer ago than this. */
     maxFactAgeSeconds?: number;
     denyDuplicate?: boolean;
     requireAllowlistedDestination?: boolean;
@@ -73,7 +73,16 @@ export const DEFAULT_POLICY: Policy = {
       enabled: true,
       operation: "refund",
       riskClass: "FINANCIAL",
-      hardRules: { maxAmountCents: 10_000, allowedCurrencies: ["USD"], requireAuthenticatedUser: true, requireRbac: true, denyDuplicate: true },
+      hardRules: {
+        maxAmountCents: 10_000,
+        allowedCurrencies: ["USD"],
+        requireAuthenticatedUser: true,
+        requireRbac: true,
+        denyDuplicate: true,
+        // Kept explicit for readers and older clients. Trust is mandatory for
+        // every fact-backed hard rule whether or not this flag is serialized.
+        requireTrustedFacts: true
+      },
       semanticPolicy: [
         "Refund only when the user explicitly requests a refund or account credit.",
         "Refund only a transaction connected to the user's stated issue.",

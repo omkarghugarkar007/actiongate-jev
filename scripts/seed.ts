@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { mkdir, writeFile } from "node:fs/promises";
 import { Pool } from "pg";
 import { DEFAULT_POLICY } from "@actiongate/core";
 import { EvidenceCipher } from "../apps/api/src/security/evidence-cipher.js";
@@ -38,7 +39,18 @@ try {
     console.log(JSON.stringify({ tenantId: tenantSlug, apiKeyCreated: false, existingKeyId: existing.id }, null, 2));
   } else {
     const issued = await repository.createApiKey({ tenantId: tenantSlug, name: "bootstrap-admin", environment, roles: [...API_ROLES] });
-    console.log(JSON.stringify({ tenantId: tenantSlug, apiKeyCreated: true, apiKey: issued.token, key: issued.key, warning: "Store this API key now; it cannot be retrieved later." }, null, 2));
+    const keyDirectory = new URL("../.actiongate/", import.meta.url);
+    const keyFilename = `bootstrap-admin-${issued.key.id}.key`;
+    const keyFile = new URL(keyFilename, keyDirectory);
+    await mkdir(keyDirectory, { recursive: true, mode: 0o700 });
+    await writeFile(keyFile, `${issued.token}\n`, { mode: 0o600, flag: "wx" });
+    console.log(JSON.stringify({
+      tenantId: tenantSlug,
+      apiKeyCreated: true,
+      key: issued.key,
+      keyFile: `.actiongate/${keyFilename}`,
+      warning: "The plaintext key was written once to a gitignored mode-0600 file; move it to a secret manager and delete the file."
+    }, null, 2));
   }
 } finally {
   await pool.end();

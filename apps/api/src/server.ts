@@ -1,4 +1,4 @@
-import { SignedRequestIssuer } from "@actiongate/core";
+import { FunctionFactProvider, HttpFactProvider, SignedRequestIssuer, type TrustedFactProvider } from "@actiongate/core";
 import { buildApp } from "./app.js";
 import { config } from "./config.js";
 import { OtlpMetricExporter } from "./services/otlp.js";
@@ -22,9 +22,22 @@ const notifier = config.ACTIONGATE_WEBHOOK_URL && config.ACTIONGATE_WEBHOOK_SECR
   ? new SignedWebhookNotifier({ url: config.ACTIONGATE_WEBHOOK_URL, secret: config.ACTIONGATE_WEBHOOK_SECRET })
   : undefined;
 
+const factProviders: TrustedFactProvider[] = config.ACTIONGATE_FACT_PROVIDER_URL
+  ? [new HttpFactProvider({
+      name: "deployment-facts",
+      url: config.ACTIONGATE_FACT_PROVIDER_URL,
+      ...(config.ACTIONGATE_FACT_PROVIDER_TOKEN
+        ? { headers: { Authorization: `Bearer ${config.ACTIONGATE_FACT_PROVIDER_TOKEN}` } }
+        : {})
+    })]
+  : config.NODE_ENV !== "production" && config.DECISION_PROVIDER === "fake"
+    ? [localDemoFactProvider()]
+    : [];
+
 const app = buildApp({
   ...(credentialIssuer ? { credentialIssuer } : {}),
   ...(notifier ? { notifier } : {}),
+  factProviders,
   quotas: config.tenantQuotas,
   defaultQuota: config.defaultQuota
 });
@@ -37,11 +50,40 @@ try {
     controlPlane: config.ACTIONGATE_CONTROL_PLANE,
     credentialBroker: Boolean(credentialIssuer),
     notifications: Boolean(notifier),
+    factProviders: factProviders.map((provider) => provider.name),
     otlp: Boolean(config.ACTIONGATE_OTLP_ENDPOINT)
   }, "ActionGate ready");
 } catch (error) {
   app.log.error(error);
   process.exit(1);
+}
+
+/** A deliberately tiny fixture keeps Tier 0 usable without teaching callers
+ * that request-body facts are authoritative. Live/provider deployments must
+ * configure their own deployment-owned service. */
+function localDemoFactProvider(): TrustedFactProvider {
+  const payments = new Map([
+    ["txn_duplicate", { refunded: false }],
+    ["txn_5512", { refunded: false }],
+    ["txn_9981", { refunded: false }],
+    ["txn_bulk", { refunded: false }]
+  ]);
+  return new FunctionFactProvider({
+    name: "local-demo-fixture",
+    resolve: ({ request }) => {
+      if (request.proposedAction.tool !== "refund_payment") return undefined;
+      const args = request.proposedAction.arguments as { transactionId?: unknown; amountCents?: unknown };
+      const payment = payments.get(String(args.transactionId));
+      return {
+        authenticated: true,
+        authorizedByRbac: true,
+        duplicate: payment?.refunded ?? false,
+        amountCents: typeof args.amountCents === "number" ? args.amountCents : 0,
+        currency: "USD",
+        resourceExists: Boolean(payment)
+      };
+    }
+  });
 }
 
 if (config.ACTIONGATE_OTLP_ENDPOINT) {

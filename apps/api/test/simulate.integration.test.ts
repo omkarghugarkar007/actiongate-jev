@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { DEFAULT_POLICY } from "@actiongate/core";
+import { DEFAULT_POLICY, FunctionFactProvider } from "@actiongate/core";
 import { FakeDecisionProvider } from "@actiongate/decision-provider";
 import { buildApp } from "../src/app.js";
 import { API_ROLES } from "../src/services/control-plane.js";
@@ -10,7 +10,13 @@ const apps: ReturnType<typeof buildApp>[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
 
 function build(roles: string[] = [...API_ROLES]) {
-  const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: KEY, apiKeyTenantId: "tenant-sim", apiKeyRoles: roles as never, logger: false });
+  const app = buildApp({
+    provider: FakeDecisionProvider.allow(), apiKey: KEY, apiKeyTenantId: "tenant-sim", apiKeyRoles: roles as never, logger: false,
+    factProviders: [new FunctionFactProvider({
+      name: "test-system",
+      resolve: ({ request }) => ({ authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: Number(request.proposedAction.arguments.amountCents ?? 0), currency: "USD" })
+    })]
+  });
   apps.push(app);
   return app;
 }

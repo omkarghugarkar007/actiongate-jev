@@ -46,6 +46,19 @@ describe("production configuration guardrails", () => {
     });
     expect(unknownActiveKey.stderr).toContain("ACTIONGATE_GRANT_ACTIVE_KID is not present");
   });
+
+  it("rejects a fact-provider token without a provider URL", () => {
+    const result = loadConfig({
+      ACTIONGATE_STORAGE: "redis",
+      ACTIONGATE_CONTROL_PLANE: "postgres",
+      ACTIONGATE_GRANT_KEYS: validGrantRing,
+      ACTIONGATE_GRANT_ACTIVE_KID: "grant_2026_09",
+      ACTIONGATE_EVIDENCE_KEYS: validEvidenceRing,
+      ACTIONGATE_EVIDENCE_ACTIVE_KID: "evidence_2026_09",
+      ACTIONGATE_FACT_PROVIDER_TOKEN: "orphaned-token"
+    });
+    expect(result.stderr).toContain("ACTIONGATE_FACT_PROVIDER_TOKEN requires ACTIONGATE_FACT_PROVIDER_URL");
+  });
 });
 
 function loadConfig(overrides: Record<string, string>) {

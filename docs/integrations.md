@@ -60,7 +60,7 @@ Every connector declares itself the same way so the catalog stays machine-readab
 | `bypass` | Anything that can reach the upstream MCP server directly. The proxy only isolates if the upstream endpoint is not routable from the agent. Relayed user intent is agent-supplied, so it is semantic evidence, not trusted input; it can never override a hard rule. |
 | `requires` | An ActionGate API key, an upstream URL and credential, and one downstream proxy token. Nothing else. |
 | `tools` | Whatever the tenant registry enables and the upstream server also exposes; the intersection, never the union |
-| `facts` | None by default. Configure a server-side fact provider on the ActionGate API so RBAC, spend, and duplicate checks are resolved rather than asserted; without one, any tool carrying hard rules fails closed. |
+| `facts` | The fake-provider development server has a small labeled local fixture for the bundled refund demo. Configure `ACTIONGATE_FACT_PROVIDER_URL` for every non-demo deployment so RBAC, spend, and duplicate checks are resolved rather than asserted; without one, any tool carrying hard rules fails closed. |
 | `setup` | Point the MCP client at the proxy URL and give it a proxy token. No application code changes. |
 
 What the proxy refuses, in every case without calling upstream: an unknown or disabled tool, a tool the registry does not own, a `BLOCK` or `REVIEW` decision, an enforced allow with no grant, a failed consumption, an unreachable ActionGate, an unauthenticated caller, and any JSON-RPC method it does not explicitly handle.
@@ -159,7 +159,7 @@ Deterministic facts decide whether a hard rule passes, so where they come from m
 - **Caller-supplied facts are untrusted.** Anything in the request body was asserted by whoever called the API. An agent that can reach ActionGate can claim its own RBAC.
 - **Provider-resolved facts are trusted.** A `TrustedFactProvider` runs inside the ActionGate API and asks a service the deployment operates. Its answer overrides the caller's claim about the same fact.
 - **Provenance is evidence.** Every decision records which facts were resolved and by which provider, so an audit can tell a vouched-for fact from a claimed one.
-- **Mark high-impact tools `requireTrustedFacts`.** That tool then refuses caller-asserted facts outright. Add `maxFactAgeSeconds` where a stale answer would be dangerous.
+- **Every hard-rule fact must be trusted.** `requireTrustedFacts` remains in the versioned policy contract for compatibility, but it is no longer an opt-in switch: caller assertions never satisfy hard rules. Add `maxFactAgeSeconds` where a stale answer would be dangerous.
 - **A failing provider fails closed.** It contributes no facts, so the rule it would have satisfied is unevaluable and blocks, with `FACT_PROVIDER_UNAVAILABLE` explaining why.
 
 A connector cannot make its own facts trusted. Facts sent by an adapter — including the MCP proxy — arrive as caller provenance, because from the API's perspective an adapter is just a client. Trust is established by running a provider on the API side.

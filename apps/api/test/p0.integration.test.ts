@@ -1,7 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { FakeDecisionProvider } from "@actiongate/decision-provider";
+import { FunctionFactProvider } from "@actiongate/core";
 import { API_ROLES, InMemoryControlPlaneRepository } from "../src/services/control-plane.js";
-import { buildApp } from "../src/app.js";
+import { buildApp as createApp, type BuildAppOptions } from "../src/app.js";
+
+const trustedFacts = new FunctionFactProvider({
+  name: "test-system",
+  resolve: ({ request }) => ({ authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: Number(request.proposedAction.arguments.amountCents ?? 0), currency: "USD", resourceExists: true })
+});
+const buildApp = (options: BuildAppOptions = {}) => createApp({ ...options, factProviders: options.factProviders ?? [trustedFacts] });
 
 const apps: ReturnType<typeof buildApp>[] = [];
 afterEach(async () => Promise.all(apps.splice(0).map((app) => app.close())));
@@ -115,16 +122,25 @@ describe("P0 tenant and registry enforcement", () => {
     expect(invalidSchema.statusCode).toBe(400);
     expect(invalidSchema.json().error.code).toBe("TOOL_SCHEMA_INVALID");
 
+    const permissiveSchema = await app.inject({
+      method: "PUT", url: "/v1/tools/refund_payment", headers: auth("tenant-a-admin"),
+      payload: { ...base, argumentSchema: { type: "object", properties: {}, additionalProperties: true } }
+    });
+    expect(permissiveSchema.statusCode).toBe(400);
+    expect(permissiveSchema.json().error.code).toBe("TOOL_SCHEMA_INVALID");
+
+    const closedSchema = { type: "object", properties: { amountCents: { type: "integer" } }, required: ["amountCents"], additionalProperties: false };
+
     const inconsistent = await app.inject({
       method: "PUT", url: "/v1/tools/refund_payment", headers: auth("tenant-a-admin"),
-      payload: { ...base, operation: "delete", argumentSchema: { type: "object" } }
+      payload: { ...base, operation: "delete", argumentSchema: closedSchema }
     });
     expect(inconsistent.statusCode).toBe(409);
     expect(inconsistent.json().error.code).toBe("TOOL_POLICY_MISMATCH");
 
     const invalidName = await app.inject({
       method: "PUT", url: "/v1/tools/INVALID%20NAME", headers: auth("tenant-a-admin"),
-      payload: { ...base, argumentSchema: { type: "object" } }
+      payload: { ...base, argumentSchema: closedSchema }
     });
     expect(invalidName.statusCode).toBe(400);
     expect(invalidName.json().error.code).toBe("TOOL_NAME_INVALID");

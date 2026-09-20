@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { Redis } from "ioredis";
 import { FakeDecisionProvider } from "@actiongate/decision-provider";
-import type { DecisionProvider } from "@actiongate/core";
+import { FunctionFactProvider, type DecisionProvider } from "@actiongate/core";
 import { buildApp } from "../src/app.js";
 
 const enabled = process.env.RUN_REDIS_TESTS === "true";
@@ -10,6 +10,16 @@ const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
 const cleanup = enabled ? new Redis(redisUrl, { maxRetriesPerRequest: 1 }) : undefined;
 const apps: ReturnType<typeof buildApp>[] = [];
 const prefixes: string[] = [];
+const trustedFacts = new FunctionFactProvider({
+  name: "redis-test-ledger",
+  resolve: ({ request }) => ({
+    authenticated: true,
+    authorizedByRbac: true,
+    duplicate: false,
+    amountCents: Number(request.proposedAction.arguments.amountCents),
+    currency: "USD"
+  })
+});
 
 afterEach(async () => {
   await Promise.all(apps.splice(0).map((app) => app.close()));
@@ -42,6 +52,7 @@ describe.skipIf(!enabled)("Redis cross-instance enforcement", () => {
       storage: "redis" as const,
       redisUrl,
       redisPrefix: prefix,
+      factProviders: [trustedFacts],
       logger: false,
       rateLimitMax: 10_000
     };
@@ -107,6 +118,7 @@ describe.skipIf(!enabled)("Redis cross-instance enforcement", () => {
       storage: "redis" as const,
       redisUrl,
       redisPrefix: prefix,
+      factProviders: [trustedFacts],
       logger: false
     };
     const firstApp = buildApp(common);

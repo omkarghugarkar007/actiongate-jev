@@ -33,7 +33,7 @@ These apply to every phase below, not to a phase of their own.
 - [x] Role gates for decisions, grants, policy, registry, reviews, corrections, keys, export, and retention
 - [x] Cross-tenant denial tests for reads and grant consumption
 - [x] Durable tenant tool registry with JSON Schema, operation, owner, risk, sensitivity, policy, and enabled state
-- [x] Registration-time schema/policy consistency checks and runtime argument validation
+- [x] Registration-time schema/policy consistency checks, closed top-level tool schemas, and runtime argument validation
 - [x] Registry-derived metadata and rejection of unknown tools, disabled tools, and risk/operation downgrades
 - [x] PostgreSQL policies, registry, keys, reviews, corrections, and encrypted long-term audit events
 - [x] Signing and encryption key IDs with explicit active keys and overlapping rotation windows
@@ -50,7 +50,7 @@ These apply to every phase below, not to a phase of their own.
 - [x] Add an HTTP reverse proxy/sidecar for applications that cannot embed the SDK
 - [x] Add a credential broker for narrow, short-lived downstream credentials or signed requests
 - [x] Publish a reference deployment where raw handlers and credentials are not directly reachable
-- [x] Add trusted server-side fact providers for identity, RBAC, resource state, spend, duplicates, and allowlists
+- [x] Add trusted server-side fact providers for identity, RBAC, resource state, spend, duplicates, and allowlists; caller claims never satisfy a hard rule
 - [x] Add review list/claim/escalation plus exact-action revalidation at approval time
 - [x] Mint a fresh approval grant and add configurable two-person approval
 - [x] Add signed notification webhooks, retries, and dead-letter handling
@@ -72,7 +72,7 @@ These reduce friction without touching the enforcement boundary, so they do not 
 Engineering complete. Two items need people rather than code and are marked as such.
 
 - [~] Replace generated cases with versioned, independently reviewed semantic examples and annotator guidance — *schema, provenance, annotator guidance, seed cases, and the gate that excludes unreviewed labels are shipped. The independent review itself is outstanding and cannot be done by the authors of the cases.*
-- [x] Add provider-backed calibration, threshold sweeps, confidence intervals, and per-risk reports
+- [x] Add provider-backed calibration, threshold sweeps, confidence intervals, and unsafe-allow, auto-allow precision, review, and false-block reports by action type
 - [x] Detect model, battery, policy, and dataset drift before promotion
 - [x] Emit tenant-safe metrics/traces for decisions, providers, stores, grants, reviews, latency, and cost
 - [x] Define SLOs and alerts; add per-tenant quotas and rate limits

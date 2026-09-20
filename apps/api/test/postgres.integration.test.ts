@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Redis } from "ioredis";
 import { Pool } from "pg";
-import { DEFAULT_POLICY, type DecisionProvider } from "@actiongate/core";
+import { DEFAULT_POLICY, FunctionFactProvider, type DecisionProvider } from "@actiongate/core";
 import { FakeDecisionProvider } from "@actiongate/decision-provider";
 import { buildApp } from "../src/app.js";
 import { EvidenceCipher } from "../src/security/evidence-cipher.js";
@@ -21,6 +21,16 @@ const evidenceKeys = [{ id: "evidence-1", secret: "postgres-integration-evidence
 const oldGrantKey = { id: "grant-old", secret: "postgres-old-grant-key-at-least-32-bytes" };
 const nextGrantKey = { id: "grant-next", secret: "postgres-next-grant-key-at-least-32-bytes" };
 const apps: ReturnType<typeof buildApp>[] = [];
+const trustedFacts = new FunctionFactProvider({
+  name: "postgres-test-ledger",
+  resolve: ({ request }) => ({
+    authenticated: true,
+    authorizedByRbac: true,
+    duplicate: false,
+    amountCents: Number(request.proposedAction.arguments.amountCents),
+    currency: "USD"
+  })
+});
 let tokenA = "";
 let tokenB = "";
 let limitedTokenA = "";
@@ -148,6 +158,7 @@ function appWith(input: { provider: DecisionProvider; grantKeys: typeof evidence
     evidenceActiveKeyId: evidenceKeys[0]!.id,
     grantKeys: input.grantKeys,
     grantActiveKeyId: input.grantActiveKeyId,
+    factProviders: [trustedFacts],
     logger: false,
     rateLimitMax: 10_000
   });

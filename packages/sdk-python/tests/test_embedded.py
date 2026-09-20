@@ -118,6 +118,19 @@ def test_never_runs_the_handler_when_hard_rules_are_unsatisfied():
     assert calls == []
 
 
+def test_caller_deterministic_facts_cannot_satisfy_hard_rules():
+    transport = EmbeddedTransport(provider=FakeDecisionProvider())
+    decision = transport.authorize({
+        "requestId": "caller-facts", "idempotencyKey": "caller-facts-key", "tenantId": "local",
+        "environment": "development", "mode": "enforce", "actor": {"agentId": "a"},
+        "userIntent": {"text": "Refund the duplicate $49 charge.", "source": "user_message"},
+        "proposedAction": {"tool": "refund_payment", "operation": "refund", "arguments": {"transactionId": "txn_1", "amountCents": 4900}, "riskClass": "FINANCIAL"},
+        "deterministicFacts": dict(SATISFIED),
+    })
+    assert decision["decision"] == "BLOCK"
+    assert "FACT_NOT_TRUSTED" in [reason["code"] for reason in decision["reasons"]]
+
+
 def test_refuses_a_tool_the_policy_does_not_contain():
     gate = build()
     with pytest.raises(EmbeddedPolicyError) as raised:

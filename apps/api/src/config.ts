@@ -26,6 +26,9 @@ const schema = z.object({
   ACTIONGATE_EVIDENCE_ACTIVE_KID: z.string().regex(/^[A-Za-z0-9_-]{1,32}$/).optional(),
   ACTIONGATE_GRANT_TTL_SECONDS: z.coerce.number().int().min(1).max(300).default(30),
   ACTIONGATE_FAIL_OPEN_READ_ONLY: z.enum(["true", "false"]).default("false"),
+  /** Deployment-owned service that resolves hard-rule evidence. */
+  ACTIONGATE_FACT_PROVIDER_URL: z.string().url().optional(),
+  ACTIONGATE_FACT_PROVIDER_TOKEN: z.string().min(1).optional(),
   /** Enables POST /v1/grants/exchange. Independent of the grant and evidence keys. */
   ACTIONGATE_CREDENTIAL_SECRET: z.string().min(32).optional(),
   ACTIONGATE_CREDENTIAL_KID: z.string().regex(/^[A-Za-z0-9_-]{1,32}$/).default("cred_1"),
@@ -48,6 +51,7 @@ if (env.NODE_ENV === "production" && env.ACTIONGATE_CONTROL_PLANE !== "postgres"
 if (env.NODE_ENV === "production" && env.ACTIONGATE_API_KEY) throw new Error("Production does not accept ACTIONGATE_API_KEY; provision a hashed tenant key in PostgreSQL");
 if (env.ACTIONGATE_IDEMPOTENCY_LEASE_MS <= env.JEV_TIMEOUT_MS) throw new Error("ACTIONGATE_IDEMPOTENCY_LEASE_MS must exceed JEV_TIMEOUT_MS");
 if (env.DECISION_PROVIDER === "openrouter" && !(env.OPENROUTER_API_KEY ?? env.OPENROUTER_KEY)) throw new Error("OPENROUTER_API_KEY is required for the OpenRouter provider");
+if (env.ACTIONGATE_FACT_PROVIDER_TOKEN && !env.ACTIONGATE_FACT_PROVIDER_URL) throw new Error("ACTIONGATE_FACT_PROVIDER_TOKEN requires ACTIONGATE_FACT_PROVIDER_URL");
 // A webhook URL with no secret would send unsigned notifications, which a
 // receiver cannot distinguish from a forgery.
 if (env.ACTIONGATE_WEBHOOK_URL && !env.ACTIONGATE_WEBHOOK_SECRET) throw new Error("ACTIONGATE_WEBHOOK_URL requires ACTIONGATE_WEBHOOK_SECRET");

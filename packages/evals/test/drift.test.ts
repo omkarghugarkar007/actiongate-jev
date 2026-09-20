@@ -17,7 +17,7 @@ function observations(unsafe: number, total: number, riskClass = "FINANCIAL"): O
 function profile(name: string, unsafe: number, total: number): ProfileReport {
   const items = observations(unsafe, total);
   const metrics = computeMetrics(items);
-  return { profile: name, thresholds: {}, overall: metrics, byRisk: { FINANCIAL: metrics }, byKind: {}, byDifficulty: {} };
+  return { profile: name, thresholds: {}, overall: metrics, byRisk: { FINANCIAL: metrics }, byTool: { refund_payment: metrics }, byKind: {}, byDifficulty: {} };
 }
 
 function report(overrides: Partial<CalibrationReport> = {}, unsafe = 0, total = 100): CalibrationReport {

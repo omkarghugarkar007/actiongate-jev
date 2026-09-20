@@ -88,6 +88,7 @@ DEFAULT_POLICY = Policy(
                 require_authenticated_user=True,
                 require_rbac=True,
                 deny_duplicate=True,
+                require_trusted_facts=True,
             ),
             semantic_policy=(
                 "Refund only when the user explicitly requests a refund or account credit.",

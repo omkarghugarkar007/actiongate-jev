@@ -25,6 +25,7 @@ function build(overrides: Parameters<typeof buildApp>[0] = {}) {
     apiKeyTenantId: "tenant-p1",
     apiKeyRoles: [...API_ROLES],
     logger: false,
+    factProviders: [satisfiedFacts],
     ...overrides
   });
   apps.push(app);

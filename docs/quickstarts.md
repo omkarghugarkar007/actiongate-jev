@@ -121,9 +121,9 @@ buildApp({
 });
 ```
 
-Mark the tool `requireTrustedFacts` in policy and it will refuse facts the caller
-asserted about itself. Then record what actually happened, separately from the
-authorization:
+Caller facts cannot satisfy a hard rule, regardless of the legacy
+`requireTrustedFacts` field. Configure a provider for every fact-backed rule,
+then record what actually happened separately from the authorization:
 
 ```bash
 curl -X POST "$ACTIONGATE_URL/v1/executions" -H "Authorization: Bearer $KEY" \

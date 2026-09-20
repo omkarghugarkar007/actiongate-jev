@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_POLICY, THRESHOLD_PROFILES, actionBindingFingerprint, canonicalJson, runDeterministicRules, type AuthorizationRequest } from "../src/index.js";
+import { DEFAULT_POLICY, FACT_NAMES, THRESHOLD_PROFILES, actionBindingFingerprint, canonicalJson, runDeterministicRules, type AuthorizationRequest, type FactAttribution } from "../src/index.js";
 
 /**
  * The TypeScript half of the cross-language conformance suite.
@@ -37,7 +37,11 @@ describe("cross-language conformance", () => {
       proposedAction: item.proposedAction,
       ...(item.facts ? { deterministicFacts: item.facts } : {})
     } as AuthorizationRequest;
-    const result = runDeterministicRules(request, DEFAULT_POLICY.tools[item.tool]);
+    const attribution = Object.fromEntries(
+      FACT_NAMES.filter((name) => item.facts?.[name] !== undefined)
+        .map((name) => [name, { provenance: "trusted", source: "conformance" } satisfies FactAttribution])
+    );
+    const result = runDeterministicRules(request, DEFAULT_POLICY.tools[item.tool], { attribution });
     expect(result.decision ?? null).toBe(item.expectedDecision);
     expect(result.reasons.map((reason) => reason.code)).toEqual(item.expectedCodes);
   });

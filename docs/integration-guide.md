@@ -45,21 +45,16 @@ curl --request POST http://localhost:8080/v1/authorize \
       "operation": "refund",
       "arguments": { "transactionId": "txn_duplicate", "amountCents": 4900 },
       "riskClass": "FINANCIAL"
-    },
-    "deterministicFacts": {
-      "authenticated": true,
-      "authorizedByRbac": true,
-      "duplicate": false,
-      "amountCents": 4900,
-      "currency": "USD",
-      "resourceExists": true
     }
   }'
 ```
 
 Tenant and environment must match the authenticated key. Tool, operation, risk, and arguments must match the server-owned registry and JSON Schema. Shadow Mode returns operational `ALLOW` while `wouldHaveDecision` shows the enforcement result; it never returns a grant.
 
-The current API accepts deterministic facts from the integration. Populate them from authenticated application services, not agent text.
+The API accepts `deterministicFacts` for compatibility and audit context, but
+they are caller claims and cannot satisfy hard rules. Configure a
+[`TrustedFactProvider`](integrations.md#trusted-facts) inside the API process;
+without one, a fact-backed rule fails closed.
 
 ## 3. Run the durable local control plane
 
@@ -71,7 +66,7 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-`pnpm db:seed` creates tenant `tenant-1`, the default immutable policy, the default tool registrations, and a bootstrap administrator key. The plaintext key is printed once. Store it immediately; only its slow hash can be retrieved later.
+`pnpm db:seed` creates tenant `tenant-1`, the default immutable policy, the default tool registrations, and a bootstrap administrator key. The plaintext key is written once to the gitignored, mode-0600 path reported as `.actiongate/bootstrap-admin-<key-id>.key`; it is never printed to CI or terminal logs. Move it to a secret manager and delete the file after use. Only its slow hash can be retrieved later.
 
 Enable the durable path in `.env`:
 
@@ -184,15 +179,7 @@ const guardedRefund = gate.wrapTool({
     environment: "production",
     mode: "enforce",
     actor: { agentId: "support-agent", userId: runtime.userId },
-    userIntent: { text: runtime.userMessage, source: "user_message" },
-    deterministicFacts: {
-      authenticated: runtime.authenticated,
-      authorizedByRbac: runtime.canRefund,
-      duplicate: runtime.alreadyRefunded,
-      amountCents: input.amountCents,
-      currency: input.currency,
-      resourceExists: runtime.transactionExists
-    }
+    userIntent: { text: runtime.userMessage, source: "user_message" }
   })
 });
 ```
@@ -236,7 +223,10 @@ Use `@actiongate/mcp-gateway` when an MCP handler should be unreachable until co
 
 Prefer the combined `authorizeAndCall` flow, which keeps the grant out of model-visible state. The split `callWithGrant` flow carries it through protected MCP metadata, never tool arguments. See [mcp-gateway.md](mcp-gateway.md).
 
-The current gateway is embeddable. A standalone authenticated proxy and credential broker are P1; see [integrations.md](integrations.md).
+The embeddable gateway ships alongside a standalone authenticated MCP proxy,
+HTTP sidecar, and credential broker. Choose the boundary that can actually keep
+the raw handler or downstream credential away from the agent; see
+[integrations.md](integrations.md).
 
 ## 9. Connect Jev through OpenRouter
 
@@ -247,9 +237,17 @@ DECISION_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-v1-...
 JEV_MODEL=typesafe/jev-1.13
 JEV_TIMEOUT_MS=2000
+ACTIONGATE_FACT_PROVIDER_URL=https://facts.internal/actiongate
+ACTIONGATE_FACT_PROVIDER_TOKEN=<secret-manager-reference>
 ```
 
 Never expose the provider key through browser variables, frontend JavaScript, prompts, logs, fixtures, or tool arguments.
+The fact-provider endpoint is called by the ActionGate server and must not be
+reachable by the agent. It receives the authenticated tenant/actor plus the
+registered action and returns `{ "facts": { ... }, "observedAt": "..." }`.
+The token is optional when service identity is provided by the network. The
+fake-provider development server uses a small local demo fixture only; live and
+production configurations have no implicit trusted facts and fail closed.
 
 Validate the live contract and record a local cost snapshot:
 
@@ -306,5 +304,5 @@ For rotation, add the new key beside the old one, switch the active ID, deploy, 
 - set retention rules and protect tenant exports;
 - add per-tenant quotas, service telemetry, alerts, and incident procedures;
 - run provider-backed evaluation on representative, independently reviewed cases;
-- complete supply-chain hardening and an external security review;
+- audit pinned supply-chain dependencies and complete an external security review;
 - read the [threat model](threat-model.md) and [architecture](architecture.md).

@@ -83,9 +83,9 @@ That measures the system against itself.
 
 ## What a report may and may not say
 
-- **May:** unsafe-allow rate, auto-allow precision, safe coverage, review and
-  block rates, confusion matrix, all with confidence intervals and stratified by
-  risk class, kind, and difficulty.
+- **May:** unsafe-allow rate, auto-allow precision, safe coverage, false-block
+  rate, review and block rates, confusion matrix, all with confidence intervals
+  and stratified by risk class, tool/action type, kind, and difficulty.
 - **May not:** a single accuracy number, a score that mixes safety with
   usefulness, or any quality claim drawn from `generated` labels.
 

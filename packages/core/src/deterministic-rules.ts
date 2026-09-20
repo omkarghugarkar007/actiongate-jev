@@ -40,13 +40,11 @@ export function runDeterministicRules(req: AuthorizationRequest, tool: ToolPolic
   const hits: Array<{ code: string; decision: "BLOCK" | "REVIEW"; message?: string }> = [];
   const facts = req.deterministicFacts ?? {};
   const attribution = context.attribution ?? {};
-  const requireTrusted = tool?.hardRules?.requireTrustedFacts === true;
   const maxAgeMs = tool?.hardRules?.maxFactAgeSeconds != null ? tool.hardRules.maxFactAgeSeconds * 1000 : undefined;
   const now = context.now ?? Date.now();
 
   const statusOf = (name: FactName): FactStatus => {
     if (facts[name] === undefined) return "absent";
-    if (!requireTrusted) return "ok";
     const record = attribution[name];
     // With no attribution the fact can only have come from the caller.
     if (!record || record.provenance !== "trusted") return "untrusted";
@@ -82,8 +80,7 @@ export function runDeterministicRules(req: AuthorizationRequest, tool: ToolPolic
   // A configured hard rule must be affirmatively satisfied. An absent, untrusted,
   // or stale fact means the control could not be evaluated, which fails closed
   // rather than passing: "require RBAC" must never be satisfied by silence, and
-  // when the tool requires trusted facts it must not be satisfied by the caller
-  // vouching for itself either.
+  // no fact-backed rule can be satisfied by the caller vouching for itself.
   if (tool?.hardRules?.requireAuthenticatedUser) {
     withFact("authenticated", "AUTH_FACT_MISSING", () => {
       if (facts.authenticated !== true) hits.push({ code: "AUTH_REQUIRED", decision: "BLOCK" });
@@ -99,7 +96,11 @@ export function runDeterministicRules(req: AuthorizationRequest, tool: ToolPolic
       if (facts.duplicate !== false) hits.push({ code: "DUPLICATE_ACTION", decision: "BLOCK" });
     });
   }
-  if (facts.resourceExists === false) hits.push({ code: "RESOURCE_NOT_FOUND", decision: "BLOCK" });
+  if (facts.resourceExists !== undefined) {
+    withFact("resourceExists", "RESOURCE_FACT_MISSING", () => {
+      if (facts.resourceExists === false) hits.push({ code: "RESOURCE_NOT_FOUND", decision: "BLOCK" });
+    });
+  }
   if (tool?.hardRules?.maxAmountCents != null) {
     const limit = tool.hardRules.maxAmountCents;
     withFact("amountCents", "AMOUNT_FACT_MISSING", () => {

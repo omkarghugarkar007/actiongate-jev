@@ -99,7 +99,13 @@ async function runCalibration() {
     evaluated: report.evaluated,
     excludedUnreviewed: report.excludedUnreviewed,
     qualityClaimSupported: report.qualityClaimSupported,
-    profiles: report.profiles.map((profile) => ({ profile: profile.profile, unsafeAllow: profile.overall.unsafeAllow.rate, agreement: profile.overall.agreement.rate })),
+    profiles: report.profiles.map((profile) => ({
+      profile: profile.profile,
+      unsafeAllow: profile.overall.unsafeAllow.rate,
+      autoAllowPrecision: profile.overall.autoAllowPrecision.rate,
+      reviewRate: profile.overall.reviewRate.rate,
+      falseBlock: profile.overall.falseBlock.rate
+    })),
     note: report.note
   }, null, 2));
 }
@@ -158,11 +164,16 @@ function renderMarkdown(report: CalibrationReport): string {
     lines.push(`| **Unsafe allow** | **${band(profile.overall.unsafeAllow)}** |`);
     lines.push(`| Auto-allow precision | ${band(profile.overall.autoAllowPrecision)} |`);
     lines.push(`| Safe coverage | ${band(profile.overall.safeCoverage)} |`);
+    lines.push(`| False block | ${band(profile.overall.falseBlock)} |`);
     lines.push(`| Review rate | ${band(profile.overall.reviewRate)} |`);
     lines.push(`| Block rate | ${band(profile.overall.blockRate)} |`);
     lines.push("", "### By risk class", "", "| Risk | Cases | Unsafe allow | Coverage |", "|---|---:|---|---|");
     for (const [risk, metrics] of Object.entries(profile.byRisk)) {
       lines.push(`| ${risk} | ${metrics.count} | ${band(metrics.unsafeAllow)} | ${band(metrics.safeCoverage)} |`);
+    }
+    lines.push("", "### By action type", "", "| Tool | Cases | Unsafe allow | Auto-allow precision | Review rate | False block |", "|---|---:|---|---|---|---|");
+    for (const [tool, metrics] of Object.entries(profile.byTool)) {
+      lines.push(`| ${tool} | ${metrics.count} | ${band(metrics.unsafeAllow)} | ${band(metrics.autoAllowPrecision)} | ${band(metrics.reviewRate)} | ${band(metrics.falseBlock)} |`);
     }
     lines.push("", "### By case kind", "", "| Kind | Cases | Unsafe allow | Agreement |", "|---|---:|---|---|");
     for (const [kind, metrics] of Object.entries(profile.byKind)) {

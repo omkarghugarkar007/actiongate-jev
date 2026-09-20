@@ -20,7 +20,7 @@ const walk = (dependencies: Record<string, PnpmNode> | undefined) => {
     // Workspace packages are the subject of the SBOM, not third-party components.
     if (version.startsWith("link:") || name.startsWith("@actiongate/")) { walk(node.dependencies); continue; }
     const key = `${name}@${version}`;
-    if (!components.has(key)) components.set(key, { name, version, purl: `pkg:npm/${name.replace("@", "%40")}@${version}` });
+    if (!components.has(key)) components.set(key, { name, version, purl: `pkg:npm/${name.replaceAll("@", "%40")}@${version}` });
     walk(node.dependencies);
   }
 };

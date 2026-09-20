@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_POLICY, runDeterministicRules, type AuthorizationRequest } from "../src/index.js";
+import { DEFAULT_POLICY, FACT_NAMES, runDeterministicRules, type AuthorizationRequest, type FactAttribution } from "../src/index.js";
 
 const refundPolicy = DEFAULT_POLICY.tools.refund_payment!;
 
@@ -18,6 +18,11 @@ function refundRequest(deterministicFacts?: AuthorizationRequest["deterministicF
 }
 
 const satisfied = { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD" } as const;
+const trusted = (facts: AuthorizationRequest["deterministicFacts"] = satisfied) => ({
+  attribution: Object.fromEntries(FACT_NAMES.filter((name) => facts?.[name] !== undefined).map((name) => [name, {
+    provenance: "trusted", source: "test"
+  } satisfies FactAttribution]))
+});
 
 describe("hard rules are satisfied affirmatively, never by silence", () => {
   it("blocks when no deterministic facts are supplied at all", () => {
@@ -33,7 +38,7 @@ describe("hard rules are satisfied affirmatively, never by silence", () => {
   });
 
   it("allows only when every configured rule is affirmatively satisfied", () => {
-    expect(runDeterministicRules(refundRequest(satisfied), refundPolicy).decision).toBeUndefined();
+    expect(runDeterministicRules(refundRequest(satisfied), refundPolicy, trusted()).decision).toBeUndefined();
   });
 
   it.each([
@@ -45,13 +50,15 @@ describe("hard rules are satisfied affirmatively, never by silence", () => {
   ] as const)("blocks when %s alone is omitted", (omitted, code) => {
     const facts: Record<string, unknown> = { ...satisfied };
     delete facts[omitted];
-    const result = runDeterministicRules(refundRequest(facts as AuthorizationRequest["deterministicFacts"]), refundPolicy);
+    const typed = facts as AuthorizationRequest["deterministicFacts"];
+    const result = runDeterministicRules(refundRequest(typed), refundPolicy, trusted(typed));
     expect(result.decision).toBe("BLOCK");
     expect(result.reasons.map((reason) => reason.code)).toContain(code);
   });
 
   it("still distinguishes an explicit denial from an unverifiable control", () => {
-    const denied = runDeterministicRules(refundRequest({ ...satisfied, authorizedByRbac: false }), refundPolicy);
+    const deniedFacts = { ...satisfied, authorizedByRbac: false };
+    const denied = runDeterministicRules(refundRequest(deniedFacts), refundPolicy, trusted(deniedFacts));
     expect(denied.reasons.map((reason) => reason.code)).toContain("RBAC_DENIED");
     expect(denied.reasons.map((reason) => reason.code)).not.toContain("RBAC_FACT_MISSING");
   });

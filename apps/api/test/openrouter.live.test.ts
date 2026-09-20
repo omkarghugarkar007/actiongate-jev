@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { FunctionFactProvider } from "@actiongate/core";
 import { OpenRouterJevProvider } from "@actiongate/decision-provider";
 import { buildApp } from "../src/app.js";
 
@@ -28,7 +29,13 @@ beforeAll(() => {
     logger: false,
     storage: "memory",
     controlPlaneStorage: "memory",
-    grantSecret: "live-openrouter-gate-secret-at-least-32-bytes"
+    grantSecret: "live-openrouter-gate-secret-at-least-32-bytes",
+    factProviders: [new FunctionFactProvider({
+      name: "live-test-system",
+      resolve: ({ request }) => request.proposedAction.tool === "refund_payment"
+        ? { authenticated: true, authorizedByRbac: false, duplicate: false, amountCents: 4900, currency: "USD", resourceExists: true }
+        : { resourceExists: true }
+    })]
   });
 });
 
@@ -46,7 +53,6 @@ function liveRequest(overrides: Record<string, unknown> = {}) {
     actor: { agentId: "support-agent" },
     userIntent: { text: "Show me order 123.", source: "user_message" },
     proposedAction: { tool: "get_order", operation: "read", arguments: { orderId: "123" }, riskClass: "READ_ONLY" },
-    deterministicFacts: { authenticated: true, authorizedByRbac: true, resourceExists: true },
     context: { resources: { order: { id: "123" } } },
     ...overrides
   };
@@ -95,7 +101,9 @@ describe.skipIf(!enabled)("OpenRouter authorization gate @live", () => {
       },
       deterministicFacts: {
         authenticated: true,
-        authorizedByRbac: false,
+        // Adversarial caller claim: the server-side provider above denies it.
+        authorizedByRbac: true,
+        duplicate: false,
         amountCents: 4900,
         currency: "USD",
         resourceExists: true
