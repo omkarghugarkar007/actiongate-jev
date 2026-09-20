@@ -29,6 +29,8 @@ export interface GrantRepository {
   saveIfAbsent(record: GrantRecord): Promise<GrantRecord>;
   consume(grantId: string, tokenHash: string, now: Date): Promise<GrantRecord>;
   revoke(grantId: string, tenantId: string, now: Date): Promise<GrantRecord>;
+  /** Grants that are neither consumed, revoked, nor expired. Used by incident response. */
+  listOutstanding?(tenantId: string, now: Date): Promise<GrantRecord[]>;
 }
 
 export class InMemoryGrantRepository implements GrantRepository {
@@ -63,6 +65,14 @@ export class InMemoryGrantRepository implements GrantRepository {
     if (!record || record.claims.tenantId !== tenantId) throw new ActionGrantError("GRANT_NOT_FOUND");
     if (!record.revokedAt) record.revokedAt = now.toISOString();
     return record;
+  }
+
+  async listOutstanding(tenantId: string, now: Date) {
+    return [...this.byId.values()].filter((record) =>
+      record.claims.tenantId === tenantId
+      && !record.consumedAt
+      && !record.revokedAt
+      && record.claims.expiresAt * 1000 > now.getTime());
   }
 }
 

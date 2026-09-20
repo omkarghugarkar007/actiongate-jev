@@ -11,7 +11,7 @@ export interface ActionGateRegistryOptions {
 }
 
 /**
- * Reads server-owned tool metadata from the ActionGate control plane so the proxy
+ * Reads server-owned tool metadata from the ActionGate control plane so a proxy
  * never trusts the upstream server's own description of risk or operation.
  */
 export class ActionGateRegistry implements ProxyRegistry {

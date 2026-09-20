@@ -23,14 +23,36 @@ export class ActionGrantService {
   }
 
   async consume(request: ActionGrantConsumeRequest): Promise<ActionGrantConsumeResponse> {
+    return (await this.consumeWithClaims(request)).response;
+  }
+
+  /** Consumption plus the verified claims, for callers that then issue a credential. */
+  async consumeWithClaims(request: ActionGrantConsumeRequest) {
     const claims = this.signer.verify(request.token, request);
     const consumed = await this.repository.consume(claims.grantId, tokenHash(request.token), new Date(this.clock()));
     return {
-      grantId: claims.grantId,
-      decisionId: claims.decisionId,
-      status: "CONSUMED",
-      consumedAt: consumed.consumedAt!
+      claims,
+      response: {
+        grantId: claims.grantId,
+        decisionId: claims.decisionId,
+        status: "CONSUMED" as const,
+        consumedAt: consumed.consumedAt!
+      }
     };
+  }
+
+  /** Revokes every outstanding grant for a tenant, optionally narrowed to one tool. */
+  async revokeOutstanding(tenantId: string, tool?: string) {
+    if (!this.repository.listOutstanding) return { revoked: [] as string[], supported: false };
+    const now = new Date(this.clock());
+    const outstanding = await this.repository.listOutstanding(tenantId, now);
+    const revoked: string[] = [];
+    for (const record of outstanding) {
+      if (tool && record.claims.tool !== tool) continue;
+      await this.repository.revoke(record.claims.grantId, tenantId, now);
+      revoked.push(record.claims.grantId);
+    }
+    return { revoked, supported: true };
   }
 
   async revoke(grantId: string, tenantId: string) {

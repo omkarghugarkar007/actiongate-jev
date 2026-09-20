@@ -1,4 +1,4 @@
-import { bigint, boolean, index, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", { id: uuid("id").primaryKey().defaultRandom(), slug: text("slug").notNull(), name: text("name").notNull(), createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull() }, (t) => [uniqueIndex("tenants_slug_unique").on(t.slug)]);
 export const apiKeys = pgTable("api_keys", { id: uuid("id").primaryKey().defaultRandom(), tenantId: uuid("tenant_id").references(() => tenants.id).notNull(), name: text("name").notNull(), keyPrefix: text("key_prefix").notNull(), keyHash: text("key_hash").notNull(), environment: text("environment").notNull(), roles: jsonb("roles").notNull(), lastUsedAt: timestamp("last_used_at", { withTimezone: true }), revokedAt: timestamp("revoked_at", { withTimezone: true }), createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull() }, (t) => [uniqueIndex("api_keys_prefix_unique").on(t.keyPrefix), index("api_keys_tenant_idx").on(t.tenantId)]);
@@ -62,8 +62,24 @@ export const reviews = pgTable("reviews", {
   createdBy: text("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   resolvedBy: text("resolved_by"),
-  resolvedAt: timestamp("resolved_at", { withTimezone: true })
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  assignee: text("assignee"),
+  escalatedTo: text("escalated_to"),
+  approvalsJson: jsonb("approvals_json").notNull().default([]),
+  requiredApprovals: integer("required_approvals").notNull().default(1)
 }, (t) => [index("reviews_tenant_status_idx").on(t.tenantId, t.status)]);
+
+/** Execution outcomes, kept separate from authorization: an authorized action is not a completed one. */
+export const executions = pgTable("executions", {
+  id: uuid("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  decisionId: uuid("decision_id").notNull(),
+  grantId: uuid("grant_id"),
+  status: text("status").notNull(),
+  payloadEncrypted: jsonb("payload_encrypted").notNull(),
+  recordedBy: text("recorded_by").notNull(),
+  recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull()
+}, (t) => [index("executions_tenant_decision_idx").on(t.tenantId, t.decisionId)]);
 
 export const auditEvents = pgTable("audit_events", {
   id: uuid("id").primaryKey(),

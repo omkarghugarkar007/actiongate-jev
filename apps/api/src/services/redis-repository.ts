@@ -211,6 +211,30 @@ export class RedisGrantRepository implements GrantRepository {
     return this.withConsumption(JSON.parse(raw) as StoredGrantRecord);
   }
 
+  async listOutstanding(tenantId: string, now: Date): Promise<GrantRecord[]> {
+    // Grant records expire with their TTL, so the live key space is already
+    // scoped to grants that could still be consumed.
+    const pattern = `${this.prefix}:grant:id:*:record`;
+    const records: GrantRecord[] = [];
+    let cursor = "0";
+    do {
+      const [next, keys] = await this.redis.scan(cursor, "MATCH", pattern, "COUNT", 200);
+      cursor = next;
+      if (keys.length === 0) continue;
+      const raws = await this.redis.mget(...keys);
+      for (const raw of raws) {
+        if (!raw) continue;
+        const stored = JSON.parse(raw) as StoredGrantRecord;
+        if (stored.claims.tenantId !== tenantId) continue;
+        if (stored.claims.expiresAt * 1000 <= now.getTime()) continue;
+        const record = await this.withConsumption(stored);
+        if (record.consumedAt || record.revokedAt) continue;
+        records.push(record);
+      }
+    } while (cursor !== "0");
+    return records;
+  }
+
   async saveIfAbsent(record: GrantRecord) {
     const stored: StoredGrantRecord = { claims: record.claims, tokenHash: record.tokenHash };
     const result = String(await this.redis.eval(

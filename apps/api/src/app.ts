@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
@@ -12,6 +13,7 @@ import {
   ActionGrantSigner,
   AuthorizationEngine,
   type TrustedFactProvider,
+  type CredentialIssuer,
   AuthorizationRequestSchema,
   PolicySchema,
   RiskClassSchema,
@@ -35,6 +37,7 @@ import {
 } from "./services/control-plane.js";
 import { PostgresControlPlaneRepository } from "./services/postgres-control-plane.js";
 import { RedisDecisionRepository, RedisGrantRepository } from "./services/redis-repository.js";
+import type { WebhookNotifier } from "./services/webhooks.js";
 import { InMemoryDecisionRepository, InMemoryGrantRepository, type DecisionRepository, type GrantRepository } from "./services/repository.js";
 
 const EnvironmentSchema = z.enum(["development", "staging", "production"]);
@@ -62,9 +65,30 @@ const ReviewInputSchema = z.object({
   decisionId: z.string().uuid(),
   reason: z.string().min(1).max(4000),
   assignee: z.string().min(1).max(255).optional(),
-  expiresAt: z.string().datetime()
+  expiresAt: z.string().datetime(),
+  /** Two or more requires that many distinct reviewers before approval resolves. */
+  requiredApprovals: z.number().int().min(1).max(5).optional()
 }).strict();
 const ReviewResolutionSchema = z.object({ decision: z.enum(["APPROVED", "DENIED"]) }).strict();
+const ReviewClaimSchema = z.object({ assignee: z.string().min(1).max(255) }).strict();
+/** A stored decision request, relaxed on the fields the approval path replaces. */
+const RevalidationRequestSchema = AuthorizationRequestSchema.omit({ requestId: true, idempotencyKey: true })
+  .extend({ requestId: z.string().optional(), idempotencyKey: z.string().optional() })
+  .transform(({ requestId: _r, idempotencyKey: _i, ...rest }) => rest);
+const ReviewEscalationSchema = z.object({ assignee: z.string().min(1).max(255), note: z.string().min(1).max(2000) }).strict();
+const ExecutionInputSchema = z.object({
+  decisionId: z.string().uuid(),
+  grantId: z.string().uuid().optional(),
+  status: z.enum(["ATTEMPTED", "COMPLETED", "FAILED", "REVERSED"]),
+  detail: z.string().max(2000).optional(),
+  externalRef: z.string().max(255).optional()
+}).strict();
+const GrantExchangeSchema = ActionGrantConsumeRequestSchema.extend({
+  ttlSeconds: z.number().int().positive().max(3600).optional(),
+  audience: z.string().min(1).max(255).optional()
+}).strict();
+const IncidentDisableSchema = z.object({ tools: z.array(z.string().min(1).max(128)).min(1).max(100) }).strict();
+const IncidentRevokeSchema = z.object({ tool: z.string().min(1).max(128).optional() }).strict();
 
 export interface BuildAppOptions {
   provider?: DecisionProvider;
@@ -93,6 +117,10 @@ export interface BuildAppOptions {
   idempotencyWaitMs?: number;
   /** Server-side providers that resolve deterministic facts ActionGate can vouch for. */
   factProviders?: readonly TrustedFactProvider[];
+  /** Exchanges a consumed grant for a narrow, short-lived downstream credential. */
+  credentialIssuer?: CredentialIssuer;
+  /** Signed outbound notifications for decisions, reviews, and incidents. */
+  notifier?: WebhookNotifier;
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
@@ -226,6 +254,13 @@ export function buildApp(options: BuildAppOptions = {}) {
   const audit = (principal: AuthPrincipal, eventType: string, objectId: string, payload: unknown) => controlPlane!.appendAuditEvent({
     tenantId: principal.tenantId, eventType, objectId, actorKeyId: principal.keyId, payload: redactSecrets(payload)
   });
+  const credentialIssuer = options.credentialIssuer;
+  const notifier = options.notifier;
+  /** Delivery is best-effort: a failing destination must never fail a decision. */
+  const notify = async (event: { type: string; tenantId: string; objectId: string; payload: unknown }) => {
+    if (!notifier) return;
+    try { await notifier.notify({ ...event, payload: redactSecrets(event.payload) }); } catch { /* dead-lettered by the notifier */ }
+  };
 
   app.get("/health", async () => ({ status: "ok" }));
   app.get("/ready", async (_request, reply) => {
@@ -412,6 +447,7 @@ export function buildApp(options: BuildAppOptions = {}) {
       decisionId: parsed.data.decisionId,
       reason: parsed.data.reason,
       ...(parsed.data.assignee ? { assignee: parsed.data.assignee } : {}),
+      ...(parsed.data.requiredApprovals ? { requiredApprovals: parsed.data.requiredApprovals } : {}),
       expiresAt: parsed.data.expiresAt,
       createdBy: principal.keyId
     });
@@ -423,10 +459,179 @@ export function buildApp(options: BuildAppOptions = {}) {
     const principal = getPrincipal(request);
     const parsed = ReviewResolutionSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: { code: "REVIEW_INVALID", issues: parsed.error.issues } });
-    const review = await controlPlane.resolveReview(principal.tenantId, (request.params as { id: string }).id, parsed.data.decision, principal.keyId);
-    if (!review) return reply.code(404).send({ error: { code: "REVIEW_NOT_FOUND" } });
+    const reviewId = (request.params as { id: string }).id;
+
+    if (parsed.data.decision === "DENIED") {
+      const denied = await controlPlane!.resolveReview(principal.tenantId, reviewId, "DENIED", principal.keyId);
+      if (!denied) return reply.code(404).send({ error: { code: "REVIEW_NOT_FOUND" } });
+      await audit(principal, "review.resolved", denied.id, denied);
+      void notify({ type: "review.denied", tenantId: principal.tenantId, objectId: denied.id, payload: denied });
+      return denied;
+    }
+
+    const outcome = await controlPlane!.recordApproval(principal.tenantId, reviewId, principal.keyId);
+    if (outcome.status === "NOT_FOUND") return reply.code(404).send({ error: { code: "REVIEW_NOT_FOUND" } });
+    if (outcome.status === "ALREADY_APPROVED_BY_ACTOR") {
+      // Two-person approval means two distinct reviewers. The same key approving
+      // twice must never satisfy both halves.
+      return reply.code(409).send({ error: { code: "DUPLICATE_APPROVER" }, review: outcome.review });
+    }
+    if (outcome.status === "PENDING_APPROVALS") {
+      await audit(principal, "review.approval_recorded", outcome.review.id, outcome.review);
+      return reply.code(202).send({ review: outcome.review, approvalsRemaining: (outcome.review.requiredApprovals ?? 1) - (outcome.review.approvals?.length ?? 0) });
+    }
+
+    const review = outcome.review;
     await audit(principal, "review.resolved", review.id, review);
+    if (review.status !== "APPROVED") return review;
+
+    // Approval does not resurrect the original decision. Re-evaluate the exact
+    // action against the policy and registry as they stand now, and mint a new
+    // short-lived grant only if that fresh evaluation still allows it.
+    const original = await decisions.get(principal.tenantId, review.decisionId);
+    if (!original) return reply.code(404).send({ error: { code: "DECISION_NOT_FOUND" } });
+    const revalidated = RevalidationRequestSchema.safeParse(original.sanitizedRequest);
+    if (!revalidated.success) return reply.code(422).send({ error: { code: "DECISION_NOT_REPLAYABLE" }, review });
+
+    const tool = await registeredAction(principal, revalidated.data.proposedAction, reply);
+    if (!tool) return;
+    const policy = await controlPlane!.getPolicy(principal.tenantId, tool.policyId, tool.policyVersion);
+    if (!policy) return reply.code(404).send({ error: { code: "POLICY_NOT_FOUND" } });
+
+    const approvalRequest: AuthorizationRequest = {
+      ...revalidated.data,
+      requestId: randomUUID(),
+      idempotencyKey: `review-approval-${review.id}`,
+      tenantId: principal.tenantId,
+      environment: principal.environment,
+      mode: "enforce",
+      policyVersion: tool.policyVersion,
+      proposedAction: { ...revalidated.data.proposedAction, tool: tool.name, operation: tool.operation, riskClass: tool.riskClass }
+    };
+    const freshDecision = await service.authorize(approvalRequest, policy);
+    const withGrant = await grantService.attachGrant(approvalRequest, freshDecision);
+    await audit(principal, "review.revalidated", review.id, { reviewId: review.id, originalDecisionId: review.decisionId, decisionId: withGrant.decisionId, decision: withGrant.decision });
+    void notify({ type: "review.approved", tenantId: principal.tenantId, objectId: review.id, payload: { review, decision: withGrant.decision, decisionId: withGrant.decisionId } });
+    return { review, revalidation: withGrant };
+  });
+
+  // --- Credential broker -------------------------------------------------
+  // Exchanges a grant for a narrow, short-lived downstream credential. The grant
+  // is consumed first, so an exchange is the same single use as an execution.
+  app.post("/v1/grants/exchange", async (request, reply) => {
+    if (!hasRole(request, reply, "consume")) return;
+    if (!credentialIssuer) return reply.code(501).send({ error: { code: "CREDENTIAL_BROKER_NOT_CONFIGURED" } });
+    const principal = getPrincipal(request);
+    const parsed = GrantExchangeSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: { code: "INVALID_REQUEST", issues: parsed.error.issues } });
+    if (!scopeRequest(principal, parsed.data.tenantId, parsed.data.environment, reply)) return;
+    const tool = await registeredAction(principal, parsed.data.proposedAction, reply);
+    if (!tool) return;
+    const { ttlSeconds, audience, ...consumeInput } = parsed.data;
+    const consumeRequest = {
+      ...consumeInput,
+      tenantId: principal.tenantId,
+      environment: principal.environment,
+      proposedAction: { ...parsed.data.proposedAction, tool: tool.name, operation: tool.operation, riskClass: tool.riskClass }
+    };
+    try {
+      const { claims, response } = await grantService.consumeWithClaims(consumeRequest);
+      const credential = await credentialIssuer.issue({ claims, ttlSeconds: ttlSeconds ?? 60, ...(audience ? { audience } : {}) });
+      await audit(principal, "grant.exchanged", response.grantId, { grantId: response.grantId, decisionId: response.decisionId, issuer: credential.issuer, expiresAt: credential.expiresAt });
+      return { grantId: response.grantId, decisionId: response.decisionId, consumedAt: response.consumedAt, credential };
+    } catch (error) { return grantErrorResponse(error, reply); }
+  });
+
+  // --- Execution outcomes ------------------------------------------------
+  // Authorization is not execution. These statuses are recorded separately so a
+  // consumed grant is never mistaken for a completed business operation.
+  app.post("/v1/executions", async (request, reply) => {
+    if (!hasRole(request, reply, "consume")) return;
+    const principal = getPrincipal(request);
+    const parsed = ExecutionInputSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: { code: "INVALID_REQUEST", issues: parsed.error.issues } });
+    if (!await decisions.get(principal.tenantId, parsed.data.decisionId)) return reply.code(404).send({ error: { code: "DECISION_NOT_FOUND" } });
+    const record = await controlPlane!.recordExecution({
+      tenantId: principal.tenantId,
+      decisionId: parsed.data.decisionId,
+      status: parsed.data.status,
+      ...(parsed.data.grantId ? { grantId: parsed.data.grantId } : {}),
+      ...(parsed.data.detail ? { detail: parsed.data.detail } : {}),
+      ...(parsed.data.externalRef ? { externalRef: parsed.data.externalRef } : {}),
+      recordedBy: principal.keyId
+    });
+    await audit(principal, `execution.${parsed.data.status.toLowerCase()}`, record.id, record);
+    void notify({ type: `execution.${parsed.data.status.toLowerCase()}`, tenantId: principal.tenantId, objectId: record.id, payload: record });
+    return reply.code(201).send(record);
+  });
+  app.get("/v1/executions", async (request, reply) => {
+    if (!hasRole(request, reply, "decision_reader")) return;
+    const principal = getPrincipal(request);
+    const decisionId = (request.query as { decisionId?: string }).decisionId;
+    return { data: await controlPlane!.listExecutions(principal.tenantId, decisionId) };
+  });
+
+  // --- Review queue ------------------------------------------------------
+  app.get("/v1/reviews", async (request, reply) => {
+    if (!hasRole(request, reply, "reviewer")) return;
+    const principal = getPrincipal(request);
+    const status = (request.query as { status?: string }).status;
+    const parsedStatus = status && ["PENDING", "APPROVED", "DENIED", "EXPIRED"].includes(status) ? status as "PENDING" : undefined;
+    return { data: await controlPlane!.listReviews(principal.tenantId, parsedStatus) };
+  });
+  app.post("/v1/reviews/:id/claim", async (request, reply) => {
+    if (!hasRole(request, reply, "reviewer")) return;
+    const principal = getPrincipal(request);
+    const parsed = ReviewClaimSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: { code: "INVALID_REQUEST", issues: parsed.error.issues } });
+    const review = await controlPlane!.claimReview(principal.tenantId, (request.params as { id: string }).id, parsed.data.assignee, principal.keyId);
+    if (!review) return reply.code(404).send({ error: { code: "REVIEW_NOT_FOUND" } });
+    if (review.status !== "PENDING") return reply.code(409).send({ error: { code: "REVIEW_NOT_PENDING" }, review });
+    // A claim by a second reviewer does not take the review from the first.
+    if (review.assignee !== parsed.data.assignee) return reply.code(409).send({ error: { code: "REVIEW_ALREADY_CLAIMED" }, review });
+    await audit(principal, "review.claimed", review.id, review);
     return review;
+  });
+  app.post("/v1/reviews/:id/escalate", async (request, reply) => {
+    if (!hasRole(request, reply, "reviewer")) return;
+    const principal = getPrincipal(request);
+    const parsed = ReviewEscalationSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: { code: "INVALID_REQUEST", issues: parsed.error.issues } });
+    const review = await controlPlane!.escalateReview(principal.tenantId, (request.params as { id: string }).id, parsed.data.assignee, parsed.data.note, principal.keyId);
+    if (!review) return reply.code(404).send({ error: { code: "REVIEW_NOT_FOUND" } });
+    if (review.status !== "PENDING") return reply.code(409).send({ error: { code: "REVIEW_NOT_PENDING" }, review });
+    await audit(principal, "review.escalated", review.id, review);
+    void notify({ type: "review.escalated", tenantId: principal.tenantId, objectId: review.id, payload: review });
+    return review;
+  });
+
+  // --- Incident response --------------------------------------------------
+  app.post("/v1/incidents/disable-tools", async (request, reply) => {
+    if (!hasRole(request, reply, "policy_admin")) return;
+    const principal = getPrincipal(request);
+    const parsed = IncidentDisableSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: { code: "INVALID_REQUEST", issues: parsed.error.issues } });
+    const disabled = await controlPlane!.disableTools(principal.tenantId, parsed.data.tools, principal.keyId);
+    argumentValidators.clear();
+    for (const tool of disabled) await audit(principal, "tool.disabled", tool.name, tool);
+    void notify({ type: "incident.tools_disabled", tenantId: principal.tenantId, objectId: parsed.data.tools.join(","), payload: { disabled: disabled.map((tool) => tool.name) } });
+    return { disabled: disabled.map((tool) => tool.name) };
+  });
+  app.post("/v1/incidents/revoke-grants", async (request, reply) => {
+    if (!hasRole(request, reply, "policy_admin")) return;
+    const principal = getPrincipal(request);
+    const parsed = IncidentRevokeSchema.safeParse(request.body ?? {});
+    if (!parsed.success) return reply.code(400).send({ error: { code: "INVALID_REQUEST", issues: parsed.error.issues } });
+    const result = await grantService.revokeOutstanding(principal.tenantId, parsed.data.tool);
+    if (!result.supported) return reply.code(501).send({ error: { code: "BULK_REVOCATION_UNSUPPORTED" } });
+    for (const grantId of result.revoked) await audit(principal, "grant.revoked", grantId, { grantId, reason: "incident" });
+    void notify({ type: "incident.grants_revoked", tenantId: principal.tenantId, objectId: parsed.data.tool ?? "*", payload: { revoked: result.revoked } });
+    return { revoked: result.revoked };
+  });
+  app.get("/v1/incidents/dead-letters", async (request, reply) => {
+    if (!hasRole(request, reply, "policy_admin", "audit_exporter")) return;
+    const principal = getPrincipal(request);
+    return { data: notifier ? await notifier.deadLetters(principal.tenantId) : [] };
   });
 
   app.get("/v1/audit/export", async (request, reply) => {

@@ -1,10 +1,8 @@
-import { randomUUID } from "node:crypto";
-import type { AuthorizationRequest, AuthorizationResponse } from "@actiongate/core";
+import { authorizeAndConsume, findEnabledTool, relayedIntent } from "@actiongate/proxy-core";
 import {
   ACTIONGATE_INTENT_META_KEY,
   JSON_RPC,
   type ActionGateEnforcementClient,
-  type DeterministicFactProvider,
   type JsonRpcRequest,
   type JsonRpcResponse,
   type McpUpstream,
@@ -26,7 +24,6 @@ export interface ActionGateMcpProxyOptions {
   registry: ProxyRegistry;
   upstream: McpUpstream;
   resolvePrincipal: ProxyPrincipalResolver;
-  deterministicFacts?: DeterministicFactProvider;
   serverName?: string;
   serverVersion?: string;
   protocolVersion?: string;
@@ -116,74 +113,41 @@ export class ActionGateMcpProxy {
     }
 
     const tool = await this.resolveTool(principal, name);
-    const userIntent = relayedIntent(params);
-    const deterministicFacts = this.options.deterministicFacts
-      ? await this.options.deterministicFacts({ principal, tool, arguments: rawArguments })
-      : undefined;
-
-    const authorizationRequest: AuthorizationRequest = {
-      requestId: randomUUID(),
-      idempotencyKey: randomUUID(),
-      tenantId: principal.tenantId,
-      environment: principal.environment,
-      mode: "enforce",
-      actor: principal.actor,
-      userIntent,
-      // Operation and risk come from the registry. A caller cannot propose a
-      // safer classification than the one the tenant registered.
-      proposedAction: {
-        tool: tool.name,
-        operation: tool.operation,
-        arguments: rawArguments,
-        riskClass: tool.riskClass
-      },
-      ...(deterministicFacts ? { deterministicFacts } : {})
-    };
-
-    const decision = await this.options.client.authorize(authorizationRequest);
-    if (decision.decision !== "ALLOW") throw deniedError(decision);
-    if (!decision.grant) {
-      throw new ProxyError(JSON_RPC.ACTION_DENIED, "Enforced allow did not include an Action Grant");
-    }
-
-    // Consume before forwarding. If consumption fails for any reason the upstream
-    // tool is never called.
-    await this.options.client.consumeGrant({
-      token: decision.grant.token,
-      tenantId: authorizationRequest.tenantId,
-      environment: authorizationRequest.environment,
-      actor: authorizationRequest.actor,
-      proposedAction: authorizationRequest.proposedAction
+    const meta = isPlainObject(params._meta) ? params._meta : undefined;
+    const result = await authorizeAndConsume(this.options.client, {
+      principal,
+      tool,
+      arguments: rawArguments,
+      userIntent: relayedIntent(meta?.[ACTIONGATE_INTENT_META_KEY], "No user intent was relayed with this MCP tool call.")
     });
 
-    let result: unknown;
+    if (!result.ok) throw enforcementError(result);
+
+    // Consumption succeeded, so the permit is spent before the upstream call.
+    let upstreamResult: unknown;
     try {
-      result = await this.options.upstream.callTool(tool.name, rawArguments);
+      upstreamResult = await this.options.upstream.callTool(tool.name, rawArguments);
     } catch (error) {
       throw new ProxyError(
         JSON_RPC.UPSTREAM_ERROR,
         error instanceof Error ? error.message : "Upstream MCP server failed",
-        { decisionId: decision.decisionId }
+        { decisionId: result.decisionId }
       );
     }
 
     return success(id, {
-      ...(isPlainObject(result) ? result : { content: [{ type: "text", text: String(result) }] }),
+      ...(isPlainObject(upstreamResult) ? upstreamResult : { content: [{ type: "text", text: String(upstreamResult) }] }),
       // The grant token is deliberately absent. Only non-secret decision identity
       // is returned so an operator can correlate the call with its audit record.
-      _meta: { "actiongate/decisionId": decision.decisionId, "actiongate/riskClass": decision.riskClass }
+      _meta: { "actiongate/decisionId": result.decisionId, "actiongate/riskClass": result.riskClass }
     });
   }
 
   private async resolveTool(principal: ProxyPrincipal, name: string): Promise<RegistryTool> {
-    const normalized = name.trim().toLowerCase();
-    const tools = await this.options.registry.listTools(principal);
-    const tool = tools.find((candidate) => candidate.name.toLowerCase() === normalized);
+    const tool = findEnabledTool(await this.options.registry.listTools(principal), name);
     // Unknown and disabled tools give the same answer, so probing the proxy does
     // not reveal which tools a tenant has registered but turned off.
-    if (!tool || !tool.enabled) {
-      throw new ProxyError(JSON_RPC.METHOD_NOT_FOUND, `Tool ${name} is not available`);
-    }
+    if (!tool) throw new ProxyError(JSON_RPC.METHOD_NOT_FOUND, `Tool ${name} is not available`);
     return tool;
   }
 }
@@ -199,31 +163,22 @@ export class ProxyError extends Error {
   }
 }
 
-function deniedError(decision: AuthorizationResponse) {
-  return new ProxyError(JSON_RPC.ACTION_DENIED, `ActionGate returned ${decision.decision}`, {
-    decision: decision.decision,
-    decisionId: decision.decisionId,
-    riskClass: decision.riskClass,
-    reasons: decision.reasons.map((reason) => ({ code: reason.code, message: reason.message, source: reason.source }))
-  });
-}
-
-/**
- * User intent is relayed by the calling agent, so it is evidence rather than
- * trusted input. When nothing is relayed the proxy says so plainly instead of
- * inventing intent; the policy's missing-intent thresholds then decide what that
- * absence is worth for the tool's risk class.
- */
-function relayedIntent(params: Record<string, unknown>): AuthorizationRequest["userIntent"] {
-  const meta = params._meta;
-  const relayed = isPlainObject(meta) ? meta[ACTIONGATE_INTENT_META_KEY] : undefined;
-  if (typeof relayed === "string" && relayed.trim().length > 0) {
-    return { text: relayed.trim().slice(0, 16_000), source: "user_message" };
+function enforcementError(result: Extract<Awaited<ReturnType<typeof authorizeAndConsume>>, { ok: false }>): ProxyError {
+  if (result.kind === "denied") {
+    return new ProxyError(JSON_RPC.ACTION_DENIED, `ActionGate returned ${result.decision}`, {
+      decision: result.decision,
+      decisionId: result.decisionId,
+      riskClass: result.riskClass,
+      reasons: result.reasons.map((reason) => ({ code: reason.code, message: reason.message, source: reason.source }))
+    });
   }
-  return {
-    text: "No user intent was relayed with this MCP tool call.",
-    source: "workflow"
-  };
+  if (result.kind === "no_grant") {
+    return new ProxyError(JSON_RPC.ACTION_DENIED, "Enforced allow did not include an Action Grant", { decisionId: result.decisionId });
+  }
+  if (result.kind === "consume_failed") {
+    return new ProxyError(JSON_RPC.ACTION_DENIED, `Action Grant could not be consumed: ${result.message}`);
+  }
+  return new ProxyError(JSON_RPC.INTERNAL_ERROR, "ActionGate proxy failed to complete the request");
 }
 
 function isJsonRpcRequest(value: unknown): value is JsonRpcRequest {

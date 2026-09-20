@@ -11,6 +11,8 @@ export default defineConfig({
       "@actiongate/sdk": `${root}packages/sdk-js/src/index.ts`,
       "@actiongate/mcp-gateway": `${root}packages/mcp-gateway/src/index.ts`,
       "@actiongate/mcp-proxy": `${root}packages/mcp-proxy/src/index.ts`,
+      "@actiongate/proxy-core": `${root}packages/proxy-core/src/index.ts`,
+      "@actiongate/http-proxy": `${root}packages/http-proxy/src/index.ts`,
       "@actiongate/db": `${root}packages/db/src/index.ts`
     }
   },

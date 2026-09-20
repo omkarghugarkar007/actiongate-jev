@@ -1,11 +1,11 @@
 {
-  "name": "@actiongate/mcp-proxy",
+  "name": "@actiongate/http-proxy",
   "version": "0.1.0",
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
     "@actiongate/core": "workspace:*",
-    "fastify": "^5.6.0",
-    "@actiongate/proxy-core": "workspace:*"
+    "@actiongate/proxy-core": "workspace:*",
+    "fastify": "^5.6.0"
   }
 }

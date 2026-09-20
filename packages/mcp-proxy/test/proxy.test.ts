@@ -185,10 +185,11 @@ describe("ActionGateMcpProxy tools/call", () => {
     expect(request.deterministicFacts).toBeUndefined();
   });
 
-  it("uses the configured server-side fact provider", async () => {
-    const proxy = buildProxy({ deterministicFacts: async () => ({ authenticated: true, authorizedByRbac: true }) });
-    await proxy.handle(callRequest("refund_payment", { amountCents: 4900 }), "proxy-token");
-    expect((authorize.mock.calls[0]?.[0] as AuthorizationRequest).deterministicFacts).toEqual({ authenticated: true, authorizedByRbac: true });
+  it("sends no facts of its own, leaving trust to a provider on the API side", async () => {
+    // A proxy is a client from the API's perspective, so anything it asserted
+    // would arrive as caller provenance. Trust is established server-side.
+    await buildProxy().handle(callRequest("refund_payment", { amountCents: 4900 }), "proxy-token");
+    expect((authorize.mock.calls[0]?.[0] as AuthorizationRequest).deterministicFacts).toBeUndefined();
   });
 });
 

@@ -18,6 +18,8 @@
       "@actiongate/sdk": ["packages/sdk-js/src/index.ts"],
       "@actiongate/mcp-gateway": ["packages/mcp-gateway/src/index.ts"],
       "@actiongate/mcp-proxy": ["packages/mcp-proxy/src/index.ts"],
+      "@actiongate/proxy-core": ["packages/proxy-core/src/index.ts"],
+      "@actiongate/http-proxy": ["packages/http-proxy/src/index.ts"],
       "@actiongate/db": ["packages/db/src/index.ts"]
     }
   },

@@ -16,8 +16,10 @@ import {
   type AuthPrincipal,
   type ControlPlaneRepository,
   type CreateReviewInput,
+  type ExecutionRecord,
   type OverrideRecord,
   type ReviewRecord,
+  type ReviewResolution,
   type ToolRegistration
 } from "./control-plane.js";
 
@@ -25,7 +27,7 @@ const ApiEnvironmentSchema = z.enum(["development", "staging", "production"]);
 const ApiRoleSchema = z.enum(API_ROLES);
 const DataSensitivitySchema = z.enum(["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"]);
 const ReviewStatusSchema = z.enum(["PENDING", "APPROVED", "DENIED", "EXPIRED"]);
-const ReviewPayloadSchema = z.object({ reason: z.string(), assignee: z.string().optional() }).strict();
+const ReviewPayloadSchema = z.object({ reason: z.string(), assignee: z.string().optional(), escalatedTo: z.string().optional(), escalationNote: z.string().optional() }).strict();
 
 export class PostgresControlPlaneRepository implements ControlPlaneRepository {
   constructor(private readonly pool: Pool, private readonly cipher: EvidenceCipher) {}
@@ -205,6 +207,133 @@ export class PostgresControlPlaneRepository implements ControlPlaneRepository {
     return result.rows[0] ? this.reviewRecord(tenantId, result.rows[0]) : undefined;
   }
 
+  async listReviews(tenantId: string, status?: ReviewRecord["status"]): Promise<ReviewRecord[]> {
+    const tenantUuid = await this.tenantUuid(tenantId);
+    await this.expireDueReviews(tenantUuid);
+    const rows = await this.pool.query<ReviewRow>(`
+      SELECT id::text, decision_id::text AS decision_id, status, payload_encrypted, expires_at, created_by, created_at,
+             resolved_by, resolved_at, assignee, escalated_to, approvals_json, required_approvals
+      FROM reviews WHERE tenant_id = $1 ${status ? "AND status = $2" : ""} ORDER BY created_at DESC
+    `, status ? [tenantUuid, status] : [tenantUuid]);
+    return rows.rows.map((row) => this.reviewRecord(tenantId, row));
+  }
+
+  async getReview(tenantId: string, reviewId: string): Promise<ReviewRecord | undefined> {
+    const tenantUuid = await this.tenantUuid(tenantId);
+    await this.expireDueReviews(tenantUuid);
+    const rows = await this.pool.query<ReviewRow>(`
+      SELECT id::text, decision_id::text AS decision_id, status, payload_encrypted, expires_at, created_by, created_at,
+             resolved_by, resolved_at, assignee, escalated_to, approvals_json, required_approvals
+      FROM reviews WHERE tenant_id = $1 AND id = $2
+    `, [tenantUuid, reviewId]);
+    const row = rows.rows[0];
+    return row ? this.reviewRecord(tenantId, row) : undefined;
+  }
+
+  async claimReview(tenantId: string, reviewId: string, assignee: string, _actorKeyId: string): Promise<ReviewRecord | undefined> {
+    const tenantUuid = await this.tenantUuid(tenantId);
+    await this.expireDueReviews(tenantUuid);
+    // Only an unclaimed pending review can be claimed, atomically.
+    await this.pool.query(`
+      UPDATE reviews SET assignee = $3
+      WHERE tenant_id = $1 AND id = $2 AND status = 'PENDING' AND assignee IS NULL
+    `, [tenantUuid, reviewId, assignee]);
+    return this.getReview(tenantId, reviewId);
+  }
+
+  async escalateReview(tenantId: string, reviewId: string, assignee: string, note: string, _actorKeyId: string): Promise<ReviewRecord | undefined> {
+    const tenantUuid = await this.tenantUuid(tenantId);
+    await this.expireDueReviews(tenantUuid);
+    await this.pool.query(`
+      UPDATE reviews SET assignee = $3, escalated_to = $3
+      WHERE tenant_id = $1 AND id = $2 AND status = 'PENDING'
+    `, [tenantUuid, reviewId, assignee]);
+    // The note is operator free text, so it is re-encrypted into the payload
+    // alongside the reason rather than stored in a readable column.
+    const current = await this.getReview(tenantId, reviewId);
+    if (current && current.status === "PENDING") {
+      const payload = this.cipher.encrypt(
+        { reason: current.reason, assignee, escalatedTo: assignee, escalationNote: note },
+        `review:${tenantId}:${reviewId}`
+      );
+      await this.pool.query("UPDATE reviews SET payload_encrypted = $3::jsonb WHERE tenant_id = $1 AND id = $2", [tenantUuid, reviewId, JSON.stringify(payload)]);
+    }
+    return this.getReview(tenantId, reviewId);
+  }
+
+  async recordApproval(tenantId: string, reviewId: string, actorKeyId: string): Promise<ReviewResolution> {
+    const tenantUuid = await this.tenantUuid(tenantId);
+    await this.expireDueReviews(tenantUuid);
+    const current = await this.getReview(tenantId, reviewId);
+    if (!current) return { status: "NOT_FOUND" };
+    if (current.status === "EXPIRED") return { status: "RESOLVED", review: current };
+    if (current.status !== "PENDING") return { status: "NOT_FOUND" };
+    const approvals = current.approvals ?? [];
+    // Two distinct reviewers, so one key cannot satisfy both halves.
+    if (approvals.includes(actorKeyId)) return { status: "ALREADY_APPROVED_BY_ACTOR", review: current };
+    const next = [...approvals, actorKeyId];
+    const required = current.requiredApprovals ?? 1;
+    if (next.length < required) {
+      await this.pool.query("UPDATE reviews SET approvals_json = $3::jsonb WHERE tenant_id = $1 AND id = $2", [tenantUuid, reviewId, JSON.stringify(next)]);
+      const updated = await this.getReview(tenantId, reviewId);
+      return { status: "PENDING_APPROVALS", review: updated! };
+    }
+    await this.pool.query(`
+      UPDATE reviews SET approvals_json = $3::jsonb, status = 'APPROVED', resolved_by = $4, resolved_at = $5
+      WHERE tenant_id = $1 AND id = $2 AND status = 'PENDING'
+    `, [tenantUuid, reviewId, JSON.stringify(next), actorKeyId, new Date().toISOString()]);
+    const updated = await this.getReview(tenantId, reviewId);
+    return { status: "RESOLVED", review: updated! };
+  }
+
+  async recordExecution(input: Omit<ExecutionRecord, "id" | "recordedAt">): Promise<ExecutionRecord> {
+    const id = randomUUID();
+    const tenantUuid = await this.tenantUuid(input.tenantId);
+    const recordedAt = new Date().toISOString();
+    const encrypted = this.cipher.encrypt({ detail: input.detail, externalRef: input.externalRef }, `execution:${input.tenantId}:${id}`);
+    await this.pool.query(`
+      INSERT INTO executions (id, tenant_id, decision_id, grant_id, status, payload_encrypted, recorded_by, recorded_at)
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)
+    `, [id, tenantUuid, input.decisionId, input.grantId ?? null, input.status, JSON.stringify(encrypted), input.recordedBy, recordedAt]);
+    return { ...input, id, recordedAt };
+  }
+
+  async listExecutions(tenantId: string, decisionId?: string): Promise<ExecutionRecord[]> {
+    const tenantUuid = await this.tenantUuid(tenantId);
+    const rows = await this.pool.query(`
+      SELECT id::text, decision_id::text AS decision_id, grant_id::text AS grant_id, status, payload_encrypted, recorded_by, recorded_at
+      FROM executions WHERE tenant_id = $1 ${decisionId ? "AND decision_id = $2" : ""} ORDER BY recorded_at ASC
+    `, decisionId ? [tenantUuid, decisionId] : [tenantUuid]);
+    return rows.rows.map((row) => {
+      const payload = this.cipher.decrypt<{ detail?: string; externalRef?: string }>(row.payload_encrypted, `execution:${tenantId}:${row.id}`);
+      return {
+        id: row.id,
+        tenantId,
+        decisionId: row.decision_id,
+        ...(row.grant_id ? { grantId: row.grant_id } : {}),
+        status: row.status,
+        ...(payload.detail ? { detail: payload.detail } : {}),
+        ...(payload.externalRef ? { externalRef: payload.externalRef } : {}),
+        recordedBy: row.recorded_by,
+        recordedAt: new Date(row.recorded_at).toISOString()
+      } as ExecutionRecord;
+    });
+  }
+
+  async disableTools(tenantId: string, toolNames: readonly string[], _actorKeyId: string): Promise<ToolRegistration[]> {
+    const disabled: ToolRegistration[] = [];
+    for (const name of toolNames) {
+      const existing = await this.getTool(tenantId, name);
+      if (!existing || !existing.enabled) continue;
+      disabled.push(await this.putTool(tenantId, { ...existing, enabled: false }, _actorKeyId));
+    }
+    return disabled;
+  }
+
+  private async expireDueReviews(tenantUuid: string) {
+    await this.pool.query("UPDATE reviews SET status = 'EXPIRED' WHERE tenant_id = $1 AND status = 'PENDING' AND expires_at <= now()", [tenantUuid]);
+  }
+
   async appendAuditEvent(event: Omit<AuditEvent, "id" | "createdAt">) {
     const id = randomUUID();
     const tenantUuid = await this.tenantUuid(event.tenantId);
@@ -273,12 +402,17 @@ export class PostgresControlPlaneRepository implements ControlPlaneRepository {
       decisionId: row.decision_id,
       status,
       reason: payload.reason,
-      ...(payload.assignee ? { assignee: payload.assignee } : {}),
+      // The column is authoritative; the payload covers rows written before it existed.
+      ...(row.assignee || payload.assignee ? { assignee: String(row.assignee ?? payload.assignee) } : {}),
+      ...(row.escalated_to ? { escalatedTo: String(row.escalated_to) } : {}),
+      ...(payload.escalationNote ? { escalationNote: payload.escalationNote } : {}),
       expiresAt: dateString(row.expires_at),
       createdBy: row.created_by,
       createdAt: dateString(row.created_at),
       ...(row.resolved_by ? { resolvedBy: row.resolved_by } : {}),
-      ...(row.resolved_at ? { resolvedAt: dateString(row.resolved_at) } : {})
+      ...(row.resolved_at ? { resolvedAt: dateString(row.resolved_at) } : {}),
+      approvals: Array.isArray(row.approvals_json) ? row.approvals_json as string[] : [],
+      requiredApprovals: Number(row.required_approvals ?? 1)
     };
   }
 }
@@ -296,6 +430,7 @@ interface AuditRow { id: string; event_type: string; object_id: string; actor_ke
 interface ReviewRow {
   id: string; decision_id: string; status: unknown; payload_encrypted: EncryptedEnvelope; expires_at: Date | string;
   created_by: string; created_at: Date | string; resolved_by: string | null; resolved_at: Date | string | null;
+  assignee?: string | null; escalated_to?: string | null; approvals_json?: unknown; required_approvals?: number | null;
 }
 
 function apiKeyMetadata(row: ApiKeyRow): ApiKeyMetadata {

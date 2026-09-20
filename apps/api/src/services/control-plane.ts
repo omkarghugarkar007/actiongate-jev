@@ -63,6 +63,27 @@ export interface ReviewRecord {
   createdAt: string;
   resolvedBy?: string;
   resolvedAt?: string;
+  /** Distinct reviewer key IDs that have approved. Two-person approval needs two. */
+  approvals?: string[];
+  requiredApprovals?: number;
+  escalatedTo?: string;
+  escalationNote?: string;
+}
+
+/**
+ * Execution outcome, recorded separately from authorization. An authorized action
+ * is not a completed one, so these statuses never merge into the decision record.
+ */
+export interface ExecutionRecord {
+  id: string;
+  tenantId: string;
+  decisionId: string;
+  grantId?: string;
+  status: "ATTEMPTED" | "COMPLETED" | "FAILED" | "REVERSED";
+  detail?: string;
+  externalRef?: string;
+  recordedBy: string;
+  recordedAt: string;
 }
 
 export interface CreateReviewInput {
@@ -72,7 +93,15 @@ export interface CreateReviewInput {
   assignee?: string;
   expiresAt: string;
   createdBy: string;
+  /** Defaults to 1. Set 2 or more to require independent reviewers. */
+  requiredApprovals?: number;
 }
+
+export type ReviewResolution =
+  | { status: "PENDING_APPROVALS"; review: ReviewRecord }
+  | { status: "RESOLVED"; review: ReviewRecord }
+  | { status: "NOT_FOUND" }
+  | { status: "ALREADY_APPROVED_BY_ACTOR"; review: ReviewRecord };
 
 export interface AuditEvent {
   id: string;
@@ -98,6 +127,14 @@ export interface ControlPlaneRepository {
   createOverride(input: Omit<OverrideRecord, "id" | "createdAt">): Promise<OverrideRecord>;
   createReview(input: CreateReviewInput): Promise<ReviewRecord>;
   resolveReview(tenantId: string, reviewId: string, resolution: "APPROVED" | "DENIED", actorKeyId: string): Promise<ReviewRecord | undefined>;
+  listReviews(tenantId: string, status?: ReviewRecord["status"]): Promise<ReviewRecord[]>;
+  getReview(tenantId: string, reviewId: string): Promise<ReviewRecord | undefined>;
+  claimReview(tenantId: string, reviewId: string, assignee: string, actorKeyId: string): Promise<ReviewRecord | undefined>;
+  escalateReview(tenantId: string, reviewId: string, assignee: string, note: string, actorKeyId: string): Promise<ReviewRecord | undefined>;
+  recordApproval(tenantId: string, reviewId: string, actorKeyId: string): Promise<ReviewResolution>;
+  recordExecution(input: Omit<ExecutionRecord, "id" | "recordedAt">): Promise<ExecutionRecord>;
+  listExecutions(tenantId: string, decisionId?: string): Promise<ExecutionRecord[]>;
+  disableTools(tenantId: string, toolNames: readonly string[], actorKeyId: string): Promise<ToolRegistration[]>;
   appendAuditEvent(event: Omit<AuditEvent, "id" | "createdAt">): Promise<AuditEvent>;
   listAuditEvents(tenantId: string): Promise<AuditEvent[]>;
   deleteAuditEventsBefore(tenantId: string, before: Date): Promise<number>;
@@ -113,6 +150,7 @@ export class InMemoryControlPlaneRepository implements ControlPlaneRepository {
   private readonly tools = new Map<string, Map<string, ToolRegistration>>();
   private readonly overrides: OverrideRecord[] = [];
   private readonly reviews: ReviewRecord[] = [];
+  private readonly executions: ExecutionRecord[] = [];
   private readonly events: AuditEvent[] = [];
 
   constructor(initialKeys: Array<{ token: string; tenantId: string; name?: string; environment?: ApiEnvironment; roles?: ApiRole[] }> = []) {
@@ -201,21 +239,108 @@ export class InMemoryControlPlaneRepository implements ControlPlaneRepository {
   }
 
   async createReview(input: CreateReviewInput) {
-    const record: ReviewRecord = { ...input, id: randomUUID(), status: "PENDING", createdAt: new Date().toISOString() };
+    const record: ReviewRecord = {
+      ...input,
+      id: randomUUID(),
+      status: "PENDING",
+      approvals: [],
+      requiredApprovals: Math.max(1, input.requiredApprovals ?? 1),
+      createdAt: new Date().toISOString()
+    };
     this.reviews.push(record);
     return structuredClone(record);
   }
 
   async resolveReview(tenantId: string, reviewId: string, resolution: "APPROVED" | "DENIED", actorKeyId: string) {
-    const record = this.reviews.find((review) => review.tenantId === tenantId && review.id === reviewId);
-    if (!record || record.status !== "PENDING") return undefined;
-    if (Date.parse(record.expiresAt) <= Date.now()) record.status = "EXPIRED";
-    else {
-      record.status = resolution;
-      record.resolvedBy = actorKeyId;
-      record.resolvedAt = new Date().toISOString();
-    }
+    const record = this.findPendingReview(tenantId, reviewId);
+    if (!record) return undefined;
+    if (this.expireIfDue(record)) return structuredClone(record);
+    record.status = resolution;
+    record.resolvedBy = actorKeyId;
+    record.resolvedAt = new Date().toISOString();
     return structuredClone(record);
+  }
+
+  async listReviews(tenantId: string, status?: ReviewRecord["status"]) {
+    const now = Date.now();
+    for (const review of this.reviews) {
+      if (review.tenantId === tenantId && review.status === "PENDING" && Date.parse(review.expiresAt) <= now) review.status = "EXPIRED";
+    }
+    return structuredClone(this.reviews.filter((review) => review.tenantId === tenantId && (!status || review.status === status)));
+  }
+
+  async getReview(tenantId: string, reviewId: string) {
+    const record = this.reviews.find((review) => review.tenantId === tenantId && review.id === reviewId);
+    return record ? structuredClone(record) : undefined;
+  }
+
+  async claimReview(tenantId: string, reviewId: string, assignee: string, _actorKeyId: string) {
+    const record = this.findPendingReview(tenantId, reviewId);
+    if (!record) return undefined;
+    if (this.expireIfDue(record)) return structuredClone(record);
+    // First claim wins; a second claimer sees the existing assignee rather than
+    // silently taking over someone else's review.
+    if (record.assignee && record.assignee !== assignee) return structuredClone(record);
+    record.assignee = assignee;
+    return structuredClone(record);
+  }
+
+  async escalateReview(tenantId: string, reviewId: string, assignee: string, note: string, _actorKeyId: string) {
+    const record = this.findPendingReview(tenantId, reviewId);
+    if (!record) return undefined;
+    if (this.expireIfDue(record)) return structuredClone(record);
+    record.escalatedTo = assignee;
+    record.escalationNote = note;
+    record.assignee = assignee;
+    return structuredClone(record);
+  }
+
+  async recordApproval(tenantId: string, reviewId: string, actorKeyId: string): Promise<ReviewResolution> {
+    const record = this.findPendingReview(tenantId, reviewId);
+    if (!record) return { status: "NOT_FOUND" };
+    if (this.expireIfDue(record)) return { status: "RESOLVED", review: structuredClone(record) };
+    const approvals = record.approvals ?? (record.approvals = []);
+    // Two-person approval means two distinct reviewers, so the same key cannot
+    // satisfy both halves by approving twice.
+    if (approvals.includes(actorKeyId)) return { status: "ALREADY_APPROVED_BY_ACTOR", review: structuredClone(record) };
+    approvals.push(actorKeyId);
+    if (approvals.length < (record.requiredApprovals ?? 1)) return { status: "PENDING_APPROVALS", review: structuredClone(record) };
+    record.status = "APPROVED";
+    record.resolvedBy = actorKeyId;
+    record.resolvedAt = new Date().toISOString();
+    return { status: "RESOLVED", review: structuredClone(record) };
+  }
+
+  async recordExecution(input: Omit<ExecutionRecord, "id" | "recordedAt">) {
+    const record: ExecutionRecord = { ...input, id: randomUUID(), recordedAt: new Date().toISOString() };
+    this.executions.push(record);
+    return structuredClone(record);
+  }
+
+  async listExecutions(tenantId: string, decisionId?: string) {
+    return structuredClone(this.executions.filter((item) => item.tenantId === tenantId && (!decisionId || item.decisionId === decisionId)));
+  }
+
+  async disableTools(tenantId: string, toolNames: readonly string[], actorKeyId: string) {
+    const disabled: ToolRegistration[] = [];
+    for (const name of toolNames) {
+      const existing = await this.getTool(tenantId, name);
+      if (!existing || !existing.enabled) continue;
+      void actorKeyId;
+      disabled.push(await this.putTool(tenantId, { ...existing, enabled: false }));
+    }
+    return disabled;
+  }
+
+  private findPendingReview(tenantId: string, reviewId: string) {
+    const record = this.reviews.find((review) => review.tenantId === tenantId && review.id === reviewId);
+    return record && record.status === "PENDING" ? record : undefined;
+  }
+
+  private expireIfDue(record: ReviewRecord) {
+    if (Date.parse(record.expiresAt) > Date.now()) return false;
+    record.status = "EXPIRED";
+    return true;
   }
 
   async appendAuditEvent(event: Omit<AuditEvent, "id" | "createdAt">) {
