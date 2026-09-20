@@ -125,6 +125,16 @@ Core must not import provider, database, web framework, or integration packages.
 - Maintain backward verification during explicit key-rotation windows; new grants use the active key ID.
 - Update the README architecture, `docs/architecture.md`, `docs/threat-model.md`, `docs/roadmap.md`, `docs/integrations.md`, and `docs/PLANNING.md` when capabilities or limitations change.
 
+### Keep the picture and the front page current
+
+The README and the architecture diagram are the first thing anyone sees. They drift faster than anything else in the repo, so treat them as part of the change, not as follow-up work.
+
+- `docs/assets/platform-architecture.svg` is the canonical picture of the system. When a change adds, removes, or moves a boundary, a store, an integration surface, or a stage in the decision path, redraw it in the same change. A diagram showing a boundary the code does not have is worse than no diagram.
+- The other diagrams are scoped: `authorization-flow.svg` covers the decide path, `action-grant-flow.svg` the permit lifecycle, `trust-model.svg` the trust boundaries. Update whichever one a change makes wrong.
+- Every diagram needs an `alt` description that states what it shows, not what it is called. Someone reading without the image should still get the architecture.
+- The README must name what ships today. When an integration reaches Guard or Isolate, it belongs on the front page with its boundary stated; when something is still missing, the README says so rather than implying it exists.
+- A new capability on the adoption ladder updates the tier table in the README and in `docs/PLANNING.md`.
+
 ## Verification expectations
 
 Run the checks relevant to every change and expand coverage when a security invariant changes:

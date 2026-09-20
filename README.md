@@ -192,12 +192,12 @@ For in-process tools, the embeddable [MCP gateway](docs/mcp-gateway.md) keeps th
 ## How it works
 
 <p align="center">
-  <img src="docs/assets/platform-architecture.svg" alt="Applications connect through SDK, MCP, HTTP, or workflow adapters. ActionGate combines tenant identity, a server-owned registry, deterministic authority, and decision-model evidence before issuing a single-use grant that is consumed at the guarded execution boundary." width="100%" />
+  <img src="docs/assets/platform-architecture.svg" alt="Applications connect through SDK, MCP, HTTP, or workflow adapters. ActionGate combines tenant identity, a server-owned registry, deterministic authority fed by trusted server-side fact providers, and decision-model evidence before issuing a single-use grant that is consumed at the guarded execution boundary by the SDK, the MCP gateway, or the standalone MCP proxy." width="100%" />
 </p>
 
 ActionGate asks all six narrow Jev questions in one request: alignment, target match, policy conflict, sensitive-data exposure, scope expansion, and missing intent. It never asks one vague “is this safe?” question and never uses generated prose as an authorization reason.
 
-Identity and roles come from a hashed tenant key. Tool operation, schema, risk, ownership, sensitivity, and policy come from a durable server-owned registry. Redis performs atomic runtime coordination; PostgreSQL stores the durable control plane and encrypted evidence. Only an enforced `ALLOW` can produce a short-lived grant, and the guarded executor consumes it before a side effect.
+Identity and roles come from a hashed tenant key. Tool operation, schema, risk, ownership, sensitivity, and policy come from a durable server-owned registry. Deterministic facts such as RBAC, spend, and duplicate checks can be resolved by server-side fact providers rather than accepted from the caller, so an agent cannot vouch for itself. Redis performs atomic runtime coordination; PostgreSQL stores the durable control plane and encrypted evidence. Only an enforced `ALLOW` can produce a short-lived grant, and the guarded executor consumes it before a side effect.
 
 Read the [architecture](docs/architecture.md), [integration ecosystem](docs/integrations.md), [threat model](docs/threat-model.md), and [living product plan](docs/PLANNING.md) for the complete design and acceptance gates.
 

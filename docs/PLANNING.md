@@ -36,6 +36,7 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Data governance | P0 complete at application layer | Tenant export plus cutoff-based Redis minimization and PostgreSQL evidence deletion are role-gated. |
 | TypeScript integrations | Partial | REST, workspace TypeScript wrapper, embeddable MCP gateway, and standalone MCP proxy exist; packages are not published. |
 | Non-bypassable network boundary | Partial | The standalone MCP proxy holds the upstream credential and consumes a grant before forwarding. An HTTP reverse proxy and credential broker remain. |
+| Trusted facts | Shipped | Server-side providers resolve RBAC, spend, duplicate, and allowlist facts. Provenance and freshness are recorded, and `requireTrustedFacts` refuses caller-asserted facts. |
 | Human approval | Partial | Durable authenticated review/resolve records exist; approval does not yet re-evaluate and mint a fresh grant. |
 | Semantic quality evidence | Not established | Generated cases validate plumbing; they are not an independently reviewed model-quality benchmark. |
 | Production operations | Not complete | Telemetry, quotas, failover drills, supply-chain provenance, and external security review remain. |
@@ -184,9 +185,9 @@ A capability that cannot degrade down this ladder is not finished. A capability 
 
 ### Trusted fact adapters
 
-- [ ] Define a server-side fact-provider interface for identity, entitlements, resource state, spend, duplication, and allowlists.
-- [ ] Mark the trust provenance and freshness of each fact in audit evidence.
-- [ ] Reject high-impact authorization when required trusted facts are absent or stale.
+- [x] Define a server-side fact-provider interface for identity, entitlements, resource state, spend, duplication, and allowlists.
+- [x] Mark the trust provenance and freshness of each fact in audit evidence.
+- [x] Reject high-impact authorization when required trusted facts are absent or stale (`requireTrustedFacts` plus `maxFactAgeSeconds`).
 
 ### Adoption track (parallel to P1)
 

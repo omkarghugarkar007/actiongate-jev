@@ -16,6 +16,8 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Cross-instance restart, race, mutation, replay, and gateway integration tests
 - Standalone MCP network proxy that authenticates the caller, owns the upstream credential, and consumes a grant before forwarding
 - Live OpenRouter gates covering the authorize/grant/consume path and the MCP proxy chain
+- Trusted fact providers: a server-side interface plus function and HTTP adapters that resolve deterministic facts ActionGate can vouch for
+- Fact provenance and freshness in decision evidence, with `requireTrustedFacts` and `maxFactAgeSeconds` hard rules
 
 ### Changed
 
@@ -31,6 +33,8 @@ All notable changes to ActionGate will be documented here. The project follows [
 - The MCP gateway derives tool operation and risk from its server-owned registry before executing
 - **Hard rules are now satisfied affirmatively rather than by silence.** A configured rule whose deterministic fact was absent used to pass: omitting `deterministicFacts` entirely returned `ALLOW` with a grant for a `FINANCIAL` tool carrying `requireAuthenticatedUser`, `requireRbac`, and `denyDuplicate`. A control that cannot be evaluated now blocks, with `AUTH_FACT_MISSING`, `RBAC_FACT_MISSING`, `DUPLICATE_FACT_MISSING`, `AMOUNT_FACT_MISSING`, `CURRENCY_FACT_MISSING`, and `DESTINATION_FACT_MISSING` distinguishing an unverifiable control from an explicit denial
 - The MCP proxy refuses methods it does not handle instead of forwarding them, and strips `_meta` so a model cannot smuggle a grant upstream
+- A tool with `requireTrustedFacts` no longer accepts facts the caller asserted about itself, closing the remaining "agent vouches for its own RBAC" path; a trusted fact resolved longer ago than `maxFactAgeSeconds` is rejected as stale
+- Trusted facts override contradicting caller claims, and a fact provider that fails contributes nothing, so the rule it would have satisfied fails closed
 
 ## [0.1.0] - 2026-09-19
 

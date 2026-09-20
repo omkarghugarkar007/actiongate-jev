@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
   <title id="title">ActionGate platform architecture</title>
-  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, combines deterministic rules with decision-model evidence, and issues a single-use exact-action grant. A guarded execution boundary consumes the grant before business tools run. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state.</desc>
-  <rect width="1200" height="700" fill="#f8fafc"/>
+  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, and resolves deterministic facts from trusted deployment services rather than trusting the caller's claims. It combines those facts with decision-model evidence and issues a single-use exact-action grant. A guarded execution boundary — the SDK wrapper, the embeddable MCP gateway, or the standalone MCP proxy that holds the downstream credential — consumes the grant before business tools run. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state.</desc>
+  <rect width="1200" height="760" fill="#f8fafc"/>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0 0 L10 5 L0 10 z" fill="#7c8aa5"/>
@@ -48,6 +48,12 @@
 
   <path d="M235 306 H278" class="arrow"/>
 
+  <rect x="40" y="498" width="195" height="88" rx="16" class="card"/>
+  <text x="137" y="528" class="title" text-anchor="middle">Trusted fact providers</text>
+  <text x="137" y="550" class="body" text-anchor="middle">Identity · RBAC · ledger</text>
+  <text x="137" y="570" class="body" text-anchor="middle">Duplicates · allowlists</text>
+  <path d="M235 542 H262 V320 H302" class="arrow"/>
+
   <rect x="278" y="103" width="584" height="420" rx="20" class="boundary"/>
   <rect x="300" y="91" width="206" height="24" rx="12" fill="#f8fafc"/>
   <text x="403" y="108" class="eyebrow" text-anchor="middle">ACTIONGATE CONTROL BOUNDARY</text>
@@ -65,7 +71,7 @@
   <rect x="306" y="236" width="244" height="98" rx="12" class="amber"/>
   <text x="428" y="264" class="title" text-anchor="middle">Deterministic authority</text>
   <text x="428" y="287" class="body" text-anchor="middle">Authentication · RBAC · limits</text>
-  <text x="428" y="308" class="body" text-anchor="middle">Idempotency · fail-safe rules</text>
+  <text x="428" y="308" class="body" text-anchor="middle">Trusted facts · fail-safe rules</text>
   <rect x="590" y="236" width="244" height="98" rx="12" class="purple"/>
   <text x="712" y="264" class="title" text-anchor="middle">Decision-model evidence</text>
   <text x="712" y="287" class="body" text-anchor="middle">Intent · target · scope</text>
@@ -92,23 +98,23 @@
   <path d="M1032 246 V276" class="arrow"/>
   <rect x="930" y="280" width="205" height="66" rx="11" class="card"/>
   <text x="1032" y="306" class="title" text-anchor="middle">Credential boundary</text>
-  <text x="1032" y="327" class="body" text-anchor="middle">No unguarded execution path</text>
+  <text x="1032" y="327" class="body" text-anchor="middle">SDK · MCP gateway · MCP proxy</text>
   <path d="M1032 349 V379" class="arrow"/>
   <rect x="930" y="383" width="205" height="66" rx="11" class="red"/>
   <text x="1032" y="409" class="title" text-anchor="middle">Business side effect</text>
   <text x="1032" y="430" class="body" text-anchor="middle">Refund · email · deploy · delete</text>
 
-  <text x="40" y="570" class="eyebrow">DURABLE STATE AND FEEDBACK</text>
-  <rect x="40" y="586" width="350" height="78" rx="13" class="card"/>
-  <text x="215" y="615" class="title" text-anchor="middle">Runtime protection</text>
-  <text x="215" y="638" class="body" text-anchor="middle">Decisions · leases · revocation · replay prevention</text>
-  <rect x="425" y="586" width="350" height="78" rx="13" class="card"/>
-  <text x="600" y="615" class="title" text-anchor="middle">Control plane</text>
-  <text x="600" y="638" class="body" text-anchor="middle">Tenants · keys · policies · registry · reviews</text>
-  <rect x="810" y="586" width="350" height="78" rx="13" class="card"/>
-  <text x="985" y="615" class="title" text-anchor="middle">Evidence loop</text>
-  <text x="985" y="638" class="body" text-anchor="middle">Encrypted audit · corrections · exports · calibration</text>
-  <path d="M570 523 V563 H215 V582" class="arrow"/>
-  <path d="M570 523 V582" class="arrow"/>
-  <path d="M1032 484 V550 H985 V582" class="arrow"/>
+  <text x="40" y="630" class="eyebrow">DURABLE STATE AND FEEDBACK</text>
+  <rect x="40" y="646" width="350" height="78" rx="13" class="card"/>
+  <text x="215" y="675" class="title" text-anchor="middle">Runtime protection</text>
+  <text x="215" y="698" class="body" text-anchor="middle">Decisions · leases · revocation · replay prevention</text>
+  <rect x="425" y="646" width="350" height="78" rx="13" class="card"/>
+  <text x="600" y="675" class="title" text-anchor="middle">Control plane</text>
+  <text x="600" y="698" class="body" text-anchor="middle">Tenants · keys · policies · registry · reviews</text>
+  <rect x="810" y="646" width="350" height="78" rx="13" class="card"/>
+  <text x="985" y="675" class="title" text-anchor="middle">Evidence loop</text>
+  <text x="985" y="698" class="body" text-anchor="middle">Encrypted audit · corrections · exports · calibration</text>
+  <path d="M570 523 V610 H215 V642" class="arrow"/>
+  <path d="M570 523 V642" class="arrow"/>
+  <path d="M1032 484 V610 H985 V642" class="arrow"/>
 </svg>

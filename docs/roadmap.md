@@ -50,7 +50,7 @@ These apply to every phase below, not to a phase of their own.
 - [ ] Add an HTTP reverse proxy/sidecar for applications that cannot embed the SDK
 - [ ] Add a credential broker for narrow, short-lived downstream credentials or signed requests
 - [ ] Publish a reference deployment where raw handlers and credentials are not directly reachable
-- [ ] Add trusted server-side fact providers for identity, RBAC, resource state, spend, duplicates, and allowlists
+- [x] Add trusted server-side fact providers for identity, RBAC, resource state, spend, duplicates, and allowlists
 - [ ] Add review list/claim/escalation plus exact-action revalidation at approval time
 - [ ] Mint a fresh approval grant and add configurable two-person approval
 - [ ] Add signed notification webhooks, retries, and dead-letter handling
