@@ -1,5 +1,6 @@
 export { ActionGateHttpProxy, type ActionGateHttpProxyOptions } from "./proxy.js";
 export { createHttpProxyServer, type HttpProxyServerOptions } from "./server.js";
+export { createSidecar, type SidecarPresetOptions } from "./presets.js";
 export { FetchHttpUpstream, UpstreamError, type HttpUpstreamOptions } from "./upstream.js";
 export { RouteTable, defaultArguments } from "./routes.js";
 export {

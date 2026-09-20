@@ -34,7 +34,7 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Server-owned tools | P0 complete | Operation, JSON Schema, risk, owner, sensitivity, policy, and enabled state are tenant-owned; downgrades fail closed. |
 | Key/evidence lifecycle | P0 complete | Signing and encryption key IDs support active-key rotation overlap; sensitive evidence is encrypted at rest. |
 | Data governance | P0 complete at application layer | Tenant export plus cutoff-based Redis minimization and PostgreSQL evidence deletion are role-gated. |
-| TypeScript integrations | Partial | REST, workspace TypeScript wrapper, embeddable MCP gateway, and standalone MCP proxy exist; packages are not published. |
+| TypeScript integrations | Shipped | SDK, MCP gateway, MCP proxy, and HTTP proxy build as versioned packages with declared exports, a generated OpenAPI 3.1 description, and a generated typed client. Nothing is published to a registry yet. |
 | Non-bypassable network boundary | Shipped | MCP proxy, HTTP reverse proxy, and credential broker all consume before forwarding. A reference topology publishes only the proxy; everything else is on an unreachable network. |
 | Trusted facts | Shipped | Server-side providers resolve RBAC, spend, duplicate, and allowlist facts. Provenance and freshness are recorded, and `requireTrustedFacts` refuses caller-asserted facts. |
 | Human approval | Shipped | Review queue with claim and escalation. Approval re-evaluates the exact action against current policy and registry and mints a fresh grant; two-person approval requires distinct reviewers. |
@@ -189,15 +189,15 @@ A capability that cannot degrade down this ladder is not finished. A capability 
 - [x] Mark the trust provenance and freshness of each fact in audit evidence.
 - [x] Reject high-impact authorization when required trusted facts are absent or stale (`requireTrustedFacts` plus `maxFactAgeSeconds`).
 
-### Adoption track (parallel to P1)
+### Adoption track (parallel to P1) — complete
 
 Packaging and on-ramp work does not touch the enforcement boundary, so it does not wait for P2 assurance.
 
-- [ ] Publish versioned TypeScript SDK and MCP gateway packages so adopters stop vendoring the workspace.
-- [ ] Publish a versioned API description and generate typed clients from it.
-- [ ] Define the connector manifest format and validate it in CI.
-- [ ] Ship a one-screen quickstart for each shipped integration level.
-- [ ] Add presets so a new connector needs no new configuration at Tier 0.
+- [x] Publish versioned TypeScript SDK and MCP gateway packages so adopters stop vendoring the workspace.
+- [x] Publish a versioned API description and generate typed clients from it.
+- [x] Define the connector manifest format and validate it in CI.
+- [x] Ship a one-screen quickstart for each shipped integration level.
+- [x] Add presets so a new connector needs no new configuration at Tier 0.
 
 P1 exit criteria:
 

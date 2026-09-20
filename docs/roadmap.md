@@ -57,15 +57,15 @@ These apply to every phase below, not to a phase of their own.
 - [x] Add bulk incident tool-disable and outstanding-grant revocation
 - [x] Record execution attempted/completed/failed/reversed separately from authorization
 
-### Adoption track — runs alongside P1
+### Adoption track — complete
 
 These reduce friction without touching the enforcement boundary, so they do not wait for P2 assurance work.
 
-- [ ] Publish versioned TypeScript SDK and MCP gateway packages so adopters stop vendoring the workspace
-- [ ] Generate a versioned API description and typed clients from it
-- [ ] Define the connector manifest format and validate it in CI
-- [ ] Ship one-screen quickstarts for each shipped integration level
-- [ ] Add presets so a new connector needs no new configuration at Tier 0
+- [x] Publish versioned TypeScript SDK and MCP gateway packages so adopters stop vendoring the workspace
+- [x] Generate a versioned API description and typed clients from it
+- [x] Define the connector manifest format and validate it in CI
+- [x] Ship one-screen quickstarts for each shipped integration level
+- [x] Add presets so a new connector needs no new configuration at Tier 0
 
 ## P2 — evidence, reliability, and production assurance
 

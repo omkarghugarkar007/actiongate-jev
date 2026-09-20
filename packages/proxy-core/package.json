@@ -2,8 +2,37 @@
   "name": "@actiongate/proxy-core",
   "version": "0.1.0",
   "type": "module",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "dependencies": {
     "@actiongate/core": "workspace:*"
+  },
+  "description": "Shared enforcement path for ActionGate proxies: registry reads, token resolution, and authorize-then-consume.",
+  "license": "Apache-2.0",
+  "author": "Omkar Ghugarkar",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omkarghugarkar007/actiongate-jev.git"
+  },
+  "homepage": "https://github.com/omkarghugarkar007/actiongate-jev#readme",
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
   }
 }

@@ -52,4 +52,12 @@ jobs:
       - run: pnpm db:migrate
       - run: pnpm test:postgres
       - run: pnpm build
+      - run: pnpm manifests:validate
+      - run: pnpm build:packages
+      - run: pnpm packages:check
+      - name: API description is in step with the server
+        run: |
+          pnpm api:generate
+          pnpm client:generate
+          git diff --exit-code docs/api/openapi.json packages/sdk-js/src/generated/client.ts
       - run: pnpm audit --prod

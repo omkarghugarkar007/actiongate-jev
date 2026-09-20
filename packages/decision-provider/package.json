@@ -2,6 +2,38 @@
   "name": "@actiongate/decision-provider",
   "version": "0.1.0",
   "type": "module",
-  "exports": "./src/index.ts",
-  "dependencies": { "@actiongate/core": "workspace:*", "zod": "^4.1.8" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@actiongate/core": "workspace:*",
+    "zod": "^4.1.8"
+  },
+  "description": "Decision-model provider adapters for ActionGate, including TypeSafe Jev through OpenRouter.",
+  "license": "Apache-2.0",
+  "author": "Omkar Ghugarkar",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omkarghugarkar007/actiongate-jev.git"
+  },
+  "homepage": "https://github.com/omkarghugarkar007/actiongate-jev#readme",
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  }
 }

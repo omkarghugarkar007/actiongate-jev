@@ -148,6 +148,12 @@ importers:
         specifier: ^17.2.2
         version: 17.4.2
 
+  packages/connector-manifest:
+    dependencies:
+      zod:
+        specifier: ^4.1.8
+        version: 4.6.5
+
   packages/core:
     dependencies:
       zod:
@@ -186,6 +192,9 @@ importers:
       '@actiongate/proxy-core':
         specifier: workspace:*
         version: link:../proxy-core
+      '@actiongate/sdk':
+        specifier: workspace:*
+        version: link:../sdk-js
       fastify:
         specifier: ^5.6.0
         version: 5.12.5
@@ -204,6 +213,9 @@ importers:
       '@actiongate/proxy-core':
         specifier: workspace:*
         version: link:../proxy-core
+      '@actiongate/sdk':
+        specifier: workspace:*
+        version: link:../sdk-js
       fastify:
         specifier: ^5.6.0
         version: 5.12.5

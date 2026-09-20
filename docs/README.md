@@ -4,7 +4,9 @@ Start with the [integration guide](integration-guide.md) to protect an agent too
 
 | Document | Purpose |
 |---|---|
+| [Quickstarts](quickstarts.md) | One screen per integration level: Observe, Guard, Isolate, Govern |
 | [Integration guide](integration-guide.md) | REST and TypeScript SDK setup, rollout modes, response handling, and production checklist |
+| [API description](api/openapi.json) | Versioned OpenAPI 3.1 document generated from the server's own schemas |
 | [Integration ecosystem](integrations.md) | Adapter levels, shared contract, priority connectors, and contribution acceptance gates |
 | [Architecture](architecture.md) | Components, request flow, provider boundary, and decision composition |
 | [Product plan](PLANNING.md) | Product thesis, moat, delivery phases, acceptance gates, and living checklist |

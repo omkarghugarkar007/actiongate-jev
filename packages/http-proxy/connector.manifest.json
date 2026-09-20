@@ -1,0 +1,22 @@
+{
+  "name": "@actiongate/http-proxy",
+  "version": "0.1.0",
+  "level": "isolate",
+  "summary": "HTTP reverse proxy and sidecar that maps routes to registry tools and consumes before forwarding.",
+  "protects": "The upstream service's network endpoint and its credential, which stay inside the proxy process.",
+  "bypass": [
+    "Anything that can route to the upstream service directly bypasses the proxy; isolation is a network property.",
+    "The downstream proxy token is a bearer token and grants that agent's authority until rotation.",
+    "Routes that are not declared simply do not exist here, so an unmapped upstream path is unreachable through the proxy but still reachable directly."
+  ],
+  "requires": { "providerKey": false, "redis": false, "postgres": false, "minimumTier": 1 },
+  "tools": [{ "name": "declared-per-route", "operation": "varies" }],
+  "facts": [],
+  "setup": { "steps": 3, "requiredSettings": 4, "presetName": "sidecar" },
+  "negativeTests": [
+    "An unmapped route is a 404 and never a pass-through",
+    "A route whose tool is disabled in the registry never reaches upstream",
+    "BLOCK, REVIEW, a missing grant, and a failed consumption never reach upstream",
+    "The arguments authorized are the arguments forwarded"
+  ]
+}

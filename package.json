@@ -53,7 +53,12 @@
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx scripts/seed.ts",
     "proxy:http": "tsx scripts/run-http-proxy.ts",
-    "proxy:mcp": "tsx scripts/run-mcp-proxy.ts"
+    "proxy:mcp": "tsx scripts/run-mcp-proxy.ts",
+    "manifests:validate": "tsx scripts/validate-connector-manifests.ts",
+    "api:generate": "tsx scripts/generate-openapi.ts",
+    "client:generate": "tsx scripts/generate-client.ts",
+    "build:packages": "tsx scripts/build-packages.ts",
+    "packages:check": "tsx scripts/check-package-exports.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

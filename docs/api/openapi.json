@@ -1,0 +1,1379 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ActionGate API",
+    "version": "0.1.0",
+    "description": "Runtime authorization for AI-agent actions. Jev supplies evidence; ActionGate creates and enforces the permit.",
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development"
+    }
+  ],
+  "security": [
+    {
+      "ActionGateKey": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ActionGateKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "A tenant-scoped ActionGate API key."
+      }
+    },
+    "schemas": {
+      "AuthorizationRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 255
+          },
+          "tenantId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "staging",
+              "production"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "shadow",
+              "enforce"
+            ]
+          },
+          "actor": {
+            "type": "object",
+            "properties": {
+              "agentId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "userId": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "sessionId": {
+                "type": "string",
+                "maxLength": 255
+              }
+            },
+            "required": [
+              "agentId"
+            ],
+            "additionalProperties": false
+          },
+          "userIntent": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16000
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "user_message",
+                  "workflow",
+                  "operator"
+                ]
+              }
+            },
+            "required": [
+              "text",
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "proposedAction": {
+            "type": "object",
+            "properties": {
+              "tool": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "operation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "arguments": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "riskClass": {
+                "type": "string",
+                "enum": [
+                  "READ_ONLY",
+                  "REVERSIBLE_WRITE",
+                  "EXTERNAL_COMMUNICATION",
+                  "FINANCIAL",
+                  "DESTRUCTIVE",
+                  "CREDENTIAL_OR_SECRET"
+                ]
+              }
+            },
+            "required": [
+              "tool",
+              "operation",
+              "arguments",
+              "riskClass"
+            ],
+            "additionalProperties": false
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "conversationExcerpt": {
+                "maxItems": 8,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "user",
+                        "assistant",
+                        "tool"
+                      ]
+                    },
+                    "content": {
+                      "type": "string",
+                      "maxLength": 4000
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "content"
+                  ]
+                }
+              },
+              "resources": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "currentState": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            },
+            "additionalProperties": false
+          },
+          "deterministicFacts": {
+            "type": "object",
+            "properties": {
+              "authenticated": {
+                "type": "boolean"
+              },
+              "authorizedByRbac": {
+                "type": "boolean"
+              },
+              "duplicate": {
+                "type": "boolean"
+              },
+              "amountCents": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "currency": {
+                "type": "string",
+                "maxLength": 3
+              },
+              "destinationAllowlisted": {
+                "type": "boolean"
+              },
+              "resourceExists": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          "policyVersion": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "requestId",
+          "idempotencyKey",
+          "tenantId",
+          "environment",
+          "mode",
+          "actor",
+          "userIntent",
+          "proposedAction"
+        ],
+        "additionalProperties": false
+      },
+      "ActionGrantConsumeRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "tenantId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "staging",
+              "production"
+            ]
+          },
+          "actor": {
+            "type": "object",
+            "properties": {
+              "agentId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "userId": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "sessionId": {
+                "type": "string",
+                "maxLength": 255
+              }
+            },
+            "required": [
+              "agentId"
+            ],
+            "additionalProperties": false
+          },
+          "proposedAction": {
+            "type": "object",
+            "properties": {
+              "tool": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "operation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "arguments": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "riskClass": {
+                "type": "string",
+                "enum": [
+                  "READ_ONLY",
+                  "REVERSIBLE_WRITE",
+                  "EXTERNAL_COMMUNICATION",
+                  "FINANCIAL",
+                  "DESTRUCTIVE",
+                  "CREDENTIAL_OR_SECRET"
+                ]
+              }
+            },
+            "required": [
+              "tool",
+              "operation",
+              "arguments",
+              "riskClass"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "token",
+          "tenantId",
+          "environment",
+          "actor",
+          "proposedAction"
+        ],
+        "additionalProperties": false
+      },
+      "ActionGrantConsumeResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "grantId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "decisionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "type": "string",
+            "const": "CONSUMED"
+          },
+          "consumedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "grantId",
+          "decisionId",
+          "status",
+          "consumedAt"
+        ],
+        "additionalProperties": false
+      },
+      "Policy": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "shadow",
+              "enforce"
+            ]
+          },
+          "skipSemanticAfterHardReview": {
+            "type": "boolean"
+          },
+          "requireHumanForRisk": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "READ_ONLY",
+                "REVERSIBLE_WRITE",
+                "EXTERNAL_COMMUNICATION",
+                "FINANCIAL",
+                "DESTRUCTIVE",
+                "CREDENTIAL_OR_SECRET"
+              ]
+            }
+          },
+          "tools": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "operation": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "riskClass": {
+                  "type": "string",
+                  "enum": [
+                    "READ_ONLY",
+                    "REVERSIBLE_WRITE",
+                    "EXTERNAL_COMMUNICATION",
+                    "FINANCIAL",
+                    "DESTRUCTIVE",
+                    "CREDENTIAL_OR_SECRET"
+                  ]
+                },
+                "hardRules": {
+                  "type": "object",
+                  "properties": {
+                    "maxAmountCents": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "allowedCurrencies": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 3
+                      }
+                    },
+                    "requireAuthenticatedUser": {
+                      "type": "boolean"
+                    },
+                    "requireRbac": {
+                      "type": "boolean"
+                    },
+                    "requireTrustedFacts": {
+                      "type": "boolean"
+                    },
+                    "maxFactAgeSeconds": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 86400
+                    },
+                    "denyDuplicate": {
+                      "type": "boolean"
+                    },
+                    "requireAllowlistedDestination": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "semanticPolicy": {
+                  "maxItems": 100,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "thresholdProfile": {
+                  "type": "string",
+                  "enum": [
+                    "read-only-v1",
+                    "reversible-write-v1",
+                    "financial-v1",
+                    "destructive-v1"
+                  ]
+                }
+              },
+              "required": [
+                "enabled",
+                "operation",
+                "riskClass",
+                "semanticPolicy",
+                "thresholdProfile"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "mode",
+          "tools"
+        ],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Liveness probe",
+        "operationId": "getHealth",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is up"
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness probe including dependencies",
+        "operationId": "getReady",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Ready"
+          },
+          "503": {
+            "description": "A dependency is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/authorize": {
+      "post": {
+        "summary": "Decide a proposed action and issue a grant for an enforced allow",
+        "operationId": "postAuthorize",
+        "description": "Requires role: authorize.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorizationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Decision, with a grant only for an enforced ALLOW"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tool disabled or metadata mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/grants/consume": {
+      "post": {
+        "summary": "Consume a grant exactly once, immediately before the side effect",
+        "operationId": "postGrantsConsume",
+        "description": "Requires role: consume.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionGrantConsumeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consumed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionGrantConsumeResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Binding mismatch or revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already consumed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/grants/exchange": {
+      "post": {
+        "summary": "Consume a grant and return a short-lived downstream credential",
+        "operationId": "postGrantsExchange",
+        "description": "Requires role: consume.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionGrantConsumeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credential bound to the exact action"
+          },
+          "501": {
+            "description": "No credential broker configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/grants/{id}/revoke": {
+      "post": {
+        "summary": "Revoke one outstanding grant",
+        "operationId": "postGrantsByIdRevoke",
+        "description": "Requires role: reviewer or policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoked"
+          },
+          "404": {
+            "description": "Unknown grant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/decisions": {
+      "get": {
+        "summary": "List decisions for the authenticated tenant",
+        "operationId": "getDecisions",
+        "description": "Requires role: decision_reader.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Decisions"
+          }
+        }
+      }
+    },
+    "/v1/decisions/{id}": {
+      "get": {
+        "summary": "Read one decision audit record",
+        "operationId": "getDecisionsById",
+        "description": "Requires role: decision_reader.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit record"
+          },
+          "404": {
+            "description": "Unknown decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/decisions/{id}/override": {
+      "post": {
+        "summary": "Record a reviewer correction against a decision",
+        "operationId": "postDecisionsByIdOverride",
+        "description": "Requires role: reviewer.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Correction recorded"
+          }
+        }
+      }
+    },
+    "/v1/policies": {
+      "get": {
+        "summary": "List policy versions",
+        "operationId": "getPolicies",
+        "description": "Requires role: policy_admin or decision_reader.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Policies"
+          }
+        }
+      }
+    },
+    "/v1/policies/{id}": {
+      "get": {
+        "summary": "Read one policy version",
+        "operationId": "getPoliciesById",
+        "description": "Requires role: policy_admin or decision_reader.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/policies/{id}/versions": {
+      "post": {
+        "summary": "Add an immutable policy version",
+        "operationId": "postPoliciesByIdVersions",
+        "description": "Requires role: policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Policy"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Version added"
+          },
+          "409": {
+            "description": "Version already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools": {
+      "get": {
+        "summary": "List server-owned tool registrations",
+        "operationId": "getTools",
+        "description": "Requires role: authorize or decision_reader or policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tool registry"
+          }
+        }
+      }
+    },
+    "/v1/tools/{name}": {
+      "put": {
+        "summary": "Register or update a tool",
+        "operationId": "putToolsByName",
+        "description": "Requires role: policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registered"
+          },
+          "409": {
+            "description": "Policy mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/api-keys": {
+      "get": {
+        "summary": "List API keys",
+        "operationId": "getApiKeys",
+        "description": "Requires role: key_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Keys, never including the secret"
+          }
+        }
+      },
+      "post": {
+        "summary": "Issue an API key, returning the secret once",
+        "operationId": "postApiKeys",
+        "description": "Requires role: key_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Issued"
+          }
+        }
+      }
+    },
+    "/v1/api-keys/{id}/revoke": {
+      "post": {
+        "summary": "Revoke an API key immediately",
+        "operationId": "postApiKeysByIdRevoke",
+        "description": "Requires role: key_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoked"
+          }
+        }
+      }
+    },
+    "/v1/reviews": {
+      "get": {
+        "summary": "List reviews",
+        "operationId": "getReviews",
+        "description": "Requires role: reviewer.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviews"
+          }
+        }
+      },
+      "post": {
+        "summary": "Raise a review for a decision",
+        "operationId": "postReviews",
+        "description": "Requires role: reviewer.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Review created"
+          }
+        }
+      }
+    },
+    "/v1/reviews/{id}/claim": {
+      "post": {
+        "summary": "Claim a pending review",
+        "operationId": "postReviewsByIdClaim",
+        "description": "Requires role: reviewer.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claimed"
+          },
+          "409": {
+            "description": "Already claimed or not pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reviews/{id}/escalate": {
+      "post": {
+        "summary": "Escalate a pending review",
+        "operationId": "postReviewsByIdEscalate",
+        "description": "Requires role: reviewer.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Escalated"
+          }
+        }
+      }
+    },
+    "/v1/reviews/{id}/resolve": {
+      "post": {
+        "summary": "Approve or deny; approval revalidates and mints a fresh grant",
+        "operationId": "postReviewsByIdResolve",
+        "description": "Requires role: reviewer.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resolved, with revalidation for an approval"
+          },
+          "202": {
+            "description": "Approval recorded, more approvals required"
+          },
+          "409": {
+            "description": "The same reviewer cannot approve twice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/executions": {
+      "get": {
+        "summary": "List execution outcomes",
+        "operationId": "getExecutions",
+        "description": "Requires role: decision_reader.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "decisionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Executions"
+          }
+        }
+      },
+      "post": {
+        "summary": "Record an execution outcome separately from authorization",
+        "operationId": "postExecutions",
+        "description": "Requires role: consume.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Recorded"
+          },
+          "404": {
+            "description": "Unknown decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/incidents/disable-tools": {
+      "post": {
+        "summary": "Disable tools in bulk",
+        "operationId": "postIncidentsDisableTools",
+        "description": "Requires role: policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Disabled tool names"
+          }
+        }
+      }
+    },
+    "/v1/incidents/revoke-grants": {
+      "post": {
+        "summary": "Revoke outstanding grants, optionally for one tool",
+        "operationId": "postIncidentsRevokeGrants",
+        "description": "Requires role: policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoked grant ids"
+          },
+          "501": {
+            "description": "Store does not support enumeration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/incidents/dead-letters": {
+      "get": {
+        "summary": "List undelivered notifications",
+        "operationId": "getIncidentsDeadLetters",
+        "description": "Requires role: policy_admin or audit_exporter.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dead letters"
+          }
+        }
+      }
+    },
+    "/v1/audit/export": {
+      "get": {
+        "summary": "Export tenant decisions and audit events",
+        "operationId": "getAuditExport",
+        "description": "Requires role: audit_exporter.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export, never including grant tokens"
+          }
+        }
+      }
+    },
+    "/v1/audit/retention": {
+      "delete": {
+        "summary": "Delete evidence older than a cutoff",
+        "operationId": "deleteAuditRetention",
+        "description": "Requires role: audit_exporter or policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "before",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted counts"
+          }
+        }
+      }
+    }
+  }
+}

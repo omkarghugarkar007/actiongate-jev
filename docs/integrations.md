@@ -86,17 +86,23 @@ The catalog is only useful if adding a connector is cheaper than hand-rolling th
 | MCP proxy | Isolate | Shipped in workspace | Standalone network service; holds the upstream credential and consumes a grant before forwarding |
 | Redis runtime adapter | Govern | Shipped | Distributed idempotency, decision state, revocation, and one-time consumption |
 | PostgreSQL control-plane adapter | Govern | Shipped | Tenant keys, policies, registry, reviews, corrections, encrypted audit |
+| HTTP reverse proxy / sidecar | Isolate | Shipped in workspace | Declarative route-to-tool mapping; an unmapped route is a 404, never a pass-through |
+| Credential broker | Isolate | Shipped | Exchanges a consumed grant for a short-lived signed request bound to the exact action |
+| Trusted fact providers | Govern | Shipped | Function and HTTP adapters resolve RBAC, spend, and duplicate facts server-side |
+| Signed webhooks | Govern | Shipped | HMAC-signed deliveries with a replay window, bounded retries, and dead-lettering |
 
-Workspace packages are not yet published to a package registry. Until versioned releases exist, use the REST contract or workspace dependencies.
+Every connector ships a [manifest](#connector-manifest), validated in CI by `pnpm manifests:validate`. Packages build with declared exports (`pnpm build:packages`, checked by `pnpm packages:check`) but are not yet published to a registry; until a release exists, use the REST contract, the generated client, or workspace dependencies.
 
 ## Priority integration map
 
 ### P1: hard execution boundaries
 
-1. **Standalone MCP proxy** — shipped. See the manifest below.
-2. **HTTP reverse proxy and sidecar** — declarative route-to-tool mapping, request normalization, response capture, retries that preserve idempotency, and deployment templates.
-3. **Credential broker** — exchange a consumed Action Grant for a narrow, short-lived downstream credential or signed request.
-4. **Webhook gateway** — signed outbound payloads, delivery retries, destination allowlists, and result evidence.
+All four shipped. See the [quickstarts](quickstarts.md) and each package's manifest.
+
+1. **Standalone MCP proxy** — shipped.
+2. **HTTP reverse proxy and sidecar** — shipped, with a `sidecar` preset.
+3. **Credential broker** — shipped as `POST /v1/grants/exchange` plus `verifySignedRequest` for the downstream side.
+4. **Webhook gateway** — shipped, with signing, a replay window, retries, destination allowlisting, and dead letters.
 
 ### P2: developer frameworks
 

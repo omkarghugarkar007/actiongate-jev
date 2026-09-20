@@ -2,7 +2,38 @@
   "name": "@actiongate/sdk",
   "version": "0.1.0",
   "type": "module",
-  "exports": "./src/index.ts",
-  "dependencies": { "@actiongate/core": "workspace:*" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@actiongate/core": "workspace:*"
+  },
+  "description": "TypeScript client for ActionGate: authorize, consume a single-use grant, then call a private handler.",
+  "license": "Apache-2.0",
+  "author": "Omkar Ghugarkar",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omkarghugarkar007/actiongate-jev.git"
+  },
+  "homepage": "https://github.com/omkarghugarkar007/actiongate-jev#readme",
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "connector.manifest.json"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  }
 }
-

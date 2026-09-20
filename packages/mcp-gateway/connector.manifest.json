@@ -1,0 +1,20 @@
+{
+  "name": "@actiongate/mcp-gateway",
+  "version": "0.1.0",
+  "level": "guard",
+  "summary": "Embeddable MCP tool registry that owns tool metadata and consumes before executing.",
+  "protects": "In-process MCP tool handlers and the runtime credentials passed to them.",
+  "bypass": [
+    "A handler registered elsewhere in the same process, or exported publicly, can be called without a grant.",
+    "The host application can call the raw execute function directly; the gateway only guards its own dispatch path."
+  ],
+  "requires": { "providerKey": false, "redis": false, "postgres": false, "minimumTier": 0 },
+  "tools": [{ "name": "registered-at-runtime", "operation": "call" }],
+  "facts": [],
+  "setup": { "steps": 2, "requiredSettings": 0 },
+  "negativeTests": [
+    "An unregistered tool name is rejected before authorization",
+    "Mutated arguments fail grant binding and never execute",
+    "A replayed grant is rejected and the handler runs exactly once"
+  ]
+}

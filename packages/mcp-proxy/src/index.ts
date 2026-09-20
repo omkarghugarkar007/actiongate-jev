@@ -1,6 +1,7 @@
 export { ActionGateMcpProxy, ProxyError, type ActionGateMcpProxyOptions } from "./proxy.js";
 export { HttpMcpUpstream, UpstreamError, type HttpMcpUpstreamOptions } from "./upstream.js";
 export { createMcpProxyServer, type McpProxyServerOptions } from "./server.js";
+export { createGuardedMcpServer, type McpGatewayPresetOptions } from "./presets.js";
 // Re-exported from proxy-core so existing imports keep working.
 export { ActionGateRegistry, staticTokenResolver, type ActionGateRegistryOptions, type ProxyTokenGrant } from "@actiongate/proxy-core";
 export {

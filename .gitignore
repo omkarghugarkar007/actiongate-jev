@@ -14,3 +14,4 @@ test-results/
 packages/evals/reports/*.json
 packages/evals/reports/*.md
 !packages/evals/reports/.gitkeep
+packages/*/dist/

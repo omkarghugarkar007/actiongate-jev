@@ -1,0 +1,22 @@
+{
+  "name": "@actiongate/mcp-proxy",
+  "version": "0.1.0",
+  "level": "isolate",
+  "summary": "Standalone MCP network proxy that owns the upstream credential and consumes before forwarding.",
+  "protects": "The upstream MCP server's network endpoint and its credential, both of which stay inside the proxy process.",
+  "bypass": [
+    "Anything that can route to the upstream MCP endpoint directly bypasses the proxy entirely; isolation is a network property.",
+    "The downstream proxy token is a bearer token, so whoever holds it acts as that agent until rotation.",
+    "Relayed user intent is agent-supplied evidence and can influence the semantic signal, though never a hard rule."
+  ],
+  "requires": { "providerKey": false, "redis": false, "postgres": false, "minimumTier": 1 },
+  "tools": [{ "name": "intersection-of-registry-and-upstream", "operation": "call" }],
+  "facts": [],
+  "setup": { "steps": 3, "requiredSettings": 3 },
+  "negativeTests": [
+    "An unknown or disabled tool is never forwarded and reveals nothing by its error",
+    "BLOCK, REVIEW, a missing grant, and a failed consumption never reach upstream",
+    "Unhandled JSON-RPC methods are refused rather than passed through",
+    "_meta is stripped before forwarding so a grant cannot be smuggled upstream"
+  ]
+}
