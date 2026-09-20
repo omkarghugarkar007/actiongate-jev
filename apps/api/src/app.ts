@@ -11,6 +11,7 @@ import {
   ActionGrantError,
   ActionGrantSigner,
   AuthorizationEngine,
+  type TrustedFactProvider,
   AuthorizationRequestSchema,
   PolicySchema,
   RiskClassSchema,
@@ -90,6 +91,8 @@ export interface BuildAppOptions {
   redisClient?: Redis;
   idempotencyLeaseMs?: number;
   idempotencyWaitMs?: number;
+  /** Server-side providers that resolve deterministic facts ActionGate can vouch for. */
+  factProviders?: readonly TrustedFactProvider[];
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
@@ -135,7 +138,11 @@ export function buildApp(options: BuildAppOptions = {}) {
   }
 
   const service = new AuthorizationService(
-    new AuthorizationEngine(provider, { timeoutMs: config.JEV_TIMEOUT_MS, failOpenReadOnly: config.failOpenReadOnly }),
+    new AuthorizationEngine(provider, {
+      timeoutMs: config.JEV_TIMEOUT_MS,
+      failOpenReadOnly: config.failOpenReadOnly,
+      ...(options.factProviders ? { factProviders: options.factProviders } : {})
+    }),
     decisions,
     options.idempotencyWaitMs ?? config.ACTIONGATE_IDEMPOTENCY_WAIT_MS
   );

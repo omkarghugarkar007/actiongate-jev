@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { FunctionFactProvider, type TrustedFactProvider } from "@actiongate/core";
 import { FakeDecisionProvider } from "@actiongate/decision-provider";
 import { ActionGate } from "@actiongate/sdk";
 import {
@@ -34,8 +35,14 @@ function fakeUpstream() {
   return { upstream, calls };
 }
 
-async function buildStack(provider = FakeDecisionProvider.allow()) {
-  const api = buildApp({ provider, apiKey: "ag_proxy_test", apiKeyTenantId: "tenant-proxy", logger: false });
+async function buildStack(provider = FakeDecisionProvider.allow(), factProviders?: readonly TrustedFactProvider[]) {
+  const api = buildApp({
+    provider,
+    apiKey: "ag_proxy_test",
+    apiKeyTenantId: "tenant-proxy",
+    logger: false,
+    ...(factProviders ? { factProviders } : {})
+  });
   apps.push(api);
   const address = await api.listen({ port: 0, host: "127.0.0.1" });
   const client = new ActionGate({ apiKey: "ag_proxy_test", baseUrl: address });
@@ -138,6 +145,50 @@ describe("standalone MCP proxy end to end", () => {
       params: { name: "drop_database", arguments: {} }
     });
     expect(response.json().error.code).toBe(JSON_RPC.METHOD_NOT_FOUND);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("forwards a financial call once a server-side fact provider vouches for it", async () => {
+    // This is what makes the proxy useful beyond read-only tools: ActionGate
+    // resolves the facts itself, so the agent never asserts its own RBAC.
+    const ledger = new FunctionFactProvider({
+      name: "ledger",
+      resolve: ({ request }) => ({
+        authenticated: true,
+        authorizedByRbac: true,
+        duplicate: false,
+        amountCents: Number((request.proposedAction.arguments as { amountCents?: number }).amountCents ?? 0),
+        currency: "USD"
+      })
+    });
+    const { proxy, calls } = await buildStack(FakeDecisionProvider.allow(), [ledger]);
+    const response = await rpc(proxy, {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: "refund_payment", arguments: { transactionId: "txn_1", amountCents: 4900 }, _meta: { [ACTIONGATE_INTENT_META_KEY]: "Please refund my duplicate $49 charge." } }
+    });
+    expect(response.json().error).toBeUndefined();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ name: "refund_payment" });
+  });
+
+  it("keeps the fact provider authoritative over anything the call implies", async () => {
+    // The provider reports the real ledger amount, not the one in the arguments,
+    // so an inflated request is caught by the policy limit.
+    const ledger = new FunctionFactProvider({
+      name: "ledger",
+      resolve: () => ({ authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 999_999, currency: "USD" })
+    });
+    const { proxy, calls } = await buildStack(FakeDecisionProvider.allow(), [ledger]);
+    const response = await rpc(proxy, {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: "refund_payment", arguments: { transactionId: "txn_1", amountCents: 1 } }
+    });
+    expect(response.json().error.code).toBe(JSON_RPC.ACTION_DENIED);
+    expect(response.json().error.data.reasons.map((reason: { code: string }) => reason.code)).toContain("AMOUNT_EXCEEDS_LIMIT");
     expect(calls).toHaveLength(0);
   });
 

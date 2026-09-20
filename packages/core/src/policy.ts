@@ -10,6 +10,10 @@ export interface ToolPolicy {
     allowedCurrencies?: string[];
     requireAuthenticatedUser?: boolean;
     requireRbac?: boolean;
+    /** Reject facts the caller asserted about itself; only provider-resolved facts count. */
+    requireTrustedFacts?: boolean;
+    /** Reject a trusted fact observed longer ago than this. Requires requireTrustedFacts. */
+    maxFactAgeSeconds?: number;
     denyDuplicate?: boolean;
     requireAllowlistedDestination?: boolean;
   };
@@ -42,6 +46,8 @@ export const ToolPolicySchema = z.object({
     allowedCurrencies: z.array(z.string().min(3).max(3)).optional(),
     requireAuthenticatedUser: z.boolean().optional(),
     requireRbac: z.boolean().optional(),
+    requireTrustedFacts: z.boolean().optional(),
+    maxFactAgeSeconds: z.number().int().positive().max(86_400).optional(),
     denyDuplicate: z.boolean().optional(),
     requireAllowlistedDestination: z.boolean().optional()
   }).strict().optional(),

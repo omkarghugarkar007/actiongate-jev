@@ -1,19 +1,39 @@
 import { randomUUID } from "node:crypto";
 import type { AuthorizationDecision, AuthorizationRequest, AuthorizationResponse, ChoiceAnswer, DecisionProvider, DecisionProviderResponse, NoulAnswer, Reason, RiskClass } from "./contracts.js";
 import { runDeterministicRules } from "./deterministic-rules.js";
+import { composeFacts, resolveTrustedFacts, type TrustedFactProvider } from "./facts.js";
 import type { Policy, ToolPolicy } from "./policy.js";
 import { THRESHOLD_PROFILES } from "./policy.js";
 import { buildSemanticBattery } from "./semantic-battery.js";
 import { buildMinimalState } from "./state-builder.js";
 
+export interface AuthorizationEngineOptions {
+  timeoutMs?: number;
+  failOpenReadOnly?: boolean;
+  /**
+   * Server-side providers that resolve deterministic facts the deployment can
+   * vouch for. Facts they return override anything the caller claimed, and a
+   * tool with `requireTrustedFacts` accepts nothing else.
+   */
+  factProviders?: readonly TrustedFactProvider[];
+}
+
 export class AuthorizationEngine {
-  constructor(private readonly provider: DecisionProvider, private readonly options: { timeoutMs?: number; failOpenReadOnly?: boolean } = {}) {}
+  constructor(private readonly provider: DecisionProvider, private readonly options: AuthorizationEngineOptions = {}) {}
 
   async authorize(req: AuthorizationRequest, policy: Policy): Promise<AuthorizationResponse> {
     const started = performance.now();
     const deterministicStarted = performance.now();
     const tool = policy.tools[req.proposedAction.tool];
-    const deterministic = runDeterministicRules(req, tool);
+
+    const providers = this.options.factProviders ?? [];
+    const { resolved, failures } = providers.length
+      ? await resolveTrustedFacts(providers, { request: req, tool })
+      : { resolved: [], failures: [] };
+    const composedFacts = composeFacts(req.deterministicFacts, resolved);
+    const effectiveRequest: AuthorizationRequest = { ...req, deterministicFacts: composedFacts.facts };
+
+    const deterministic = runDeterministicRules(effectiveRequest, tool, { attribution: composedFacts.attribution });
     const deterministicMs = performance.now() - deterministicStarted;
     let effective: AuthorizationDecision;
     let reasons = deterministic.reasons;
@@ -29,7 +49,7 @@ export class AuthorizationEngine {
       const semanticStarted = performance.now();
       try {
         providerResponse = await this.provider.evaluate(
-          { state: buildMinimalState(req, tool), questions: buildSemanticBattery() },
+          { state: buildMinimalState(effectiveRequest, tool), questions: buildSemanticBattery() },
           { timeoutMs: this.options.timeoutMs ?? 2000 }
         );
         semanticMs = performance.now() - semanticStarted;
@@ -44,6 +64,11 @@ export class AuthorizationEngine {
       }
     }
 
+    for (const failure of failures) {
+      // A provider that fails contributes no facts, so any rule depending on it
+      // has already failed closed above. Record why, so the cause is visible.
+      reasons = [...reasons, { code: "FACT_PROVIDER_UNAVAILABLE", message: `Trusted fact provider "${failure.provider}" failed: ${failure.message}`, source: "SYSTEM" }];
+    }
     if (reasons.length === 0) reasons = [{ code: "POLICY_SATISFIED", message: "Deterministic and semantic policy checks passed.", source: "SYSTEM" }];
     const mode = req.mode;
     const decision = mode === "shadow" ? "ALLOW" : effective;
