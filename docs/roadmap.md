@@ -86,13 +86,13 @@ Engineering complete. Two items need people rather than code and are marked as s
 
 Packaging and the API description move into the P1 adoption track above; what remains here is breadth.
 
-- [ ] Add Python SDK parity
+- [x] Add Python SDK parity
 - [ ] Add adapters for widely used agent and workflow frameworks with explicit Observe/Guard/Isolate labels
 - [ ] Add workflow-automation and webhook connectors
 - [ ] Add identity, secret-manager, gateway, service-mesh, incident, and observability integrations
 - [ ] Add guarded examples for email, CRM, booking, finance, infrastructure, and coding agents
-- [ ] Publish an adapter conformance suite for third-party integrations
-- [ ] Publish a browsable connector catalog driven by connector manifests
+- [x] Publish an adapter conformance suite for third-party integrations
+- [x] Publish a browsable connector catalog driven by connector manifests
 - [ ] Add a hosted sandbox and interactive policy/decision simulator
 
 The detailed acceptance gates are in [PLANNING.md](PLANNING.md), and the integration strategy is in [integrations.md](integrations.md).

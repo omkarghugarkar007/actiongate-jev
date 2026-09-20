@@ -85,6 +85,7 @@ The catalog is only useful if adding a connector is cheaper than hand-rolling th
 | MCP gateway | Guard | Shipped in workspace | Owns tool metadata and keeps the grant outside model-visible arguments |
 | MCP proxy | Isolate | Shipped in workspace | Standalone network service; holds the upstream credential and consumes a grant before forwarding |
 | Redis runtime adapter | Govern | Shipped | Distributed idempotency, decision state, revocation, and one-time consumption |
+| Python client | Guard | Shipped in workspace | `wrap_tool` authorizes, consumes, then calls a private handler; standard library only |
 | PostgreSQL control-plane adapter | Govern | Shipped | Tenant keys, policies, registry, reviews, corrections, encrypted audit |
 | HTTP reverse proxy / sidecar | Isolate | Shipped in workspace | Declarative route-to-tool mapping; an unmapped route is a 404, never a pass-through |
 | Credential broker | Isolate | Shipped | Exchanges a consumed grant for a short-lived signed request bound to the exact action |
@@ -122,6 +123,34 @@ Framework adapters are Guard integrations only when the raw callable is private.
 - review/incident systems and signed notification webhooks;
 - telemetry exporters and data warehouses;
 - policy-as-code repositories and controlled environment promotion.
+
+## Adapter conformance
+
+A connector claims an integration level. `@actiongate/conformance` checks the
+claim by driving the adapter against a scripted ActionGate and asserting the
+handler ran only when it should have.
+
+```ts
+import { createScriptedGate, runConformance } from "@actiongate/conformance";
+
+const gate = createScriptedGate();
+const result = await runConformance({
+  name: "my-adapter",
+  level: "guard",
+  attempt: async ({ tool, arguments: args }) => ({ executed: await myAdapter(tool, args) })
+}, gate);
+
+if (!result.conformant) console.error(result.checks.filter((check) => check.status === "fail"));
+```
+
+The checks that apply to `guard` and `isolate`: executes on allow, consumes
+exactly one grant, and does **not** execute on BLOCK, on REVIEW, on an allow
+carrying no grant, when consumption fails, or when ActionGate is unreachable. An
+`observe` adapter is checked the other way round — if it blocks, its level is
+wrong and it should be labelled `guard`.
+
+Every adapter this project ships is run through the suite in CI, so the checks
+are calibrated against real implementations rather than only against examples.
 
 ## Trusted facts
 

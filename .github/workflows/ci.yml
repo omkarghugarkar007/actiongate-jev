@@ -52,7 +52,15 @@ jobs:
       - run: pnpm db:migrate
       - run: pnpm test:postgres
       - run: pnpm build
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python -m pip install --quiet pytest
+      - run: pnpm test:python
       - run: pnpm manifests:validate
+      - name: Catalog is in step with the manifests
+        run: |
+          pnpm catalog:build
+          git diff --exit-code docs/catalog.md docs/api/catalog.json
       - run: pnpm build:packages
       - run: pnpm packages:check
       - name: API description is in step with the server

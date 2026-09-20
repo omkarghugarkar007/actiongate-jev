@@ -14,6 +14,7 @@ export default defineConfig({
       "@actiongate/proxy-core": `${root}packages/proxy-core/src/index.ts`,
       "@actiongate/http-proxy": `${root}packages/http-proxy/src/index.ts`,
       "@actiongate/connector-manifest": `${root}packages/connector-manifest/src/index.ts`,
+      "@actiongate/conformance": `${root}packages/conformance/src/index.ts`,
       "@actiongate/db": `${root}packages/db/src/index.ts`
     }
   },

@@ -148,6 +148,12 @@ importers:
         specifier: ^17.2.2
         version: 17.4.2
 
+  packages/conformance:
+    dependencies:
+      '@actiongate/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/connector-manifest:
     dependencies:
       zod:

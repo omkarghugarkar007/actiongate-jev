@@ -1,0 +1,176 @@
+{
+  "generatedAt": "2026-09-20T07:36:55.003Z",
+  "connectors": [
+    {
+      "name": "@actiongate/http-proxy",
+      "version": "0.1.0",
+      "level": "isolate",
+      "summary": "HTTP reverse proxy and sidecar that maps routes to registry tools and consumes before forwarding.",
+      "protects": "The upstream service's network endpoint and its credential, which stay inside the proxy process.",
+      "bypass": [
+        "Anything that can route to the upstream service directly bypasses the proxy; isolation is a network property.",
+        "The downstream proxy token is a bearer token and grants that agent's authority until rotation.",
+        "Routes that are not declared simply do not exist here, so an unmapped upstream path is unreachable through the proxy but still reachable directly."
+      ],
+      "requires": {
+        "providerKey": false,
+        "redis": false,
+        "postgres": false,
+        "minimumTier": 1
+      },
+      "tools": [
+        {
+          "name": "declared-per-route",
+          "operation": "varies"
+        }
+      ],
+      "facts": [],
+      "setup": {
+        "steps": 3,
+        "requiredSettings": 4,
+        "presetName": "sidecar"
+      },
+      "negativeTests": [
+        "An unmapped route is a 404 and never a pass-through",
+        "A route whose tool is disabled in the registry never reaches upstream",
+        "BLOCK, REVIEW, a missing grant, and a failed consumption never reach upstream",
+        "The arguments authorized are the arguments forwarded"
+      ]
+    },
+    {
+      "name": "@actiongate/mcp-gateway",
+      "version": "0.1.0",
+      "level": "guard",
+      "summary": "Embeddable MCP tool registry that owns tool metadata and consumes before executing.",
+      "protects": "In-process MCP tool handlers and the runtime credentials passed to them.",
+      "bypass": [
+        "A handler registered elsewhere in the same process, or exported publicly, can be called without a grant.",
+        "The host application can call the raw execute function directly; the gateway only guards its own dispatch path."
+      ],
+      "requires": {
+        "providerKey": false,
+        "redis": false,
+        "postgres": false,
+        "minimumTier": 0
+      },
+      "tools": [
+        {
+          "name": "registered-at-runtime",
+          "operation": "call"
+        }
+      ],
+      "facts": [],
+      "setup": {
+        "steps": 2,
+        "requiredSettings": 0
+      },
+      "negativeTests": [
+        "An unregistered tool name is rejected before authorization",
+        "Mutated arguments fail grant binding and never execute",
+        "A replayed grant is rejected and the handler runs exactly once"
+      ]
+    },
+    {
+      "name": "@actiongate/mcp-proxy",
+      "version": "0.1.0",
+      "level": "isolate",
+      "summary": "Standalone MCP network proxy that owns the upstream credential and consumes before forwarding.",
+      "protects": "The upstream MCP server's network endpoint and its credential, both of which stay inside the proxy process.",
+      "bypass": [
+        "Anything that can route to the upstream MCP endpoint directly bypasses the proxy entirely; isolation is a network property.",
+        "The downstream proxy token is a bearer token, so whoever holds it acts as that agent until rotation.",
+        "Relayed user intent is agent-supplied evidence and can influence the semantic signal, though never a hard rule."
+      ],
+      "requires": {
+        "providerKey": false,
+        "redis": false,
+        "postgres": false,
+        "minimumTier": 1
+      },
+      "tools": [
+        {
+          "name": "intersection-of-registry-and-upstream",
+          "operation": "call"
+        }
+      ],
+      "facts": [],
+      "setup": {
+        "steps": 3,
+        "requiredSettings": 3
+      },
+      "negativeTests": [
+        "An unknown or disabled tool is never forwarded and reveals nothing by its error",
+        "BLOCK, REVIEW, a missing grant, and a failed consumption never reach upstream",
+        "Unhandled JSON-RPC methods are refused rather than passed through",
+        "_meta is stripped before forwarding so a grant cannot be smuggled upstream"
+      ]
+    },
+    {
+      "name": "@actiongate/sdk",
+      "version": "0.1.0",
+      "level": "guard",
+      "summary": "TypeScript client that authorizes and consumes a grant before calling a private function.",
+      "protects": "The application's own tool function, which must stay private to the module that wraps it.",
+      "bypass": [
+        "Any other caller that can reach the same function directly is unguarded; wrapTool protects the wrapper, not the callee.",
+        "A downstream credential held by the application rather than the wrapper remains reachable without a grant."
+      ],
+      "requires": {
+        "providerKey": false,
+        "redis": false,
+        "postgres": false,
+        "minimumTier": 0
+      },
+      "tools": [
+        {
+          "name": "declared-per-wraptool-call",
+          "operation": "varies"
+        }
+      ],
+      "facts": [],
+      "setup": {
+        "steps": 2,
+        "requiredSettings": 0
+      },
+      "negativeTests": [
+        "BLOCK and REVIEW never call the wrapped function",
+        "A missing grant in enforce mode never calls the wrapped function",
+        "A failed consumption never calls the wrapped function"
+      ]
+    },
+    {
+      "name": "actiongate-python",
+      "version": "0.1.0",
+      "level": "guard",
+      "summary": "Python client that authorizes and consumes a grant before calling a private handler.",
+      "protects": "The application's own tool function, which must stay private to the module that wraps it.",
+      "bypass": [
+        "Any other caller that can reach the same function directly is unguarded; wrap_tool protects the wrapper, not the callee.",
+        "A downstream credential held by the application rather than the wrapper remains reachable without a grant."
+      ],
+      "requires": {
+        "providerKey": false,
+        "redis": false,
+        "postgres": false,
+        "minimumTier": 0
+      },
+      "tools": [
+        {
+          "name": "declared-per-wrap-tool-call",
+          "operation": "varies"
+        }
+      ],
+      "facts": [],
+      "setup": {
+        "steps": 2,
+        "requiredSettings": 0
+      },
+      "negativeTests": [
+        "BLOCK and REVIEW never call the handler",
+        "A missing grant in enforce mode never calls the handler",
+        "A failed consumption never calls the handler",
+        "An unreachable API never calls the handler"
+      ]
+    }
+  ]
+}
