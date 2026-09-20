@@ -6,7 +6,7 @@ const NoulAnswerSchema = z.object({ type: z.literal("noul"), noul: probability }
 const ChoiceAnswerSchema = z.object({ type: z.literal("choice"), choice: z.string(), probabilities: z.record(z.string(), probability), confidence: probability }).strict();
 const ScoreAnswerSchema = z.object({ type: z.literal("score"), score: z.number(), probabilities: z.record(z.string(), probability), confidence: probability, legend: z.record(z.string(), z.string()).optional() }).strict();
 
-export const OpenRouterDecisionResponseSchema = z.object({
+export const JevDecisionResponseSchema = z.object({
   model: z.string().min(1),
   provider: z.string().optional(),
   answers: z.record(z.string(), z.discriminatedUnion("type", [NoulAnswerSchema, ChoiceAnswerSchema, ScoreAnswerSchema])),
@@ -16,8 +16,15 @@ export const OpenRouterDecisionResponseSchema = z.object({
   }).passthrough().optional()
 }).passthrough();
 
+/** @deprecated Use JevDecisionResponseSchema. Kept for package compatibility. */
+export const OpenRouterDecisionResponseSchema = JevDecisionResponseSchema;
+
 export function parseProviderResponse(raw: unknown, request: DecisionProviderRequest): DecisionProviderResponse {
-  const parsed = OpenRouterDecisionResponseSchema.safeParse(raw);
+  return parseJevResponse(raw, request, "openrouter");
+}
+
+export function parseJevResponse(raw: unknown, request: DecisionProviderRequest, provider: string): DecisionProviderResponse {
+  const parsed = JevDecisionResponseSchema.safeParse(raw);
   if (!parsed.success) throw new Error(`JEV_MALFORMED_RESPONSE:${parsed.error.issues[0]?.message ?? "invalid response"}`);
   for (const [key, question] of Object.entries(request.questions)) {
     const answer = parsed.data.answers[key];
@@ -37,7 +44,7 @@ export function parseProviderResponse(raw: unknown, request: DecisionProviderReq
     ...(usage.cost != null || usage.costUsd != null ? { costUsd: usage.cost ?? usage.costUsd } : {})
   } : undefined;
   return {
-    provider: "openrouter",
+    provider,
     model: parsed.data.model,
     answers: parsed.data.answers,
     ...(normalizedUsage ? { usage: normalizedUsage } : {}),

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_POLICY, FunctionFactProvider } from "@actiongate/core";
 import { FakeDecisionProvider } from "@actiongate/decision-provider";
 import { ActionGate, ActionBlockedError, ActionGrantMissingError, EmbeddedPolicyError, EmbeddedTransport } from "@actiongate/sdk";
@@ -34,6 +34,8 @@ function guarded(instance: ActionGate, calls: string[]) {
   });
 }
 
+afterEach(() => vi.unstubAllGlobals());
+
 describe("embedded mode", () => {
   it("needs no API key, no base URL, and no server", async () => {
     const calls: string[] = [];
@@ -45,6 +47,33 @@ describe("embedded mode", () => {
     const transport = new EmbeddedTransport({});
     // Without a key it must not silently pretend to be doing semantic work.
     expect(typeof transport.usingLiveProvider).toBe("boolean");
+  });
+
+  it("uses the direct TypeSafe API when TYPESAFE_API_KEY is supplied", async () => {
+    let requestedUrl = "";
+    vi.stubGlobal("fetch", async (input: string | URL | Request) => {
+      requestedUrl = String(input);
+      return new Response(JSON.stringify({
+        model: "jev-1.13.0",
+        answers: {
+          alignment: { type: "choice", choice: "exact", probabilities: { exact: .97, narrower: .01, ambiguous: .01, unrelated: .01, conflicting: 0 }, confidence: .99 },
+          target_matches_intent: { type: "noul", noul: .98 },
+          violates_semantic_policy: { type: "noul", noul: .01 },
+          unnecessary_sensitive_exposure: { type: "noul", noul: .01 },
+          materially_expands_scope: { type: "noul", noul: .01 },
+          missing_required_intent: { type: "noul", noul: .01 }
+        },
+        usage: { input_tokens: 100, output_tokens: 10 }
+      }), { status: 200 });
+    });
+    const transport = new EmbeddedTransport({ typeSafeApiKey: "ts_test" });
+    const response = await transport.authorize({
+      requestId: "direct", idempotencyKey: "direct", tenantId: "local", environment: "development", mode: "enforce",
+      actor: { agentId: "a" }, userIntent: { text: "Show order 123", source: "user_message" },
+      proposedAction: { tool: "get_order", operation: "read", arguments: { orderId: "123" }, riskClass: "READ_ONLY" }
+    });
+    expect(requestedUrl).toBe("https://api.typesafe.ai/v1/systemone");
+    expect(response.model).toMatchObject({ provider: "typesafe", resolvedModel: "jev-1.13.0" });
   });
 
   it("consumes exactly one grant per allowed call", async () => {

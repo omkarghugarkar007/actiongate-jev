@@ -14,7 +14,7 @@ import { createHttpProxyServer, FetchHttpUpstream } from "@actiongate/http-proxy
 /**
  * Real end-to-end verification. Nothing here is mocked:
  *
- *  - a real ActionGate API on Redis and PostgreSQL, backed by live Jev via OpenRouter
+ *  - a real ActionGate API on Redis and PostgreSQL, backed by live Jev
  *  - real HTTP between every component, including the proxies and their upstreams
  *  - the real TypeScript SDK and the real Python SDK, over the network
  *  - a real browser driving the real UI
@@ -67,7 +67,8 @@ const authorized = await api("/v1/authorize", { method: "POST", body: JSON.strin
 const decision = authorized.body as { decision?: string; decisionId?: string; grant?: { token: string; grantId: string }; model?: { provider?: string; resolvedModel?: string; usage?: { costUsd?: number } } };
 record("API", "authorize returns a live decision", authorized.status === 200 && Boolean(decision.decisionId),
   `${decision.decision} via ${decision.model?.provider ?? "?"}/${decision.model?.resolvedModel ?? "?"}`);
-record("API", "decision came from the live model, not a fixture", decision.model?.provider === "openrouter", `cost $${(decision.model?.usage?.costUsd ?? 0).toFixed(6)}`);
+record("API", "decision came from the live model, not a fixture", ["openrouter", "typesafe"].includes(decision.model?.provider ?? ""),
+  `${decision.model?.provider ?? "?"}${decision.model?.usage?.costUsd == null ? "" : ` cost $${decision.model.usage.costUsd.toFixed(6)}`}`);
 record("API", "enforced allow carries a grant", decision.decision !== "ALLOW" || Boolean(decision.grant));
 
 if (decision.grant) {

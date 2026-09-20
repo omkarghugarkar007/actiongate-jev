@@ -2,7 +2,7 @@
 
 > Living strategy, architecture, and delivery checklist. Update this file whenever a capability, limitation, or acceptance gate changes.
 
-Last reconciled: **2026-09-20** against the implementation on `main`.
+Last reconciled: **2026-09-21** against the implementation in this change.
 
 ## North star
 
@@ -42,7 +42,7 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Semantic quality evidence | Not established | Generated cases validate plumbing; they are not an independently reviewed model-quality benchmark. |
 | Production operations | Not complete | Telemetry, quotas, failover drills, signed exports, SBOM, and release provenance ship; independent label review and an external security review remain. |
 | Adoption friction | Holding budget | Tier 0 runs with no key, no database, and no container; tiers 1-3 are additive. Registry naming is deliberately unresolved, so clone/workspace use is the supported path. |
-| Live provider evidence | Gate in place | `pnpm test:jev:live` exercises authorize, grant issue, single-use consume, and replay rejection against the real OpenRouter endpoint. |
+| Live provider evidence | Partial | `pnpm test:jev:live` exercises authorize, grant issue, single-use consume, and replay rejection against real OpenRouter. The equivalent direct TypeSafe gate is implemented but cannot be called verified until a `TYPESAFE_API_KEY` is available. |
 
 **Production-ready claim: no.** P0/P1 engineering controls and most P2 operational tooling are complete, but independently reviewed semantic evidence and an external security review are still required for high-impact production use.
 
@@ -69,7 +69,7 @@ The answer to "is this heavy?" is that the weight is opt-in. Each tier is additi
 | Tier | Developer adds | They get | Cost |
 |---|---|---|---|
 | 0 | Nothing | Decisions, named reasons, grants, dashboard, guarded examples | No key, no database, no container, no spend |
-| 1 | A provider key | Real Jev semantic evidence through OpenRouter | Per-decision provider cost only |
+| 1 | A provider key | Real Jev semantic evidence through TypeSafe directly or OpenRouter | Per-decision provider cost only |
 | 2 | Redis | Restart-safe state, distributed idempotency, cross-replica consumption | One container |
 | 3 | PostgreSQL and key rings | Durable tenants, registry, reviews, encrypted audit, rotation, retention | Operating a database |
 
@@ -357,6 +357,6 @@ Prioritize work that:
 5. makes policy, review, retention, or incident operations safer at scale;
 6. removes an adoption step without weakening the boundary.
 
-Before calling any decision-path work done, verify it against the real OpenRouter endpoint. A change that passes only against fixtures has not been shown to work.
+Before calling any provider-path work done, verify it against that real endpoint. Use `pnpm test:jev:live` for OpenRouter and `pnpm test:typesafe:live` for direct TypeSafe. A change that passes only against fixtures has not been shown to work.
 
 Deprioritize decorative dashboards, provider-count marketing, and shallow framework logos until the relevant enforcement, evidence, and operations acceptance gates pass.

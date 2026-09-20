@@ -14,7 +14,8 @@ sys.path.insert(0, str(ROOT / "packages/sdk-python/src"))
 
 from actiongate import ActionBlockedError, ActionGate, Actor, UserIntent  # noqa: E402
 
-LIVE = bool(os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_KEY"))
+DIRECT = bool(os.environ.get("TYPESAFE_API_KEY"))
+LIVE = DIRECT or bool(os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_KEY"))
 
 # Both named transactions exist, so the semantic case is refused on meaning
 # rather than on a missing record.
@@ -72,7 +73,7 @@ CASES = [
     ("a transaction never named", {"transactionId": "txn_9981", "amountCents": 4900}, "meaning"),
 ]
 
-print(f"\nProvider: {'OpenRouter (live Jev)' if LIVE else 'deterministic fake — no OPENROUTER_API_KEY set'}\n")
+print(f"\nProvider: {'TypeSafe (direct live Jev)' if DIRECT else 'OpenRouter (live Jev)' if LIVE else 'deterministic fake — no provider key set'}\n")
 
 for label, arguments, judged in CASES:
     # The fake provider cannot judge meaning, so say so rather than letting the
@@ -91,7 +92,7 @@ for label, arguments, judged in CASES:
 print("\nNo server, no API key, no base URL. Nothing left running.")
 if not LIVE:
     print(
-        "\nSet OPENROUTER_API_KEY to judge the third case. Deterministic rules work\n"
+        "\nSet TYPESAFE_API_KEY (direct) or OPENROUTER_API_KEY to judge the third case. Deterministic rules work\n"
         "without a model, but only a decision model can tell that a refund for a\n"
         "transaction the user never named is the wrong action.\n"
     )

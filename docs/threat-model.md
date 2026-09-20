@@ -10,7 +10,7 @@ Protected assets include tenant identity, API keys, signing and encryption keys,
 
 - Agent-generated arguments, user or retrieved text, request tenant fields, requested operation/risk, and model-visible state are untrusted.
 - Authenticated tenant/environment/roles, the durable tool registry, immutable policy version, trusted fact adapters, secret manager, Redis, PostgreSQL, and guarded executor are trusted only within their deployment boundary.
-- The semantic provider is an external evidence processor. It never has authority to issue or consume a grant.
+- TypeSafe's direct System One endpoint and OpenRouter are external evidence processors. Their API keys stay server-side, their responses are untrusted until schema validation, and neither route has authority to issue or consume a grant.
 - Administrator and reviewer credentials are powerful principals and require operational protection outside this repository.
 
 ## Principal threats and controls
@@ -32,7 +32,7 @@ Protected assets include tenant identity, API keys, signing and encryption keys,
 | Evidence disclosure at rest | AES-256-GCM envelopes use a key ID and context-bound authenticated encryption | Memory, logs, exports, database metadata, and key-management systems remain separate attack surfaces |
 | Cross-tenant data access | Tenant-qualified Redis keys/indices, tenant-qualified SQL, role gates, and denial tests | Database superusers and shared infrastructure administrators remain privileged |
 | Idempotency race or mutation | Canonical fingerprint, distributed lease, first-write-wins record, and conflict response | A lease shorter than provider execution can duplicate evaluation; startup validates lease exceeds configured timeout |
-| Provider timeout, malformed response, or outage | Strict validation and risk-aware fail-safe outcome | Availability failures increase review/block volume |
+| Provider timeout, malformed response, rate limit, overload, or outage | Strict validation, a bounded total timeout, bounded retries for the direct provider's documented transient statuses, and a risk-aware fail-safe outcome | Retries consume latency budget, and availability failures increase review/block volume |
 | Grant or key must be stopped during an incident | Shared-state grant revocation, API-key revocation, and tool disablement | Already completed downstream side effects require domain-specific reversal |
 | Excessive data retention | Tenant-scoped export and cutoff-based minimization/deletion | Retention scheduling, legal policy, backups, and replicas are deployment responsibilities |
 | Audit tampering | Append-oriented event model, actor key IDs, encrypted payloads, and hash-chained, signed tenant exports detect removal, reordering, or editing after export | A PostgreSQL writer with the export signing key can forge a new internally consistent export; online storage is not an append-only external ledger |

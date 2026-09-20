@@ -23,7 +23,7 @@ is `claude_desktop_config.json`; other clients use the same shape.
       "env": {
         "UPSTREAM_COMMAND": "npx",
         "UPSTREAM_ARGS": "-y @modelcontextprotocol/server-everything",
-        "OPENROUTER_API_KEY": "sk-or-v1-..."
+        "TYPESAFE_API_KEY": "..."
       }
     }
   }
@@ -40,7 +40,7 @@ client shows in its MCP logs:
 ActionGate guarding: npx -y @modelcontextprotocol/server-everything
   registry:   local policy + 8 upstream tools at REVERSIBLE_WRITE
   hard rules: off — a proxy resolves no facts; semantic guarding only
-  provider:   OpenRouter (live Jev)
+  provider:   TypeSafe (direct live Jev)
   note:       an adopted tool's risk class is a guess; set it in a policy file before trusting anything costly
 ```
 
@@ -56,7 +56,8 @@ never described to the model.
 **It consumes a single-use permit before forwarding.** Nothing reaches the real
 server unless a grant was issued for that exact call and spent.
 
-**It does not judge meaning without a model.** With no `OPENROUTER_API_KEY` the
+**It does not judge meaning without a model.** With neither `TYPESAFE_API_KEY`
+nor `OPENROUTER_API_KEY` the
 deterministic fake provider answers every semantic question the same way, so the
 guard falls back to rules alone. It says so on startup.
 
@@ -102,7 +103,8 @@ ACTIONGATE_API_KEY=agk_...
 | `UPSTREAM_COMMAND` | The MCP server to guard. Required. |
 | `UPSTREAM_ARGS` | Space-separated arguments for it. |
 | `UPSTREAM_CWD` | Working directory for the upstream server. |
-| `OPENROUTER_API_KEY` | Enables semantic judgement. Without it, rules only. |
+| `TYPESAFE_API_KEY` | Enables semantic judgement through the direct TypeSafe API. Takes precedence in embedded mode. |
+| `OPENROUTER_API_KEY` | Alternative Jev access through OpenRouter. Without either provider key, rules only. |
 | `ACTIONGATE_POLICY_FILE` | A policy JSON file, replacing the bundled default. |
 | `ACTIONGATE_ADOPT_UPSTREAM_TOOLS` | `false` to guard only tools the policy names. |
 | `ACTIONGATE_DEFAULT_RISK` | Risk class for adopted tools. Defaults to `REVERSIBLE_WRITE`. |

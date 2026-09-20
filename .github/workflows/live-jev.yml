@@ -2,6 +2,13 @@ name: Live Jev
 
 on:
   workflow_dispatch:
+    inputs:
+      provider:
+        description: Live Jev gateway to verify
+        required: true
+        type: choice
+        default: openrouter
+        options: [openrouter, typesafe]
   schedule:
     - cron: "17 3 * * *"
 
@@ -13,10 +20,10 @@ permissions:
   contents: read
 
 jobs:
-  smoke:
+  openrouter:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'workflow_dispatch' || vars.ENABLE_SCHEDULED_LIVE_JEV == 'true' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.provider == 'openrouter') || (github.event_name == 'schedule' && vars.ENABLE_SCHEDULED_LIVE_JEV == 'true') }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -31,5 +38,26 @@ jobs:
         run: pnpm test:jev:live
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Validate evaluation dataset integrity
+        run: pnpm eval -- --dataset core-v2
+
+  typesafe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.provider == 'typesafe' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with: { version: 10.27.0 }
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typesafe:smoke
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+      - name: Direct TypeSafe authorization gate
+        run: pnpm test:typesafe:live
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
       - name: Validate evaluation dataset integrity
         run: pnpm eval -- --dataset core-v2

@@ -116,13 +116,15 @@ The fake provider proves plumbing. Only the live gate proves the integration wor
 ```bash
 pnpm test:jev:live   # authorize -> grant -> consume against the real OpenRouter endpoint
 pnpm jev:smoke       # single call; prints resolved model, gateway, and latency
+pnpm test:typesafe:live # same lifecycle against the direct TypeSafe endpoint
+pnpm typesafe:smoke     # direct single call; prints resolved model and token usage
 ```
 
-- Run `pnpm test:jev:live` before calling any decision-path change done: provider adapters, wire translation, response parsing, question batteries, decision composition, policy thresholds, timeout and fallback behavior.
-- A new capability on the decision path is not done until it has run against the real OpenRouter API, not only against fixtures.
+- Run the relevant live suite before calling any provider-path change done: provider adapters, wire translation, response parsing, question batteries, decision composition, policy thresholds, timeout and fallback behavior.
+- A new provider capability is not done until it has run against its real endpoint, not only against fixtures.
 - Assert the decision was attributed to the live gateway. A test that would still pass with the fake provider is not a live test.
 - Record the resolved model ID, latency, and token or cost impact. Requested and resolved model IDs differ — report the resolved one.
-- A skipped live suite is never a pass. `pnpm test:jev:live` sets its own opt-in flag and throws on a missing key. Keep it that way.
+- A skipped live suite is never a pass. Both live scripts set their own opt-in flag and throw on a missing key. Keep them that way.
 - Keep live suites opt-in by script name so ordinary runs and CI never spend credits by accident.
 
 Never report generated-label replay or dataset integrity as model accuracy. Semantic quality, enforcement security, reliability, adoption cost, and performance/cost are separate dimensions and stay separate.
@@ -130,7 +132,7 @@ Never report generated-label replay or dataset integrity as model accuracy. Sema
 ## Local environment notes
 
 - `.env` is gitignored. `.env.example` is the template; keep it current when configuration changes.
-- The provider key may be `OPENROUTER_API_KEY` or the local alias `OPENROUTER_KEY`.
+- Provider keys are `TYPESAFE_API_KEY` for the direct API and `OPENROUTER_API_KEY` (or deprecated local alias `OPENROUTER_KEY`) for OpenRouter.
 - Infrastructure runs from `infra/docker-compose.yml`. The Postgres host port comes from `POSTGRES_PORT`, and on this machine it is **55432** because another service holds 5432. `DATABASE_URL` in `.env` must match, or `pnpm test:postgres` fails with a password error that looks like a credentials bug.
 - `apps/api/src/config.ts` imports `dotenv/config`, so `.env` is loaded for any test that imports the app.
 - When appending to `.env`, check for a trailing newline first. Appending to a file that lacks one silently corrupts the last value.

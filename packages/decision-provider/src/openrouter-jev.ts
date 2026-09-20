@@ -1,4 +1,5 @@
 import type { DecisionProvider, DecisionProviderRequest, DecisionProviderResponse, DecisionQuestion } from "@actiongate/core";
+import { ProviderError } from "./errors.js";
 import { parseProviderResponse } from "./schemas.js";
 
 export interface OpenRouterJevOptions {
@@ -8,10 +9,6 @@ export interface OpenRouterJevOptions {
   appUrl?: string;
   appTitle?: string;
   fetch?: typeof globalThis.fetch;
-}
-
-export class ProviderError extends Error {
-  constructor(public readonly code: string, message: string, public readonly status?: number) { super(`${code}:${message}`); this.name = "ProviderError"; }
 }
 
 export class OpenRouterJevProvider implements DecisionProvider {
@@ -51,7 +48,7 @@ export class OpenRouterJevProvider implements DecisionProvider {
     }
     let raw: unknown;
     try { raw = await response.json(); } catch { throw new ProviderError("JEV_MALFORMED_RESPONSE", "response was not JSON", response.status); }
-    return parseProviderResponse(raw, request);
+    return { ...parseProviderResponse(raw, request), requestedModel: this.model };
   }
 }
 

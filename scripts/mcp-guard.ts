@@ -18,7 +18,7 @@ import { readFileSync } from "node:fs";
  *       "env": {
  *         "UPSTREAM_COMMAND": "npx",
  *         "UPSTREAM_ARGS": "-y @modelcontextprotocol/server-everything",
- *         "OPENROUTER_API_KEY": "sk-or-v1-..."
+ *         "TYPESAFE_API_KEY": "..."
  *       }
  *     }
  *   }
@@ -82,7 +82,7 @@ process.stderr.write(
   `ActionGate guarding: ${upstreamCommand} ${process.env.UPSTREAM_ARGS ?? ""}`.trim() + "\n"
   + `  registry:   ${hosted ? "server-owned" : shouldAdopt ? `local policy + ${upstreamTools.length} upstream tools at ${process.env.ACTIONGATE_DEFAULT_RISK ?? "REVERSIBLE_WRITE"}` : "local policy only"}\n`
   + `  hard rules: ${enforceHardRules ? "enforced (supply facts, or every guarded call blocks)" : "off — a proxy resolves no facts; semantic guarding only"}\n`
-  + `  provider:   ${process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_KEY ? "OpenRouter (live Jev)" : "deterministic fake — set OPENROUTER_API_KEY to judge meaning"}\n`
+  + `  provider:   ${process.env.TYPESAFE_API_KEY ? "TypeSafe (direct live Jev)" : process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_KEY ? "OpenRouter (live Jev)" : "deterministic fake — set TYPESAFE_API_KEY or OPENROUTER_API_KEY to judge meaning"}\n`
   + (hosted ? "" : "  note:       an adopted tool's risk class is a guess; set it in a policy file before trusting anything costly\n")
 );
 

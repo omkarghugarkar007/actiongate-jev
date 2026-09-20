@@ -84,7 +84,7 @@ class AuthorizationEngine:
                 reasons = reasons + composed_reasons
                 model = {
                     "provider": response.get("provider"),
-                    "requestedModel": response.get("model"),
+                    "requestedModel": response.get("requestedModel", response.get("model")),
                     "resolvedModel": response.get("model"),
                     "usage": response.get("usage") or {},
                 }

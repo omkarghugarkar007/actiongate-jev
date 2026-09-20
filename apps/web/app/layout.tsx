@@ -4,8 +4,8 @@ import "./styles.css";
 export const metadata: Metadata = {
   applicationName: "ActionGate",
   title: { default: "ActionGate — Jev Tool-Calling Authorization", template: "%s | ActionGate" },
-  description: "Open-source runtime authorization for AI-agent tool calls using deterministic policy, single-use permits, and TypeSafe Jev through OpenRouter.",
-  keywords: ["Jev", "TypeSafe Jev", "Jev tool calling", "OpenRouter Jev", "AI agent tool calling", "AI agent authorization", "agent security", "MCP security", "AI guardrails"],
+  description: "Open-source runtime authorization for AI-agent tool calls using deterministic policy, single-use permits, and TypeSafe Jev directly or through OpenRouter.",
+  keywords: ["Jev", "TypeSafe API", "TypeSafe Jev", "Jev tool calling", "OpenRouter Jev", "AI agent tool calling", "AI agent authorization", "agent security", "MCP security", "AI guardrails"],
   authors: [{ name: "Omkar Ghugarkar", url: "https://github.com/omkarghugarkar007" }],
   creator: "Omkar Ghugarkar",
   category: "developer tools",

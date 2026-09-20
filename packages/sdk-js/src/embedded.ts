@@ -12,7 +12,7 @@ import {
   type Policy,
   type TrustedFactProvider
 } from "@actiongate/core";
-import { FakeDecisionProvider, OpenRouterJevProvider } from "@actiongate/decision-provider";
+import { FakeDecisionProvider, OpenRouterJevProvider, TypeSafeJevProvider } from "@actiongate/decision-provider";
 
 /**
  * Runs the whole decision path inside your process: no server, no API key, no
@@ -43,9 +43,12 @@ import { FakeDecisionProvider, OpenRouterJevProvider } from "@actiongate/decisio
 export interface EmbeddedOptions {
   /** Supply a provider, or let it pick one from the environment. */
   provider?: DecisionProvider;
-  /** Enables live Jev. Falls back to `OPENROUTER_API_KEY` in the environment. */
+  /** Enables Jev through OpenRouter. Falls back to `OPENROUTER_API_KEY`. */
   openRouterApiKey?: string;
+  /** Enables Jev through the direct TypeSafe API. Falls back to `TYPESAFE_API_KEY` and takes precedence over OpenRouter. */
+  typeSafeApiKey?: string;
   model?: string;
+  typeSafeModel?: string;
   /** Defaults to the bundled support-agent policy. Yours replaces it entirely. */
   policy?: Policy;
   /** Resolve RBAC, spend, and duplicate facts from trusted local state. */
@@ -80,13 +83,16 @@ export class EmbeddedTransport implements ActionGateTransport {
   readonly usingLiveProvider: boolean;
 
   constructor(options: EmbeddedOptions = {}) {
-    const apiKey = options.openRouterApiKey ?? process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER_KEY;
+    const typeSafeApiKey = options.typeSafeApiKey ?? process.env.TYPESAFE_API_KEY;
+    const openRouterApiKey = options.openRouterApiKey ?? process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER_KEY;
     const provider = options.provider
-      ?? (apiKey
-        ? new OpenRouterJevProvider({ apiKey, model: options.model ?? process.env.JEV_MODEL ?? "typesafe/jev-1.13", appTitle: "ActionGate embedded" })
-        : FakeDecisionProvider.allow());
+      ?? (typeSafeApiKey
+        ? new TypeSafeJevProvider({ apiKey: typeSafeApiKey, model: options.typeSafeModel ?? process.env.TYPESAFE_MODEL ?? "jev-1.13.0" })
+        : openRouterApiKey
+          ? new OpenRouterJevProvider({ apiKey: openRouterApiKey, model: options.model ?? process.env.JEV_MODEL ?? "typesafe/jev-1.13", appTitle: "ActionGate embedded" })
+          : FakeDecisionProvider.allow());
 
-    this.usingLiveProvider = Boolean(options.provider) || Boolean(apiKey);
+    this.usingLiveProvider = Boolean(options.provider) || Boolean(typeSafeApiKey) || Boolean(openRouterApiKey);
     this.policy = options.policy ?? DEFAULT_POLICY;
     this.clock = options.clock ?? Date.now;
     this.engine = new AuthorizationEngine(provider, {

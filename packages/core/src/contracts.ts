@@ -142,6 +142,9 @@ export type ScoreAnswer = { type: "score"; score: number; probabilities: Record<
 export type DecisionAnswer = NoulAnswer | ChoiceAnswer | ScoreAnswer;
 export interface DecisionProviderResponse {
   provider: string;
+  /** Provider-specific model identifier sent on the request. */
+  requestedModel?: string;
+  /** Concrete model identifier returned by the provider. */
   model: string;
   answers: Record<string, DecisionAnswer>;
   usage?: { inputTokens?: number | undefined; outputTokens?: number | undefined; costUsd?: number | undefined };

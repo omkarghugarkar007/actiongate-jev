@@ -228,15 +228,29 @@ HTTP sidecar, and credential broker. Choose the boundary that can actually keep
 the raw handler or downstream credential away from the agent; see
 [integrations.md](integrations.md).
 
-## 9. Connect Jev through OpenRouter
+## 9. Connect Jev directly or through OpenRouter
 
-Set server-only environment variables:
+Set one server-only provider configuration. Direct TypeSafe:
+
+```env
+DECISION_PROVIDER=typesafe
+TYPESAFE_API_KEY=...
+TYPESAFE_MODEL=jev-1.13.0
+JEV_TIMEOUT_MS=2000
+```
+
+Or OpenRouter:
 
 ```env
 DECISION_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-v1-...
 JEV_MODEL=typesafe/jev-1.13
 JEV_TIMEOUT_MS=2000
+```
+
+For either provider, configure trusted hard-rule evidence separately:
+
+```env
 ACTIONGATE_FACT_PROVIDER_URL=https://facts.internal/actiongate
 ACTIONGATE_FACT_PROVIDER_TOKEN=<secret-manager-reference>
 ```
@@ -252,14 +266,28 @@ production configurations have no implicit trusted facts and fail closed.
 Validate the live contract and record a local cost snapshot:
 
 ```bash
+# Direct TypeSafe (requires TYPESAFE_API_KEY)
+pnpm typesafe:smoke
+pnpm test:typesafe:live
+
+# OpenRouter (requires OPENROUTER_API_KEY)
 pnpm jev:smoke
 pnpm test:jev:live
 pnpm cost:track
 ```
 
-`pnpm test:jev:live` runs authorize, grant issue, single-use consume, and replay rejection against the real Decisions endpoint and fails loudly if the provider key is missing. Run it before treating any change on the decision path as verified; fixtures prove plumbing, not integration.
+Both live suites run authorize, grant issue, single-use consume, and replay
+rejection against their real endpoint and fail loudly if the selected key is
+missing. The direct TypeSafe adapter is fixture-tested but has not yet passed its
+live suite because this project does not currently have a `TYPESAFE_API_KEY`.
+Run that suite before claiming the direct integration is live-verified; fixtures
+prove plumbing, not integration.
 
-Cost snapshots remain in the gitignored `.actiongate/` directory. Provider cost, latency, semantic quality, and enforcement correctness are separate measurements.
+OpenRouter cost snapshots remain in the gitignored `.actiongate/` directory.
+The direct TypeSafe response reports token usage but no cost field, so cost must
+be computed from the applicable account pricing rather than invented by the
+adapter. Provider cost, latency, semantic quality, and enforcement correctness
+are separate measurements.
 
 ## 10. Configure production keys
 

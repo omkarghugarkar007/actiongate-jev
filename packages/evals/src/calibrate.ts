@@ -106,6 +106,7 @@ export async function calibrate(options: CalibrationOptions): Promise<Calibratio
   const latencies: number[] = [];
   const cost = { inputTokens: 0, outputTokens: 0, costUsd: 0 };
   let providerErrors = 0;
+  let requestedModel = "unknown";
   let resolvedModel: string | null = null;
   let providerName: string | null = null;
 
@@ -134,6 +135,7 @@ export async function calibrate(options: CalibrationOptions): Promise<Calibratio
         const response = await engine.authorize(toRequest(item), withProfile(policy, item, profile));
         if (profile === profiles[0]) latencies.push(performance.now() - started);
         if (response.model) {
+          requestedModel = response.model.requestedModel;
           resolvedModel = response.model.resolvedModel ?? resolvedModel;
           providerName = response.model.provider;
           if (profile === profiles[0]) {
@@ -167,7 +169,7 @@ export async function calibrate(options: CalibrationOptions): Promise<Calibratio
       datasetHash: hashDataset(options.dataset),
       policy: `${policy.id}@${policy.version}`,
       battery: BATTERY_VERSION,
-      requestedModel: process.env.JEV_MODEL ?? "typesafe/jev-1.13",
+      requestedModel,
       resolvedModel,
       provider: providerName
     },

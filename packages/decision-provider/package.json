@@ -13,7 +13,7 @@
     "@actiongate/core": "workspace:*",
     "zod": "^4.1.8"
   },
-  "description": "Decision-model provider adapters for ActionGate, including TypeSafe Jev through OpenRouter.",
+  "description": "Decision-model provider adapters for ActionGate, including direct TypeSafe Jev and OpenRouter.",
   "license": "Apache-2.0",
   "author": "Omkar Ghugarkar",
   "repository": {

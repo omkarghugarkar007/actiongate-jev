@@ -59,6 +59,22 @@ describe("production configuration guardrails", () => {
     });
     expect(result.stderr).toContain("ACTIONGATE_FACT_PROVIDER_TOKEN requires ACTIONGATE_FACT_PROVIDER_URL");
   });
+
+  it("requires a direct TypeSafe key and a pinned production model", () => {
+    const base = {
+      ACTIONGATE_STORAGE: "redis",
+      ACTIONGATE_CONTROL_PLANE: "postgres",
+      ACTIONGATE_GRANT_KEYS: validGrantRing,
+      ACTIONGATE_GRANT_ACTIVE_KID: "grant_2026_09",
+      ACTIONGATE_EVIDENCE_KEYS: validEvidenceRing,
+      ACTIONGATE_EVIDENCE_ACTIVE_KID: "evidence_2026_09",
+      DECISION_PROVIDER: "typesafe"
+    };
+    expect(loadConfig(base).stderr).toContain("TYPESAFE_API_KEY is required");
+    expect(loadConfig({ ...base, TYPESAFE_API_KEY: "ts_test", TYPESAFE_MODEL: "jev-latest" }).stderr)
+      .toContain("Production TypeSafe requires TYPESAFE_MODEL=jev-1.13.0");
+    expect(loadConfig({ ...base, TYPESAFE_API_KEY: "ts_test", TYPESAFE_MODEL: "jev-1.13.0" }).status).toBe(0);
+  });
 });
 
 function loadConfig(overrides: Record<string, string>) {

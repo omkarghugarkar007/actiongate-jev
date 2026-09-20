@@ -1,12 +1,13 @@
 <p align="center">
-  <img src="docs/assets/actiongate-social.svg" alt="ActionGate — runtime authorization for AI agent actions with TypeSafe Jev via OpenRouter" width="100%" />
+  <img src="docs/assets/actiongate-social.svg" alt="ActionGate — runtime authorization for AI agent actions with TypeSafe Jev directly or through OpenRouter" width="100%" />
 </p>
 
 # ActionGate
 
 **Open-source Jev tool-calling authorization for AI agents.** ActionGate is a
 runtime security gateway that evaluates a proposed tool call with deterministic
-policy plus [TypeSafe Jev](https://docs.typesafe.ai/concepts/system-one)
+policy plus [TypeSafe Jev](https://docs.typesafe.ai/concepts/system-one), called
+[directly through TypeSafe](https://docs.typesafe.ai/introduction/quickstart) or
 through [OpenRouter](https://openrouter.ai/typesafe/jev-1.13), binds approval to
 that exact action, and refuses expired, changed, or replayed permits.
 
@@ -14,7 +15,7 @@ that exact action, and refuses expired, changed, or replayed permits.
 [![License](https://img.shields.io/github/license/omkarghugarkar007/actiongate-jev?style=flat-square)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white)](package.json)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](packages/sdk-python)
-[![Jev](https://img.shields.io/badge/TypeSafe_Jev-1.13-6C7CFF?style=flat-square)](https://openrouter.ai/typesafe/jev-1.13)
+[![Jev](https://img.shields.io/badge/TypeSafe_Jev-1.13-6C7CFF?style=flat-square)](https://docs.typesafe.ai/models)
 
 > **Early public release.** Use mock or sandbox tools while evaluating it. No
 > external security review has happened yet — see the [threat model](docs/threat-model.md)
@@ -57,7 +58,23 @@ Dashboard on [:3000](http://localhost:3000), simulator on
 [:3000/simulator](http://localhost:3000/simulator), API on [:8080](http://localhost:8080).
 Then `pnpm refund:demo` runs a guarded refund that cannot move real money.
 
-For live decisions, set `DECISION_PROVIDER=openrouter` and `OPENROUTER_API_KEY`.
+For live decisions, choose either direct TypeSafe or OpenRouter:
+
+```env
+# Direct TypeSafe API
+DECISION_PROVIDER=typesafe
+TYPESAFE_API_KEY=...
+TYPESAFE_MODEL=jev-1.13.0
+
+# Or OpenRouter
+# DECISION_PROVIDER=openrouter
+# OPENROUTER_API_KEY=sk-or-v1-...
+# JEV_MODEL=typesafe/jev-1.13
+```
+
+The direct adapter is fully fixture-tested but has not yet been exercised live
+because no `TYPESAFE_API_KEY` is available. When you obtain one, run
+`pnpm typesafe:smoke && pnpm test:typesafe:live`; both fail loudly if it is missing.
 For tools with hard rules, also point `ACTIONGATE_FACT_PROVIDER_URL` at a
 deployment-owned fact service; the fake Tier 0 server uses only a labeled local
 fixture, and non-demo deployments fail closed without trusted evidence.
@@ -191,7 +208,7 @@ ActionGate, ActionGate spawns the real server:
 { "mcpServers": { "payments": {
   "command": "npx",
   "args": ["tsx", "/path/to/actiongate-jev/scripts/mcp-guard.ts"],
-  "env": { "UPSTREAM_COMMAND": "npx", "UPSTREAM_ARGS": "-y your-mcp-server", "OPENROUTER_API_KEY": "sk-or-v1-..." }
+  "env": { "UPSTREAM_COMMAND": "npx", "UPSTREAM_ARGS": "-y your-mcp-server", "TYPESAFE_API_KEY": "..." }
 }}}
 ```
 
@@ -207,7 +224,7 @@ The boundary is strict; the on-ramp is not. Each tier is additive.
 | Tier | You add | You get |
 |---|---|---|
 | 0 | `ActionGate.embedded()` | Guarded tools in one process — no server, no key, no database |
-| 1 | An OpenRouter key | Real Jev semantic evidence instead of the deterministic fake |
+| 1 | A TypeSafe or OpenRouter key | Real Jev semantic evidence instead of the deterministic fake |
 | 2 | The API server | A registry the agent cannot edit, plus audit, reviews, and incident controls |
 | 3 | Redis and PostgreSQL | Restart-safe state, cross-replica consumption, encrypted durable evidence |
 
@@ -240,6 +257,7 @@ pnpm test:redis && pnpm test:postgres         # against real containers
 pnpm test:python                              # Python SDK
 pnpm e2e                                      # real browser
 pnpm test:jev:live                            # real OpenRouter; spends credits
+pnpm test:typesafe:live                       # direct TypeSafe; requires its own key
 ```
 
 See [a real refusal](docs/a-real-refusal.md) for one live decision record with
@@ -249,6 +267,11 @@ its signals, cost, and latency.
 PostgreSQL, live OpenRouter, both SDKs over HTTP, both proxies with real upstream
 servers, the credential broker, the signed audit chain, and the UI in a real
 browser. Nothing in it is mocked.
+
+The direct TypeSafe adapter is covered by offline wire-contract and boundary
+tests, but it is not yet live-verified because this project does not currently
+have a `TYPESAFE_API_KEY`. Run `pnpm typesafe:smoke` and
+`pnpm test:typesafe:live` before treating that route as verified.
 
 Semantic quality is measured separately and honestly: `pnpm eval:calibrate`
 refuses unreviewed labels, and `pnpm eval:drift` blocks a promotion that raises
@@ -270,7 +293,7 @@ and quotas, tamper-evident exports, supply-chain provenance, the connector
 catalog, embedded mode in both SDKs, config-only MCP guarding, and the evidence
 loop.
 
-**Two things are open, and neither is a code change.** The semantic dataset's
+**Two release-readiness items remain, and neither is a code change.** The semantic dataset's
 labels were authored alongside the system they test, so they stay `generated` and
 are excluded from quality reports until someone who did not write them reviews
 them. And no external security review has happened. Until both are done, treat

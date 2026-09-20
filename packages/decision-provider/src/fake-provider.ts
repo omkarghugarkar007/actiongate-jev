@@ -15,6 +15,7 @@ export class FakeDecisionProvider implements DecisionProvider {
     const missing = this.scenario === "missing" ? .90 : .02;
     return {
       provider: "fake",
+      requestedModel: "fake/jev-test",
       model: "fake/jev-test",
       answers: {
         alignment: { type: "choice", choice: this.scenario === "missing" ? "ambiguous" : "exact", probabilities: { exact: this.scenario === "missing" ? .08 : .97, narrower: .01, ambiguous: this.scenario === "missing" ? .88 : .01, unrelated: .01, conflicting: .00 }, confidence: .99 },

@@ -23,7 +23,7 @@ import {
   type DecisionProvider,
   type Policy
 } from "@actiongate/core";
-import { FakeDecisionProvider, OpenRouterJevProvider } from "@actiongate/decision-provider";
+import { FakeDecisionProvider, OpenRouterJevProvider, TypeSafeJevProvider } from "@actiongate/decision-provider";
 import { config } from "./config.js";
 import { EvidenceCipher } from "./security/evidence-cipher.js";
 import { AuthorizationService, IdempotencyBusyError, IdempotencyConflictError } from "./services/authorization-service.js";
@@ -828,5 +828,8 @@ function grantErrorResponse(error: unknown, reply: FastifyReply) {
 
 function createProvider(): DecisionProvider {
   if (config.DECISION_PROVIDER === "fake") return FakeDecisionProvider.allow();
+  if (config.DECISION_PROVIDER === "typesafe") {
+    return new TypeSafeJevProvider({ apiKey: config.typeSafeApiKey!, model: config.TYPESAFE_MODEL });
+  }
   return new OpenRouterJevProvider({ apiKey: config.openRouterApiKey!, model: config.JEV_MODEL, appTitle: "ActionGate" });
 }

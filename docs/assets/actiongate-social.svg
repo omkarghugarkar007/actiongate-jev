@@ -30,7 +30,7 @@
     <text x="76" y="40" fill="#f4f7fb" font-family="Inter, ui-sans-serif, system-ui" font-size="34" font-weight="750" letter-spacing="-1">ActionGate</text>
     <text x="0" y="146" fill="#f4f7fb" font-family="Inter, ui-sans-serif, system-ui" font-size="64" font-weight="760" letter-spacing="-2.5">Authorization before action.</text>
     <text x="0" y="203" fill="#98a4b8" font-family="Inter, ui-sans-serif, system-ui" font-size="25">Runtime guardrails for AI-agent tool calls with</text>
-    <text x="0" y="238" fill="#98a4b8" font-family="Inter, ui-sans-serif, system-ui" font-size="25">deterministic policy + TypeSafe Jev via OpenRouter.</text>
+    <text x="0" y="238" fill="#98a4b8" font-family="Inter, ui-sans-serif, system-ui" font-size="25">deterministic policy + TypeSafe Jev, direct or via OpenRouter.</text>
     <g transform="translate(0 300)" filter="url(#shadow)">
       <rect width="176" height="58" rx="12" fill="#151b25" stroke="#2b3546"/>
       <text x="88" y="37" text-anchor="middle" fill="#dfe5ef" font-family="Inter, ui-sans-serif, system-ui" font-size="17" font-weight="650">PROPOSED ACTION</text>

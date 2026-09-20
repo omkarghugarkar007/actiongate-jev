@@ -20,7 +20,7 @@ body:
       label: Area
       options:
         - Authorization engine
-        - TypeSafe Jev / OpenRouter provider
+        - TypeSafe Jev provider (direct or OpenRouter)
         - API
         - TypeScript SDK
         - Dashboard
@@ -43,7 +43,7 @@ body:
     attributes:
       label: Environment
       description: ActionGate commit/version, Node.js, pnpm, OS, provider, and requested/resolved Jev model.
-      placeholder: "ActionGate: main@abc123; Node: 22.x; provider: fake/openrouter"
+      placeholder: "ActionGate: main@abc123; Node: 22.x; provider: fake/typesafe/openrouter"
     validations:
       required: true
   - type: textarea
@@ -63,4 +63,3 @@ body:
           required: true
         - label: This is not a vulnerability report. Security issues follow SECURITY.md.
           required: true
-

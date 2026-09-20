@@ -4,14 +4,14 @@ ActionGate is developed in public. Work is ordered around durable identity and e
 
 The destination is a hub with a connector catalog: a small core that owns identity, policy, and enforcement, surrounded by thin connectors that any application can add in minutes. Breadth is only worth building once the boundary it plugs into is real, which is why enforcement leads and the catalog follows.
 
-Last reconciled: **2026-09-20**. P0 application controls are complete and verified against real Redis, PostgreSQL, and the live OpenRouter endpoint; ActionGate remains an early public release and does not yet claim production readiness.
+Last reconciled: **2026-09-21**. P0 application controls are complete and verified against real Redis, PostgreSQL, and the live OpenRouter endpoint; the direct TypeSafe adapter is fixture-tested but awaits a key for live verification. ActionGate remains an early public release and does not yet claim production readiness.
 
 ## Standing constraints
 
 These apply to every phase below, not to a phase of their own.
 
 - **Friction budget.** Clone to first decision stays under five minutes with no model key, no database, and no container. Every new capability ships with a working zero-config default. Production hardening is opt-in in configuration and fail-closed in behavior. The budgets and adoption tiers are in [AGENTS.md](../AGENTS.md#adoption-friction-budget).
-- **Live provider verification.** Any change on the decision path is verified against the real OpenRouter endpoint with `pnpm test:jev:live` before it is called done. Fixtures prove plumbing; only the live gate proves the integration. Resolved model, latency, and cost are recorded.
+- **Live provider verification.** Any change on a provider path is verified against that real endpoint before it is called done: `pnpm test:jev:live` for OpenRouter and `pnpm test:typesafe:live` for direct TypeSafe. Fixtures prove plumbing; only the live gate proves the integration. Resolved model, latency, tokens, and available cost are recorded.
 - **The value test.** Every feature must beat a direct provider call on authority, binding, enforcement, custody, or evidence. A feature that advances none of those is a wrapper and does not ship.
 
 ## Shipped foundation
@@ -25,6 +25,7 @@ These apply to every phase below, not to a phase of their own.
 - [x] Embeddable MCP gateway with server-owned tool metadata and consume-before-execute ordering
 - [x] Provider token/cost capture, public security policy, CI, and security scanning
 - [x] Live OpenRouter gate covering authorize, grant issue, single-use consume, and replay rejection
+- [~] Direct TypeSafe System One adapter, bounded rate-limit/overload retries, smoke command, and fail-loud live gate — *implementation and offline contract tests ship; live execution waits for `TYPESAFE_API_KEY`*
 
 ## P0 — tenant-safe durable control plane: complete
 

@@ -9,7 +9,8 @@ import { ActionGate, ActionBlockedError } from "@actiongate/sdk";
  * one that should run, one refused by deterministic policy alone, and one that
  * can only be judged by meaning.
  */
-const live = Boolean(process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER_KEY);
+const direct = Boolean(process.env.TYPESAFE_API_KEY);
+const live = direct || Boolean(process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER_KEY);
 
 // Both transactions exist, so the semantic case is refused on meaning rather
 // than on a missing record.
@@ -71,7 +72,7 @@ const cases = [
   { label: "a transaction never named", args: { transactionId: "txn_9981", amountCents: 4900 }, judged: "meaning" }
 ] as const;
 
-console.log(`\nProvider: ${live ? "OpenRouter (live Jev)" : "deterministic fake — no OPENROUTER_API_KEY set"}\n`);
+console.log(`\nProvider: ${direct ? "TypeSafe (direct live Jev)" : live ? "OpenRouter (live Jev)" : "deterministic fake — no provider key set"}\n`);
 
 for (const item of cases) {
   // The fake provider cannot judge meaning, so say so rather than letting the
@@ -93,7 +94,7 @@ for (const item of cases) {
 console.log("\nNo server, no API key, no base URL. Nothing left running.");
 if (!live) {
   console.log(
-    "\nSet OPENROUTER_API_KEY to judge the third case. Deterministic rules work\n"
+    "\nSet TYPESAFE_API_KEY (direct) or OPENROUTER_API_KEY to judge the third case. Deterministic rules work\n"
     + "without a model, but only a decision model can tell that a refund for a\n"
     + "transaction the user never named is the wrong action.\n"
   );

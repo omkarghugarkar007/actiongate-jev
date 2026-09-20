@@ -14,6 +14,11 @@ Standard library only — adding it pulls in no dependency tree.
 survive a restart or coordinate across replicas, and the policy sits in the
 agent's own process.
 
+Set `TYPESAFE_API_KEY` to use Jev through TypeSafe's direct System One API, or
+`OPENROUTER_API_KEY` to use OpenRouter. When both are present, embedded mode
+prefers the direct TypeSafe route. With neither key it keeps the zero-config
+deterministic fake provider.
+
 ```python
 from actiongate import ActionGate, Actor, UserIntent
 

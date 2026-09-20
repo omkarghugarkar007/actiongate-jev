@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { AuthorizationEngine, DEFAULT_POLICY, FunctionFactProvider, THRESHOLD_PROFILES, type Policy, type ToolPolicy } from "@actiongate/core";
-import { FakeDecisionProvider, OpenRouterJevProvider } from "@actiongate/decision-provider";
+import { FakeDecisionProvider, OpenRouterJevProvider, TypeSafeJevProvider } from "@actiongate/decision-provider";
 import { DOMAINS, resetDomains } from "./domains.js";
 
 /**
@@ -10,13 +10,18 @@ import { DOMAINS, resetDomains } from "./domains.js";
  * The point is the contrast. Both calls are well-formed and both pass schema
  * validation; only the meaning differs.
  */
-const useLive = process.env.DECISION_PROVIDER === "openrouter";
-const apiKey = process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER_KEY;
-if (useLive && !apiKey) throw new Error("OPENROUTER_API_KEY is required when DECISION_PROVIDER=openrouter");
+const providerKind = process.env.DECISION_PROVIDER ?? "fake";
+const useLive = providerKind === "openrouter" || providerKind === "typesafe";
+const openRouterApiKey = process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER_KEY;
+const typeSafeApiKey = process.env.TYPESAFE_API_KEY;
+if (providerKind === "openrouter" && !openRouterApiKey) throw new Error("OPENROUTER_API_KEY is required when DECISION_PROVIDER=openrouter");
+if (providerKind === "typesafe" && !typeSafeApiKey) throw new Error("TYPESAFE_API_KEY is required when DECISION_PROVIDER=typesafe");
 
-const provider = useLive
-  ? new OpenRouterJevProvider({ apiKey: apiKey!, model: process.env.JEV_MODEL ?? "typesafe/jev-1.13", appTitle: "ActionGate guarded examples" })
-  : FakeDecisionProvider.allow();
+const provider = providerKind === "typesafe"
+  ? new TypeSafeJevProvider({ apiKey: typeSafeApiKey!, model: process.env.TYPESAFE_MODEL ?? "jev-1.13.0" })
+  : providerKind === "openrouter"
+    ? new OpenRouterJevProvider({ apiKey: openRouterApiKey!, model: process.env.JEV_MODEL ?? "typesafe/jev-1.13", appTitle: "ActionGate guarded examples" })
+    : FakeDecisionProvider.allow();
 
 resetDomains();
 const rows: { domain: string; variant: string; decision: string; executed: boolean; reason: string }[] = [];
@@ -48,7 +53,7 @@ for (const [domain, definition] of Object.entries(DOMAINS)) {
 
 const width = (key: keyof (typeof rows)[number]) => Math.max(...rows.map((row) => String(row[key]).length), key.length);
 const columns: (keyof (typeof rows)[number])[] = ["domain", "variant", "decision", "executed", "reason"];
-console.log(`\nProvider: ${useLive ? "OpenRouter (live Jev)" : "fake (deterministic)"}\n`);
+console.log(`\nProvider: ${providerKind === "typesafe" ? "TypeSafe (direct live Jev)" : providerKind === "openrouter" ? "OpenRouter (live Jev)" : "fake (deterministic)"}\n`);
 console.log(columns.map((key) => key.padEnd(width(key))).join("  "));
 for (const row of rows) console.log(columns.map((key) => String(row[key]).padEnd(width(key))).join("  "));
 const askedFor = rows.filter((row) => row.variant === "asked-for");

@@ -49,7 +49,7 @@ Step by step:
 3. The registered JSON Schema must be a closed top-level object (`additionalProperties: false`) and validates normalized arguments before any semantic-provider request.
 4. The registered policy version supplies hard rules, semantic questions, and risk-specific thresholds.
 5. Deployment-owned fact providers resolve authentication, RBAC, amount, currency, allowlist, duplicate, and availability evidence. Caller claims cannot satisfy a hard rule; missing, stale, or unavailable evidence blocks.
-6. Only a minimal, structured state is sent to the configured `DecisionProvider` for narrow intent, target, conflict, exposure, scope, and missing-intent evidence.
+6. Only a minimal, structured state is sent to the configured `DecisionProvider` for narrow intent, target, conflict, exposure, scope, and missing-intent evidence. The shipped Jev adapters use either TypeSafe's direct System One endpoint or OpenRouter; neither adapter owns authorization policy.
 7. Fixed precedence composes the outcome: hard block, critical semantic hazard, deterministic review, semantic uncertainty, then allow. A probability cannot override a failed hard rule.
 8. The runtime decision and an encrypted long-term audit event are recorded. Raw API keys and raw grant tokens are never stored in evidence.
 9. Only an enforced `ALLOW` receives a signed grant. The grant binds the tenant, environment, actor, tool, operation, canonical arguments, risk, policy version, and decision.
@@ -87,7 +87,7 @@ An adapter is an enforcement integration only when it consumes the grant immedia
 - The TypeScript wrapper provides a convenient in-process authorize/consume/execute sequence.
 - The MCP gateway owns registered tool metadata and invokes private handlers only after consumption.
 - Direct REST integration supports any language but leaves handler isolation to the adopter.
-- The next network boundaries are an authenticated MCP proxy, HTTP sidecar, and credential broker.
+- The authenticated MCP proxy and HTTP sidecar own downstream credentials; the credential broker exchanges a consumed grant for a narrow signed request.
 
 See [integrations.md](integrations.md) for the plug-and-play integration strategy.
 

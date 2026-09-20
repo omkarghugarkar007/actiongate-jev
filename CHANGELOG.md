@@ -30,12 +30,14 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Python SDK, adapter conformance suite, generated connector catalog, framework and webhook adapters, six guarded examples, secret resolution, and a non-persisting policy simulator
 - Trusted fact providers: a server-side interface plus function and HTTP adapters that resolve deterministic facts ActionGate can vouch for
 - Fact provenance and freshness in decision evidence, with mandatory trusted evidence for hard rules and optional `maxFactAgeSeconds`
+- A direct TypeSafe System One provider selected with `DECISION_PROVIDER=typesafe` and `TYPESAFE_API_KEY`, including bounded `429`/`529` retries, TypeScript/Python embedded support, offline wire-contract tests, a smoke command, and an opt-in fail-loud live gate
 
 ### Changed
 
 - Canonical action fingerprints now bind risk class plus optional user and session identity
 - The default evaluation command reports dataset integrity only and no longer presents label replay as accuracy
 - Every registered tool schema must be a closed top-level object; default schemas also constrain identifiers, amounts, email recipients, and body lengths
+- Live Jev configuration, calibration, embedded examples, and MCP guarding can use either direct TypeSafe or OpenRouter; direct TypeSafe live verification remains explicitly pending until a key is available
 
 ### Security
 

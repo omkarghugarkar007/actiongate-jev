@@ -83,7 +83,7 @@ export class AuthorizationEngine {
       signals: { deterministic: deterministic.signals, ...(semantic ? { semantic } : {}) },
       ...(providerResponse ? { model: {
         provider: providerResponse.provider,
-        requestedModel: process.env.JEV_MODEL ?? "typesafe/jev-1.13",
+        requestedModel: providerResponse.requestedModel ?? providerResponse.model,
         resolvedModel: providerResponse.model,
         ...(providerResponse.usage ? { usage: providerResponse.usage } : {})
       } } : {}),

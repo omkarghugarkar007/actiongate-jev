@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { FakeDecisionProvider, OpenRouterJevProvider } from "@actiongate/decision-provider";
+import { FakeDecisionProvider, OpenRouterJevProvider, TypeSafeJevProvider } from "@actiongate/decision-provider";
 import type { DecisionProvider } from "@actiongate/core";
 import { calibrate, hashDataset, type CalibrationReport } from "./calibrate.js";
 import { detectDrift } from "./drift.js";
@@ -123,6 +123,14 @@ async function runDrift() {
 
 function buildProvider(): DecisionProvider {
   const wanted = flags.get("provider") ?? process.env.DECISION_PROVIDER ?? "fake";
+  if (wanted === "typesafe") {
+    const apiKey = process.env.TYPESAFE_API_KEY;
+    if (!apiKey) {
+      console.error("TYPESAFE_API_KEY is required for a direct TypeSafe calibration run.");
+      process.exit(1);
+    }
+    return new TypeSafeJevProvider({ apiKey, model: process.env.TYPESAFE_MODEL ?? "jev-1.13.0" });
+  }
   if (wanted !== "openrouter") return FakeDecisionProvider.allow();
   const apiKey = process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER_KEY;
   if (!apiKey) {

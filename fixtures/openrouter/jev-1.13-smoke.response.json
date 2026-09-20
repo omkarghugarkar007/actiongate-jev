@@ -12,10 +12,10 @@
       "probabilities": {
         "conflicting": 0,
         "unrelated": 0,
-        "exact": 0.76,
-        "partial": 0.24
+        "partial": 0.21,
+        "exact": 0.79
       },
-      "confidence": 0.68
+      "confidence": 0.72
     }
   },
   "usage": {
@@ -26,7 +26,8 @@
   "metadata": {
     "upstreamProvider": "TypeSafe",
     "endpoint": "https://openrouter.ai/api/alpha/decisions",
-    "capturedAt": "2026-09-20T12:58:45.958Z",
-    "latencyMs": 673
-  }
+    "capturedAt": "2026-09-20T18:38:47.571Z",
+    "latencyMs": 849
+  },
+  "requestedModel": "typesafe/jev-1.13"
 }

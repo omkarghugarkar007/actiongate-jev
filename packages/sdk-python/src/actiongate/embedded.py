@@ -29,7 +29,7 @@ from typing import Any, Callable
 from ._core.engine import AuthorizationEngine
 from ._core.grants import ActionGrantError, ActionGrantSigner
 from ._core.policy import DEFAULT_POLICY, Policy
-from ._core.providers import FakeDecisionProvider, OpenRouterJevProvider
+from ._core.providers import FakeDecisionProvider, OpenRouterJevProvider, TypeSafeJevProvider
 
 FactProvider = Callable[[dict[str, Any], Any], "dict[str, Any] | None"]
 
@@ -47,7 +47,9 @@ class EmbeddedTransport:
         self,
         provider: Any | None = None,
         openrouter_api_key: str | None = None,
+        typesafe_api_key: str | None = None,
         model: str | None = None,
+        typesafe_model: str | None = None,
         policy: Policy | None = None,
         fact_providers: list[tuple[str, FactProvider]] | None = None,
         grant_ttl_seconds: int = 30,
@@ -55,14 +57,17 @@ class EmbeddedTransport:
         fail_open_read_only: bool = False,
         clock: Callable[[], float] | None = None,
     ) -> None:
-        api_key = openrouter_api_key or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_KEY")
+        direct_key = typesafe_api_key or os.environ.get("TYPESAFE_API_KEY")
+        openrouter_key = openrouter_api_key or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_KEY")
         if provider is None:
             provider = (
-                OpenRouterJevProvider(api_key, model or os.environ.get("JEV_MODEL") or "typesafe/jev-1.13", app_title="ActionGate embedded")
-                if api_key
+                TypeSafeJevProvider(direct_key, typesafe_model or os.environ.get("TYPESAFE_MODEL") or "jev-1.13.0")
+                if direct_key
+                else OpenRouterJevProvider(openrouter_key, model or os.environ.get("JEV_MODEL") or "typesafe/jev-1.13", app_title="ActionGate embedded")
+                if openrouter_key
                 else FakeDecisionProvider()
             )
-        self.using_live_provider = isinstance(provider, OpenRouterJevProvider)
+        self.using_live_provider = isinstance(provider, (OpenRouterJevProvider, TypeSafeJevProvider))
         self._policy = policy or DEFAULT_POLICY
         self._clock = clock or (lambda: time.time() * 1000)
         self._engine = AuthorizationEngine(

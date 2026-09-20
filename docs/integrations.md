@@ -186,7 +186,7 @@ A connector cannot make its own facts trusted. Facts sent by an adapter — incl
 - restart and concurrent-consumption behavior is tested when the adapter is networked;
 - README states its integration level and bypass assumptions;
 - latency and provider cost are reported separately from security correctness;
-- the connector has been exercised once against the real OpenRouter endpoint with `pnpm test:jev:live`, and the resolved model, latency, and cost are recorded;
+- the connector has been exercised against the configured live provider (`pnpm test:jev:live` for OpenRouter or `pnpm test:typesafe:live` for direct TypeSafe), and resolved model, latency, tokens, and available cost data are recorded;
 - the connector manifest is complete, including a non-empty `bypass` statement;
 - the setup steps were counted against the friction budget and the count is published.
 
