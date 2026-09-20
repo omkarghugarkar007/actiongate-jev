@@ -50,6 +50,21 @@ Every connector declares itself the same way so the catalog stays machine-readab
 
 `bypass` is mandatory and may not be empty. "None known" is a claim that must be backed by the connector's negative tests.
 
+### Worked example: the MCP proxy manifest
+
+| Field | Value |
+|---|---|
+| `name` | `@actiongate/mcp-proxy` |
+| `level` | `isolate` |
+| `protects` | The upstream MCP server's network endpoint and its credential, which stay inside the proxy process |
+| `bypass` | Anything that can reach the upstream MCP server directly. The proxy only isolates if the upstream endpoint is not routable from the agent. Relayed user intent is agent-supplied, so it is semantic evidence, not trusted input; it can never override a hard rule. |
+| `requires` | An ActionGate API key, an upstream URL and credential, and one downstream proxy token. Nothing else. |
+| `tools` | Whatever the tenant registry enables and the upstream server also exposes; the intersection, never the union |
+| `facts` | None by default. Without a configured server-side fact provider, any tool carrying hard rules fails closed. |
+| `setup` | Point the MCP client at the proxy URL and give it a proxy token. No application code changes. |
+
+What the proxy refuses, in every case without calling upstream: an unknown or disabled tool, a tool the registry does not own, a `BLOCK` or `REVIEW` decision, an enforced allow with no grant, a failed consumption, an unreachable ActionGate, an unauthenticated caller, and any JSON-RPC method it does not explicitly handle.
+
 ## Connector friction rules
 
 The catalog is only useful if adding a connector is cheaper than hand-rolling the same protection. Budgets come from the [adoption friction budget](../AGENTS.md#adoption-friction-budget).
@@ -68,6 +83,7 @@ The catalog is only useful if adding a connector is cheaper than hand-rolling th
 | REST API | Observe / Guard building block | Shipped | Language-neutral authorize, consume, registry, key, review, audit, and retention endpoints |
 | TypeScript client | Guard | Shipped in workspace | `wrapTool` authorizes, consumes, then calls a private function |
 | MCP gateway | Guard | Shipped in workspace | Owns tool metadata and keeps the grant outside model-visible arguments |
+| MCP proxy | Isolate | Shipped in workspace | Standalone network service; holds the upstream credential and consumes a grant before forwarding |
 | Redis runtime adapter | Govern | Shipped | Distributed idempotency, decision state, revocation, and one-time consumption |
 | PostgreSQL control-plane adapter | Govern | Shipped | Tenant keys, policies, registry, reviews, corrections, encrypted audit |
 
@@ -77,7 +93,7 @@ Workspace packages are not yet published to a package registry. Until versioned 
 
 ### P1: hard execution boundaries
 
-1. **Standalone MCP proxy** — authenticated transport, upstream/downstream server mapping, registry synchronization, private tool credentials, and consume-before-forward.
+1. **Standalone MCP proxy** — shipped. See the manifest below.
 2. **HTTP reverse proxy and sidecar** — declarative route-to-tool mapping, request normalization, response capture, retries that preserve idempotency, and deployment templates.
 3. **Credential broker** — exchange a consumed Action Grant for a narrow, short-lived downstream credential or signed request.
 4. **Webhook gateway** — signed outbound payloads, delivery retries, destination allowlists, and result evidence.

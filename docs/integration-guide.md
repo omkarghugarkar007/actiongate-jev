@@ -49,6 +49,7 @@ curl --request POST http://localhost:8080/v1/authorize \
     "deterministicFacts": {
       "authenticated": true,
       "authorizedByRbac": true,
+      "duplicate": false,
       "amountCents": 4900,
       "currency": "USD",
       "resourceExists": true
@@ -187,6 +188,7 @@ const guardedRefund = gate.wrapTool({
     deterministicFacts: {
       authenticated: runtime.authenticated,
       authorizedByRbac: runtime.canRefund,
+      duplicate: runtime.alreadyRefunded,
       amountCents: input.amountCents,
       currency: input.currency,
       resourceExists: runtime.transactionExists

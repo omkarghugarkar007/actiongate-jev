@@ -133,6 +133,7 @@ const guardedRefund = gate.wrapTool({
     deterministicFacts: {
       authenticated: true,
       authorizedByRbac: runtime.canRefund,
+      duplicate: runtime.alreadyRefunded,
       amountCents: input.amountCents,
       currency: "USD"
     }
@@ -162,6 +163,31 @@ REVIEW — MISSING_SEMANTIC_AUTHORIZATION
 ```
 
 That is why agent authorization needs both deterministic code and semantic evidence.
+
+## Guard an MCP server without touching the agent
+
+The standalone MCP proxy sits between an MCP client and the server it calls. The agent's configuration changes; its code does not.
+
+```ts
+import { ActionGate } from "@actiongate/sdk";
+import { ActionGateRegistry, HttpMcpUpstream, createMcpProxyServer, staticTokenResolver } from "@actiongate/mcp-proxy";
+
+createMcpProxyServer({
+  client: new ActionGate({ apiKey: process.env.ACTIONGATE_API_KEY!, baseUrl: process.env.ACTIONGATE_URL! }),
+  registry: new ActionGateRegistry({ baseUrl: process.env.ACTIONGATE_URL!, apiKey: process.env.ACTIONGATE_API_KEY! }),
+  // The upstream credential stays in this process and never reaches the agent.
+  upstream: new HttpMcpUpstream({ url: process.env.UPSTREAM_MCP_URL!, headers: { Authorization: `Bearer ${process.env.UPSTREAM_TOKEN}` } }),
+  resolvePrincipal: staticTokenResolver([
+    { token: process.env.PROXY_TOKEN!, tenantId: "acme", environment: "production", actor: { agentId: "support-agent" } }
+  ])
+}).listen({ port: 8090 });
+```
+
+Point the MCP client at `http://localhost:8090/mcp` and every `tools/call` is authorized and permitted before it reaches the upstream server. `tools/list` advertises only the intersection of what the upstream offers and what the tenant registry enables, using the registry's schema — so a tool ActionGate does not own is never described to the model.
+
+This is an **Isolate** integration only when the upstream endpoint is not routable from the agent. Its full boundary, including what it does *not* protect, is in the [connector manifest](docs/integrations.md#worked-example-the-mcp-proxy-manifest). To guard tools that carry hard rules such as RBAC or amount limits, configure a server-side `deterministicFacts` provider; without one those tools fail closed.
+
+For in-process tools, the embeddable [MCP gateway](docs/mcp-gateway.md) keeps the raw handler behind the same boundary.
 
 ## How it works
 
@@ -247,7 +273,8 @@ packages/
   core/                   Contracts, hard rules, state, thresholds, composition
   decision-provider/      OpenRouter Jev and deterministic fake providers
   sdk-js/                 TypeScript client and tool wrapper
-  mcp-gateway/            Guarded MCP tool registry and execution boundary
+  mcp-gateway/            Guarded MCP tool registry and execution boundary (embeddable)
+  mcp-proxy/              Standalone MCP network proxy that owns the upstream credential
   db/                     Drizzle schema and PostgreSQL migrations
   evals/                  Starter dataset and integrity validation CLI
 examples/
@@ -257,6 +284,7 @@ fixtures/openrouter/      Sanitized live Jev contract fixtures
 infra/                    Docker Compose and k6 profiles
 docs/                     Integration, architecture, and threat model
 AGENTS.md                  Product and security invariants for coding agents
+CLAUDE.md                  In-session working agreement for Claude Code
 ```
 
 ## API surface

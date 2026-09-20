@@ -20,9 +20,9 @@ Protected assets include tenant identity, API keys, signing and encryption keys,
 | Caller selects another tenant or environment | Slow-hashed API key derives tenant, environment, and roles; mismatches fail before evaluation | A stolen key retains its scoped authority until revocation |
 | Caller declares a safer operation or risk | Tenant registry owns operation, schema, risk, owner, sensitivity, and policy; mismatch and unknown tools fail closed | Registry administrators can misconfigure metadata |
 | Invalid or adversarial arguments | Registered JSON Schema is validated at registration and before evaluation | Business invariants still need deterministic rules and trusted resource lookup |
-| Caller fabricates RBAC or resource facts | Hard rules take precedence over semantic evidence | Facts currently enter through the integration contract; deployments must populate them from trusted server-side adapters |
+| Caller fabricates or omits RBAC or resource facts | Hard rules take precedence over semantic evidence, and a configured rule whose fact is absent blocks rather than passing | Facts still enter through the integration contract; deployments must populate them from trusted server-side adapters. The MCP proxy asserts no facts of its own, so tools with hard rules fail closed there until a fact provider is configured |
 | Prompt injection or misleading retrieved text | Minimal structured state, fixed narrow questions, strict response validation, and uncertainty review | A decision model can still misclassify; representative calibration remains necessary |
-| Model score overrides a hard failure | Fixed precedence makes authentication, RBAC, schema, limit, duplicate, and dependency failures authoritative | New rule types must preserve this invariant |
+| Model score overrides a hard failure | Fixed precedence makes authentication, RBAC, schema, limit, duplicate, and dependency failures authoritative, and an unevaluable control counts as a failure | New rule types must preserve this invariant and must treat an absent fact as unsatisfied, never as satisfied |
 | Decision reused for another action | Signed fingerprint binds tenant, environment, actor, tool, operation, canonical arguments, risk, policy, and decision | The downstream system must be reachable only through the guarded path |
 | Grant replay or concurrent double use | Atomic Redis consumption; exactly one connected replica succeeds | Redis compromise or loss can disrupt availability; consumption is not exactly-once business execution |
 | Grant is stolen | Short expiry, exact-action binding, tenant-scoped consumption, and explicit revocation | A thief with the same API authority and exact context can race until sender-constrained transport is added |
@@ -37,7 +37,7 @@ Protected assets include tenant identity, API keys, signing and encryption keys,
 | Excessive data retention | Tenant-scoped export and cutoff-based minimization/deletion | Retention scheduling, legal policy, backups, and replicas are deployment responsibilities |
 | Audit tampering | Append-oriented event model, actor key IDs, encrypted payloads, and tenant export | A PostgreSQL writer can alter history; signed/tamper-evident exports are not implemented yet |
 | Reviewer abuse | Authenticated reviewer role, durable identity, expiry, and immutable audit events | Two-person approval, escalation, and fresh approval grants remain P1 |
-| Agent bypasses ActionGate | SDK wrapper and MCP gateway consume before calling private handlers | Any separately exposed handler or credential bypasses enforcement; network isolation or a future proxy/broker is required |
+| Agent bypasses ActionGate | SDK wrapper and MCP gateway consume before calling private handlers; the standalone MCP proxy owns the upstream credential and consumes before forwarding | Any separately exposed handler or credential still bypasses enforcement. The proxy only isolates when the upstream MCP endpoint is not routable from the agent; an HTTP reverse proxy and credential broker remain |
 
 ## Production configuration guardrails
 

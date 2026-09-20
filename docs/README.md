@@ -9,6 +9,7 @@ Start with the [integration guide](integration-guide.md) to protect an agent too
 | [Architecture](architecture.md) | Components, request flow, provider boundary, and decision composition |
 | [Product plan](PLANNING.md) | Product thesis, moat, delivery phases, acceptance gates, and living checklist |
 | [MCP gateway](mcp-gateway.md) | Guarded tool registration, combined execution, split-grant flow, and security requirements |
+| [MCP proxy manifest](integrations.md#worked-example-the-mcp-proxy-manifest) | The standalone network proxy: what it protects, what it requires, and what still bypasses it |
 | [Threat model](threat-model.md) | Assets, trust boundaries, abuse cases, mitigations, and current limitations |
 | [Roadmap](roadmap.md) | Planned durability, integrations, observability, and release milestones |
 | [Engineering plan](engineering-plan.md) | Original product and implementation specification |

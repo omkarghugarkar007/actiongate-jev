@@ -14,6 +14,8 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Redis-backed decisions, distributed idempotency leases, and atomic cross-instance grant consumption
 - Embeddable MCP gateway with combined authorize-and-call and split metadata-grant flows
 - Cross-instance restart, race, mutation, replay, and gateway integration tests
+- Standalone MCP network proxy that authenticates the caller, owns the upstream credential, and consumes a grant before forwarding
+- Live OpenRouter gates covering the authorize/grant/consume path and the MCP proxy chain
 
 ### Changed
 
@@ -27,6 +29,8 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Enforced SDK calls fail closed when a grant is missing or consumption fails
 - Production refuses process-local storage, and Redis repository failures fail closed
 - The MCP gateway derives tool operation and risk from its server-owned registry before executing
+- **Hard rules are now satisfied affirmatively rather than by silence.** A configured rule whose deterministic fact was absent used to pass: omitting `deterministicFacts` entirely returned `ALLOW` with a grant for a `FINANCIAL` tool carrying `requireAuthenticatedUser`, `requireRbac`, and `denyDuplicate`. A control that cannot be evaluated now blocks, with `AUTH_FACT_MISSING`, `RBAC_FACT_MISSING`, `DUPLICATE_FACT_MISSING`, `AMOUNT_FACT_MISSING`, `CURRENCY_FACT_MISSING`, and `DESTINATION_FACT_MISSING` distinguishing an unverifiable control from an explicit denial
+- The MCP proxy refuses methods it does not handle instead of forwarding them, and strips `_meta` so a model cannot smuggle a grant upstream
 
 ## [0.1.0] - 2026-09-19
 

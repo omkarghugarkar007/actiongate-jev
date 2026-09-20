@@ -46,7 +46,7 @@ These apply to every phase below, not to a phase of their own.
 
 ## P1 — non-bypassable execution and complete review
 
-- [ ] Package the gateway as a standalone MCP network proxy with authenticated transport
+- [x] Package the gateway as a standalone MCP network proxy with authenticated transport
 - [ ] Add an HTTP reverse proxy/sidecar for applications that cannot embed the SDK
 - [ ] Add a credential broker for narrow, short-lived downstream credentials or signed requests
 - [ ] Publish a reference deployment where raw handlers and credentials are not directly reachable
