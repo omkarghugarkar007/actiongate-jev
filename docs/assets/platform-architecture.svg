@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
   <title id="title">ActionGate platform architecture</title>
-  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, and resolves deterministic facts from trusted deployment services rather than trusting the caller's claims. It combines those facts with decision-model evidence and issues a single-use exact-action grant. A guarded execution boundary — the SDK wrapper, the embeddable MCP gateway, or the standalone MCP proxy that holds the downstream credential — consumes the grant before business tools run. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state.</desc>
+  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, and resolves deterministic facts from trusted deployment services rather than trusting the caller's claims. It combines those facts with decision-model evidence and issues a single-use exact-action grant. A guarded execution boundary — the SDK wrapper, the embeddable MCP gateway, the standalone MCP and HTTP proxies that hold the downstream credential, or a credential broker that exchanges the grant for a short-lived signed request — consumes the grant before business tools run. Execution outcomes are recorded separately from authorization. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state.</desc>
   <rect width="1200" height="760" fill="#f8fafc"/>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
@@ -38,9 +38,9 @@
   <rect x="64" y="185" width="147" height="48" rx="9" class="blue"/>
   <text x="137" y="214" class="title" text-anchor="middle">TypeScript / Python</text>
   <rect x="64" y="247" width="147" height="48" rx="9" class="blue"/>
-  <text x="137" y="276" class="title" text-anchor="middle">MCP tools</text>
+  <text x="137" y="276" class="title" text-anchor="middle">MCP proxy / gateway</text>
   <rect x="64" y="309" width="147" height="48" rx="9" class="blue"/>
-  <text x="137" y="338" class="title" text-anchor="middle">HTTP / webhooks</text>
+  <text x="137" y="338" class="title" text-anchor="middle">HTTP proxy / sidecar</text>
   <rect x="64" y="371" width="147" height="48" rx="9" class="blue"/>
   <text x="137" y="400" class="adapter" text-anchor="middle">Automation platforms</text>
   <text x="137" y="450" class="small" text-anchor="middle">One authorization contract</text>
@@ -97,8 +97,8 @@
   <text x="1032" y="224" class="body" text-anchor="middle">Verify exact action and expiry</text>
   <path d="M1032 246 V276" class="arrow"/>
   <rect x="930" y="280" width="205" height="66" rx="11" class="card"/>
-  <text x="1032" y="306" class="title" text-anchor="middle">Credential boundary</text>
-  <text x="1032" y="327" class="body" text-anchor="middle">SDK · MCP gateway · MCP proxy</text>
+  <text x="1032" y="303" class="title" text-anchor="middle">Credential boundary</text>
+  <text x="1032" y="327" class="body" text-anchor="middle">SDK · MCP · HTTP · broker</text>
   <path d="M1032 349 V379" class="arrow"/>
   <rect x="930" y="383" width="205" height="66" rx="11" class="red"/>
   <text x="1032" y="409" class="title" text-anchor="middle">Business side effect</text>
@@ -113,7 +113,7 @@
   <text x="600" y="698" class="body" text-anchor="middle">Tenants · keys · policies · registry · reviews</text>
   <rect x="810" y="646" width="350" height="78" rx="13" class="card"/>
   <text x="985" y="675" class="title" text-anchor="middle">Evidence loop</text>
-  <text x="985" y="698" class="body" text-anchor="middle">Encrypted audit · corrections · exports · calibration</text>
+  <text x="985" y="698" class="body" text-anchor="middle">Encrypted audit · executions · reviews · exports</text>
   <path d="M570 523 V610 H215 V642" class="arrow"/>
   <path d="M570 523 V642" class="arrow"/>
   <path d="M1032 484 V610 H985 V642" class="arrow"/>

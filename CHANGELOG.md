@@ -16,6 +16,13 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Cross-instance restart, race, mutation, replay, and gateway integration tests
 - Standalone MCP network proxy that authenticates the caller, owns the upstream credential, and consumes a grant before forwarding
 - Live OpenRouter gates covering the authorize/grant/consume path and the MCP proxy chain
+- HTTP reverse proxy and sidecar with declarative route-to-tool mapping and a `sidecar` preset
+- Credential broker: `POST /v1/grants/exchange` plus `verifySignedRequest` for downstream verification
+- Execution outcomes recorded separately from authorization, and a review queue with claim, escalation, revalidation at approval, a fresh approval grant, and two-person approval
+- Bulk incident tool disablement and outstanding-grant revocation
+- Signed notification webhooks with a replay window, bounded retries, destination allowlisting, and dead letters
+- A reference deployment where the guarded proxy is the only reachable service, with a topology test
+- Versioned publishable packages, a generated OpenAPI 3.1 description, a generated typed client, validated connector manifests, and one-screen quickstarts
 - Trusted fact providers: a server-side interface plus function and HTTP adapters that resolve deterministic facts ActionGate can vouch for
 - Fact provenance and freshness in decision evidence, with `requireTrustedFacts` and `maxFactAgeSeconds` hard rules
 

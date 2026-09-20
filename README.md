@@ -185,9 +185,25 @@ createMcpProxyServer({
 
 Point the MCP client at `http://localhost:8090/mcp` and every `tools/call` is authorized and permitted before it reaches the upstream server. `tools/list` advertises only the intersection of what the upstream offers and what the tenant registry enables, using the registry's schema — so a tool ActionGate does not own is never described to the model.
 
-This is an **Isolate** integration only when the upstream endpoint is not routable from the agent. Its full boundary, including what it does *not* protect, is in the [connector manifest](docs/integrations.md#worked-example-the-mcp-proxy-manifest). To guard tools that carry hard rules such as RBAC or amount limits, configure a server-side `deterministicFacts` provider; without one those tools fail closed.
+This is an **Isolate** integration only when the upstream endpoint is not routable from the agent. Its full boundary, including what it does *not* protect, is in the [connector manifest](docs/integrations.md#worked-example-the-mcp-proxy-manifest). To guard tools that carry hard rules such as RBAC or amount limits, configure a [server-side fact provider](docs/integrations.md#trusted-facts); without one those tools fail closed.
 
-For in-process tools, the embeddable [MCP gateway](docs/mcp-gateway.md) keeps the raw handler behind the same boundary.
+For anything that is not MCP, `@actiongate/http-proxy` does the same for HTTP routes:
+
+```ts
+import { createSidecar } from "@actiongate/http-proxy";
+
+createSidecar({
+  actionGateUrl, actionGateApiKey, tenantId: "acme",
+  upstreamUrl: "http://payments.internal:9000",
+  upstreamToken: process.env.UPSTREAM_TOKEN,   // never reaches the caller
+  proxyToken: process.env.PROXY_TOKEN!,        // all the caller gets
+  routes: [{ method: "POST", path: "/refunds", tool: "refund_payment" }]
+}).listen({ port: 8090 });
+```
+
+An unmapped route is a 404, never a pass-through. For in-process tools, the embeddable [MCP gateway](docs/mcp-gateway.md) keeps the raw handler behind the same boundary. For a topology where the proxy is the *only* reachable service, see the [reference deployment](infra/reference/README.md).
+
+One screen per integration level is in the [quickstarts](docs/quickstarts.md).
 
 ## How it works
 
@@ -273,15 +289,18 @@ packages/
   core/                   Contracts, hard rules, state, thresholds, composition
   decision-provider/      OpenRouter Jev and deterministic fake providers
   sdk-js/                 TypeScript client and tool wrapper
+  proxy-core/             Shared enforcement path: registry, tokens, authorize-then-consume
   mcp-gateway/            Guarded MCP tool registry and execution boundary (embeddable)
   mcp-proxy/              Standalone MCP network proxy that owns the upstream credential
+  http-proxy/             HTTP reverse proxy and sidecar for anything that is not MCP
+  connector-manifest/     Schema and validator for connector manifests
   db/                     Drizzle schema and PostgreSQL migrations
   evals/                  Starter dataset and integrity validation CLI
 examples/
   curl/                   Copy-paste REST authorization request
   refund-agent/           Safe, in-memory end-to-end example
 fixtures/openrouter/      Sanitized live Jev contract fixtures
-infra/                    Docker Compose and k6 profiles
+infra/                    Docker Compose, k6 profiles, and an isolated reference deployment
 docs/                     Integration, architecture, and threat model
 AGENTS.md                  Product and security invariants for coding agents
 CLAUDE.md                  In-session working agreement for Claude Code
@@ -339,7 +358,9 @@ The repository includes unit, provider-contract, API integration, browser E2E, l
 
 ActionGate is an independent community project and is not affiliated with or endorsed by TypeSafe AI or OpenRouter. TypeSafe, Jev, and OpenRouter are names of their respective owners.
 
-The API defaults to in-memory repositories for a zero-dependency demo. The P0 path uses Redis for runtime coordination and PostgreSQL for tenant-scoped keys, policy, registry, reviews, corrections, and encrypted audit evidence. The embeddable MCP gateway protects registered handlers when downstream credentials remain private to that gateway. A standalone authenticated proxy, credential broker, advanced review workflow, independent semantic benchmark, operations hardening, and external security review remain on the [product plan](docs/PLANNING.md).
+P0 (tenant-safe durable control plane) and P1 (non-bypassable execution, review, and incident workflow) are complete, along with the adoption track: versioned packages, a generated OpenAPI 3.1 description and typed client, validated connector manifests, presets, and quickstarts. P2 — independently reviewed semantic evaluation, telemetry, quotas, failover drills, supply-chain provenance, and an external security review — remains.
+
+The API defaults to in-memory repositories for a zero-dependency demo. The durable path uses Redis for runtime coordination and PostgreSQL for tenant-scoped keys, policy, registry, reviews, executions, corrections, and encrypted audit evidence. The MCP and HTTP proxies and the credential broker hold downstream credentials so the guarded path is the only route to them, which isolates only when the upstream endpoint is not otherwise routable. An independent semantic benchmark, operations hardening, and an external security review remain on the [product plan](docs/PLANNING.md).
 
 ## Contributing
 
