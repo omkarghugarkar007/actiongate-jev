@@ -58,7 +58,10 @@
     "api:generate": "tsx scripts/generate-openapi.ts",
     "client:generate": "tsx scripts/generate-client.ts",
     "build:packages": "tsx scripts/build-packages.ts",
-    "packages:check": "tsx scripts/check-package-exports.ts"
+    "packages:check": "tsx scripts/check-package-exports.ts",
+    "eval:dataset": "tsx scripts/build-eval-dataset.ts",
+    "eval:calibrate": "tsx packages/evals/src/cli.ts calibrate",
+    "eval:drift": "tsx packages/evals/src/cli.ts drift"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

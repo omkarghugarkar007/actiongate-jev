@@ -32,4 +32,4 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       - name: Validate evaluation dataset integrity
-        run: pnpm eval --dataset core-v1
+        run: pnpm eval -- --dataset core-v2
