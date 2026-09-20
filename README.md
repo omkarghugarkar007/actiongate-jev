@@ -13,7 +13,7 @@
 [![Jev](https://img.shields.io/badge/TypeSafe_Jev-1.13-6C7CFF?style=flat-square)](https://openrouter.ai/typesafe/jev-1.13)
 [![GitHub stars](https://img.shields.io/github/stars/omkarghugarkar007/actiongate-jev?style=flat-square)](https://github.com/omkarghugarkar007/actiongate-jev/stargazers)
 
-> **Early public MVP:** use mock or sandbox tools. Redis provides shared decision and grant state, and the MCP gateway can protect registered handlers. Production still requires hardened tenant authentication, key rotation, and a deployment where raw tool credentials cannot bypass the gateway. See the [security boundary](docs/threat-model.md).
+> **Early public release:** use mock or sandbox tools while evaluating it. The P0 tenant-safe control plane is implemented and exercised against Redis and PostgreSQL, but the project has not completed an external security review. A high-impact deployment must also make the guarded executor the only path to downstream credentials. See the [security boundary](docs/threat-model.md).
 
 ## Why ActionGate?
 
@@ -63,6 +63,8 @@ pnpm dev
 
 No model key is required for the default local experience. ActionGate starts with its deterministic fake provider so you can explore without spending credits.
 
+The local key `ag_test_local` is scoped to the development tenant `tenant-1`. It is intentionally unsuitable for deployment.
+
 - Dashboard: [http://localhost:3000](http://localhost:3000)
 - API: [http://localhost:8080](http://localhost:8080)
 - Health: [http://localhost:8080/health](http://localhost:8080/health)
@@ -75,18 +77,35 @@ pnpm refund:demo
 
 The demo cannot move real money. For REST, SDK, and deployment examples, follow the [integration guide](docs/integration-guide.md).
 
-For shared state across API instances, start Redis and enable durable mode:
+For the complete local durable stack, start PostgreSQL and Redis, apply migrations, and seed a tenant:
 
 ```bash
-docker compose -f infra/docker-compose.yml up -d redis
+docker compose -f infra/docker-compose.yml up -d postgres redis
+pnpm db:migrate
+pnpm db:seed
 ```
 
 ```env
 ACTIONGATE_STORAGE=redis
+ACTIONGATE_CONTROL_PLANE=postgres
 REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgres://actiongate:actiongate@localhost:5432/actiongate
 ```
 
-Redis mode shares decisions, idempotency leases, grants, and one-time consumption state across instances and restarts. The included Compose profile enables append-only persistence; production Redis also needs authentication, TLS, replication, backups, and network isolation.
+The seed command prints a bootstrap API key once. Redis holds short-lived enforcement state; PostgreSQL holds tenant keys, policies, the tool registry, reviews, corrections, and long-term audit events. The included infrastructure is for local development; deployment requirements are in the [integration guide](docs/integration-guide.md).
+
+## How much does this cost to adopt?
+
+The boundary is strict; the on-ramp is not. Each tier is additive, and the one below it keeps working.
+
+| Tier | You add | You get | Cost |
+|---|---|---|---|
+| 0 | Nothing | Decisions, named reasons, grants, dashboard, guarded examples | No key, no database, no container, no spend |
+| 1 | A provider key | Real Jev semantic evidence through OpenRouter | Per-decision provider cost only |
+| 2 | Redis | Restart-safe state, distributed idempotency, cross-replica consumption | One container |
+| 3 | PostgreSQL and key rings | Durable tenants, registry, reviews, encrypted audit, rotation, retention | Operating a database |
+
+You never need a database, Redis, or a key ring to evaluate ActionGate, and guarding an existing function is one wrapper rather than a new service to operate.
 
 ## Protect an agent tool
 
@@ -147,12 +166,14 @@ That is why agent authorization needs both deterministic code and semantic evide
 ## How it works
 
 <p align="center">
-  <img src="docs/assets/trust-model.svg" alt="ActionGate treats agent input as untrusted, combines deterministic guardrails with Jev semantic evidence, and produces a deterministic decision with named reasons and a sanitized audit trail." width="100%" />
+  <img src="docs/assets/platform-architecture.svg" alt="Applications connect through SDK, MCP, HTTP, or workflow adapters. ActionGate combines tenant identity, a server-owned registry, deterministic authority, and decision-model evidence before issuing a single-use grant that is consumed at the guarded execution boundary." width="100%" />
 </p>
 
 ActionGate asks all six narrow Jev questions in one request: alignment, target match, policy conflict, sensitive-data exposure, scope expansion, and missing intent. It never asks one vague “is this safe?” question and never uses generated prose as an authorization reason.
 
-Read the [architecture](docs/architecture.md), [threat model](docs/threat-model.md), and [living product plan](docs/PLANNING.md) for the complete design and acceptance gates.
+Identity and roles come from a hashed tenant key. Tool operation, schema, risk, ownership, sensitivity, and policy come from a durable server-owned registry. Redis performs atomic runtime coordination; PostgreSQL stores the durable control plane and encrypted evidence. Only an enforced `ALLOW` can produce a short-lived grant, and the guarded executor consumes it before a side effect.
+
+Read the [architecture](docs/architecture.md), [integration ecosystem](docs/integrations.md), [threat model](docs/threat-model.md), and [living product plan](docs/PLANNING.md) for the complete design and acceptance gates.
 
 ## TypeSafe Jev through OpenRouter
 
@@ -168,10 +189,12 @@ The production model is pinned to `typesafe/jev-1.13`; ActionGate does not silen
 
 ```bash
 pnpm jev:smoke
-RUN_LIVE_JEV_TESTS=true pnpm test:jev:live
+pnpm test:jev:live
 ```
 
 The smoke test validates the structured response, reports latency and resolved model/provider metadata, and writes a credential-free fixture to [`fixtures/openrouter`](fixtures/openrouter/).
+
+`pnpm test:jev:live` is the end-to-end gate. It runs authorize, grant issue, single-use consume, and replay rejection against the real Decisions endpoint, asserts the decision came from the live gateway rather than the fake provider, and confirms a deterministic RBAC failure still blocks when the model scores the request favourably. It fails loudly on a missing key rather than skipping, so a skipped suite can never be mistaken for a pass. It is the only suite that spends provider credits.
 
 ### Cost tracking
 
@@ -197,6 +220,11 @@ The snapshot stays in the gitignored `.actiongate/` directory. Pricing is never 
 - **One-time consumption** — altered, expired, unknown, and replayed permits fail closed before SDK execution.
 - **Cross-instance enforcement** — Redis-backed Lua transactions allow one consumer across API replicas and preserve idempotent decisions across restarts.
 - **MCP execution boundary** — the gateway derives server-owned tool risk, consumes the permit, and only then exposes the handler to execution.
+- **Tenant-safe control plane** — slow-hashed, role-scoped API keys derive tenant and environment; revocation takes effect immediately.
+- **Durable tool registry** — JSON Schema, operation, risk, owner, sensitivity, and policy linkage are tenant-scoped and validated before evaluation.
+- **Key rotation** — signing and evidence-encryption key IDs permit overlapping verification/decryption windows while new records use the active key.
+- **Encrypted evidence** — Redis decision payloads and PostgreSQL review, correction, and audit payloads use authenticated encryption at rest.
+- **Data governance** — tenant-scoped export plus retention-driven evidence minimization and deletion are built into the API.
 - **Honest evaluation boundaries** — dataset integrity, semantic quality, enforcement security, reliability, and performance are measured separately.
 
 ## Common use cases
@@ -228,6 +256,7 @@ examples/
 fixtures/openrouter/      Sanitized live Jev contract fixtures
 infra/                    Docker Compose and k6 profiles
 docs/                     Integration, architecture, and threat model
+AGENTS.md                  Product and security invariants for coding agents
 ```
 
 ## API surface
@@ -236,11 +265,19 @@ docs/                     Integration, architecture, and threat model
 |---|---|---|
 | `POST` | `/v1/authorize` | Evaluate a proposed action |
 | `POST` | `/v1/grants/consume` | Consume an exact-action grant once before execution |
+| `POST` | `/v1/grants/:id/revoke` | Revoke an unconsumed grant |
 | `GET` | `/v1/decisions` | List sanitized audit decisions |
 | `GET` | `/v1/decisions/:id` | Inspect one decision and its signals |
 | `GET` | `/v1/policies` | List immutable policy versions |
 | `POST` | `/v1/policies/:id/versions` | Create a policy version |
+| `GET` / `PUT` | `/v1/tools` / `/v1/tools/:name` | Read or update the tenant tool registry |
+| `GET` / `POST` | `/v1/api-keys` | List key metadata or issue a scoped key once |
+| `POST` | `/v1/api-keys/:id/revoke` | Revoke a tenant API key |
 | `POST` | `/v1/decisions/:id/override` | Record a human correction |
+| `POST` | `/v1/reviews` | Create an expiring review record |
+| `POST` | `/v1/reviews/:id/resolve` | Approve or deny a review |
+| `GET` | `/v1/audit/export` | Export tenant decisions and audit events |
+| `DELETE` | `/v1/audit/retention` | Minimize or delete evidence before a cutoff |
 | `GET` | `/health` | Liveness |
 | `GET` | `/ready` | Readiness |
 
@@ -254,9 +291,11 @@ pnpm typecheck
 pnpm test
 pnpm test:integration
 pnpm test:redis
+pnpm test:postgres
 pnpm build
 pnpm e2e
 pnpm audit --prod
+pnpm test:jev:live   # opt-in; spends provider credits
 ```
 
 Local infrastructure:
@@ -272,7 +311,7 @@ The repository includes unit, provider-contract, API integration, browser E2E, l
 
 ActionGate is an independent community project and is not affiliated with or endorsed by TypeSafe AI or OpenRouter. TypeSafe, Jev, and OpenRouter are names of their respective owners.
 
-The API defaults to in-memory repositories for a zero-dependency demo. Redis mode provides durable shared decisions, distributed idempotency leases, and atomic cross-instance grant consumption. The embeddable MCP gateway protects registered handlers when downstream credentials remain private to that gateway. Durable policies, tenant-scoped API keys, signing-key rotation, review workflows, and a standalone authenticated proxy remain on the [product plan](docs/PLANNING.md).
+The API defaults to in-memory repositories for a zero-dependency demo. The P0 path uses Redis for runtime coordination and PostgreSQL for tenant-scoped keys, policy, registry, reviews, corrections, and encrypted audit evidence. The embeddable MCP gateway protects registered handlers when downstream credentials remain private to that gateway. A standalone authenticated proxy, credential broker, advanced review workflow, independent semantic benchmark, operations hardening, and external security review remain on the [product plan](docs/PLANNING.md).
 
 ## Contributing
 

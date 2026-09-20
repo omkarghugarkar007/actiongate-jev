@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+  <title id="title">ActionGate platform architecture</title>
+  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, combines deterministic rules with decision-model evidence, and issues a single-use exact-action grant. A guarded execution boundary consumes the grant before business tools run. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state.</desc>
+  <rect width="1200" height="700" fill="#f8fafc"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7c8aa5"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#16213a" flood-opacity="0.08"/>
+    </filter>
+    <style>
+      .heading { font-size:25px; font-weight:700; fill:#17213a }
+      .subheading { font-size:13px; fill:#667085 }
+      .eyebrow { font-size:11px; font-weight:700; letter-spacing:.1em; fill:#65718b }
+      .title { font-size:14px; font-weight:700; fill:#17213a }
+      .adapter { font-size:12px; font-weight:700; fill:#17213a }
+      .body { font-size:12px; fill:#667085 }
+      .small { font-size:11px; fill:#667085 }
+      .card { fill:#ffffff; stroke:#d8dfeb; stroke-width:1.3; filter:url(#shadow) }
+      .blue { fill:#eef3ff; stroke:#7b8ee6; stroke-width:1.4 }
+      .purple { fill:#f3efff; stroke:#9985dd; stroke-width:1.4 }
+      .amber { fill:#fff7e8; stroke:#dda84d; stroke-width:1.4 }
+      .green { fill:#ecf9f1; stroke:#67ad80; stroke-width:1.4 }
+      .red { fill:#fff1ef; stroke:#db8a7d; stroke-width:1.4 }
+      .boundary { fill:#fbfcff; stroke:#7185de; stroke-width:1.5; stroke-dasharray:7 6 }
+      .arrow { fill:none; stroke:#7c8aa5; stroke-width:1.8; marker-end:url(#arrow) }
+      .line { fill:none; stroke:#a9b3c4; stroke-width:1.4 }
+    </style>
+  </defs>
+
+  <text x="40" y="44" class="heading">Decision intelligence, enforced at the action boundary</text>
+  <text x="40" y="68" class="subheading">Plug in applications and specialized decision models; keep identity, policy, permits, and execution control deterministic.</text>
+
+  <text x="40" y="112" class="eyebrow">INTEGRATION SURFACE</text>
+  <rect x="40" y="128" width="195" height="356" rx="16" class="card"/>
+  <text x="137" y="160" class="title" text-anchor="middle">Agents and workflows</text>
+  <rect x="64" y="185" width="147" height="48" rx="9" class="blue"/>
+  <text x="137" y="214" class="title" text-anchor="middle">TypeScript / Python</text>
+  <rect x="64" y="247" width="147" height="48" rx="9" class="blue"/>
+  <text x="137" y="276" class="title" text-anchor="middle">MCP tools</text>
+  <rect x="64" y="309" width="147" height="48" rx="9" class="blue"/>
+  <text x="137" y="338" class="title" text-anchor="middle">HTTP / webhooks</text>
+  <rect x="64" y="371" width="147" height="48" rx="9" class="blue"/>
+  <text x="137" y="400" class="adapter" text-anchor="middle">Automation platforms</text>
+  <text x="137" y="450" class="small" text-anchor="middle">One authorization contract</text>
+  <text x="137" y="467" class="small" text-anchor="middle">across every adapter</text>
+
+  <path d="M235 306 H278" class="arrow"/>
+
+  <rect x="278" y="103" width="584" height="420" rx="20" class="boundary"/>
+  <rect x="300" y="91" width="206" height="24" rx="12" fill="#f8fafc"/>
+  <text x="403" y="108" class="eyebrow" text-anchor="middle">ACTIONGATE CONTROL BOUNDARY</text>
+
+  <rect x="306" y="136" width="244" height="66" rx="11" class="card"/>
+  <text x="428" y="163" class="title" text-anchor="middle">Tenant identity and roles</text>
+  <text x="428" y="184" class="body" text-anchor="middle">Hashed keys · environment scope</text>
+  <rect x="590" y="136" width="244" height="66" rx="11" class="card"/>
+  <text x="712" y="163" class="title" text-anchor="middle">Tool registry and policy</text>
+  <text x="712" y="184" class="body" text-anchor="middle">Schema · owner · risk · sensitivity</text>
+
+  <path d="M428 205 V232" class="arrow"/>
+  <path d="M712 205 V232" class="arrow"/>
+
+  <rect x="306" y="236" width="244" height="98" rx="12" class="amber"/>
+  <text x="428" y="264" class="title" text-anchor="middle">Deterministic authority</text>
+  <text x="428" y="287" class="body" text-anchor="middle">Authentication · RBAC · limits</text>
+  <text x="428" y="308" class="body" text-anchor="middle">Idempotency · fail-safe rules</text>
+  <rect x="590" y="236" width="244" height="98" rx="12" class="purple"/>
+  <text x="712" y="264" class="title" text-anchor="middle">Decision-model evidence</text>
+  <text x="712" y="287" class="body" text-anchor="middle">Intent · target · scope</text>
+  <text x="712" y="308" class="body" text-anchor="middle">Conflict · data exposure</text>
+
+  <path d="M550 285 H586" class="line"/>
+  <path d="M428 338 V365 H535" class="arrow"/>
+  <path d="M712 338 V365 H605" class="arrow"/>
+
+  <rect x="438" y="369" width="264" height="64" rx="12" class="blue"/>
+  <text x="570" y="395" class="title" text-anchor="middle">ALLOW · REVIEW · BLOCK</text>
+  <text x="570" y="416" class="body" text-anchor="middle">Named reasons and versioned evidence</text>
+  <path d="M570 436 V457" class="arrow"/>
+  <rect x="438" y="461" width="264" height="42" rx="10" class="green"/>
+  <text x="570" y="487" class="title" text-anchor="middle">Signed, single-use action grant</text>
+
+  <path d="M862 306 H905" class="arrow"/>
+
+  <text x="905" y="112" class="eyebrow">GUARDED EXECUTION</text>
+  <rect x="905" y="128" width="255" height="356" rx="16" class="card"/>
+  <rect x="930" y="177" width="205" height="66" rx="11" class="green"/>
+  <text x="1032" y="203" class="title" text-anchor="middle">Consume grant once</text>
+  <text x="1032" y="224" class="body" text-anchor="middle">Verify exact action and expiry</text>
+  <path d="M1032 246 V276" class="arrow"/>
+  <rect x="930" y="280" width="205" height="66" rx="11" class="card"/>
+  <text x="1032" y="306" class="title" text-anchor="middle">Credential boundary</text>
+  <text x="1032" y="327" class="body" text-anchor="middle">No unguarded execution path</text>
+  <path d="M1032 349 V379" class="arrow"/>
+  <rect x="930" y="383" width="205" height="66" rx="11" class="red"/>
+  <text x="1032" y="409" class="title" text-anchor="middle">Business side effect</text>
+  <text x="1032" y="430" class="body" text-anchor="middle">Refund · email · deploy · delete</text>
+
+  <text x="40" y="570" class="eyebrow">DURABLE STATE AND FEEDBACK</text>
+  <rect x="40" y="586" width="350" height="78" rx="13" class="card"/>
+  <text x="215" y="615" class="title" text-anchor="middle">Runtime protection</text>
+  <text x="215" y="638" class="body" text-anchor="middle">Decisions · leases · revocation · replay prevention</text>
+  <rect x="425" y="586" width="350" height="78" rx="13" class="card"/>
+  <text x="600" y="615" class="title" text-anchor="middle">Control plane</text>
+  <text x="600" y="638" class="body" text-anchor="middle">Tenants · keys · policies · registry · reviews</text>
+  <rect x="810" y="586" width="350" height="78" rx="13" class="card"/>
+  <text x="985" y="615" class="title" text-anchor="middle">Evidence loop</text>
+  <text x="985" y="638" class="body" text-anchor="middle">Encrypted audit · corrections · exports · calibration</text>
+  <path d="M570 523 V563 H215 V582" class="arrow"/>
+  <path d="M570 523 V582" class="arrow"/>
+  <path d="M1032 484 V550 H985 V582" class="arrow"/>
+</svg>

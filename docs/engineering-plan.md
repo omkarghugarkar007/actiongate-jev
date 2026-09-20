@@ -1,6 +1,8 @@
 # ActionGate — E2E Engineering Plan
 ## Runtime authorization for AI-agent actions using TypeSafe Jev 1.13 via OpenRouter
 
+> **Historical specification:** this document records the original MVP brief and is intentionally preserved. For current architecture, shipped status, and priorities, use [architecture.md](architecture.md), [PLANNING.md](PLANNING.md), and [roadmap.md](roadmap.md).
+
 **Document purpose:** This is an implementation specification intended to be handed directly to an AI coding agent. Build the complete end-to-end MVP described here. Prefer working software, tests, observability, and reproducible evaluation over extra abstractions.
 
 **Working product name:** `ActionGate`

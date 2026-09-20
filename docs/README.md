@@ -5,6 +5,7 @@ Start with the [integration guide](integration-guide.md) to protect an agent too
 | Document | Purpose |
 |---|---|
 | [Integration guide](integration-guide.md) | REST and TypeScript SDK setup, rollout modes, response handling, and production checklist |
+| [Integration ecosystem](integrations.md) | Adapter levels, shared contract, priority connectors, and contribution acceptance gates |
 | [Architecture](architecture.md) | Components, request flow, provider boundary, and decision composition |
 | [Product plan](PLANNING.md) | Product thesis, moat, delivery phases, acceptance gates, and living checklist |
 | [MCP gateway](mcp-gateway.md) | Guarded tool registration, combined execution, split-grant flow, and security requirements |

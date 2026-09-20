@@ -1,8 +1,10 @@
 # Integrating ActionGate
 
-This guide takes an application from a proposed AI-agent tool call to a one-time Action Grant. Start with the fake provider and Shadow Mode; connect TypeSafe Jev through OpenRouter only after the local flow works.
+This guide starts with a zero-cost local flow, then moves to the durable Redis/PostgreSQL control plane. Use Shadow Mode first and keep tools sandboxed until the integration boundary has been tested.
 
-## 1. Start ActionGate locally
+## 1. Start the local development API
+
+Requirements: Node.js 22+, pnpm 10+, and Docker only for durable mode.
 
 ```bash
 corepack enable
@@ -11,22 +13,16 @@ pnpm install
 pnpm dev:api
 ```
 
-The default API key is `ag_test_local` and the default provider is deterministic and offline. These defaults are for development only.
-
-The development signing secret is also intentionally public. Set a unique value of at least 32 bytes before deployment:
-
-```env
-ACTIONGATE_GRANT_SECRET=replace-with-a-random-secret-of-at-least-32-bytes
-ACTIONGATE_GRANT_TTL_SECONDS=30
-```
-
-Verify the service:
+The default provider is deterministic and offline. The local-only bearer key is `ag_test_local`, scoped to tenant `tenant-1`, environment `development`, with all roles. No provider request or cost is incurred.
 
 ```bash
 curl http://localhost:8080/health
+curl http://localhost:8080/ready
 ```
 
-## 2. Authorize one action over REST
+Memory mode is for one-process development only.
+
+## 2. Authorize a sandbox action
 
 ```bash
 curl --request POST http://localhost:8080/v1/authorize \
@@ -36,10 +32,10 @@ curl --request POST http://localhost:8080/v1/authorize \
   --data '{
     "requestId": "request-demo-001",
     "idempotencyKey": "refund-demo-001",
-    "tenantId": "demo",
+    "tenantId": "tenant-1",
     "environment": "development",
     "mode": "shadow",
-    "actor": { "agentId": "support-agent" },
+    "actor": { "agentId": "support-agent", "userId": "user-42" },
     "userIntent": {
       "text": "Refund the duplicate $49 charge.",
       "source": "user_message"
@@ -47,10 +43,7 @@ curl --request POST http://localhost:8080/v1/authorize \
     "proposedAction": {
       "tool": "refund_payment",
       "operation": "refund",
-      "arguments": {
-        "transactionId": "txn_duplicate",
-        "amountCents": 4900
-      },
+      "arguments": { "transactionId": "txn_duplicate", "amountCents": 4900 },
       "riskClass": "FINANCIAL"
     },
     "deterministicFacts": {
@@ -63,24 +56,121 @@ curl --request POST http://localhost:8080/v1/authorize \
   }'
 ```
 
-Shadow Mode always returns operational `ALLOW`; inspect `wouldHaveDecision` to see what enforcement would do. Shadow decisions never receive an Action Grant because shadow mode is observational.
+Tenant and environment must match the authenticated key. Tool, operation, risk, and arguments must match the server-owned registry and JSON Schema. Shadow Mode returns operational `ALLOW` while `wouldHaveDecision` shows the enforcement result; it never returns a grant.
 
-## 3. Use the TypeScript SDK
+The current API accepts deterministic facts from the integration. Populate them from authenticated application services, not agent text.
 
-The SDK currently ships as the workspace package `@actiongate/sdk`. Until the first npm release, consume it from this monorepo, a workspace dependency, or use the REST API directly.
+## 3. Run the durable local control plane
+
+Start dependencies and initialize PostgreSQL:
+
+```bash
+docker compose -f infra/docker-compose.yml up -d postgres redis
+pnpm db:migrate
+pnpm db:seed
+```
+
+`pnpm db:seed` creates tenant `tenant-1`, the default immutable policy, the default tool registrations, and a bootstrap administrator key. The plaintext key is printed once. Store it immediately; only its slow hash can be retrieved later.
+
+Enable the durable path in `.env`:
+
+```env
+ACTIONGATE_STORAGE=redis
+ACTIONGATE_CONTROL_PLANE=postgres
+REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgres://actiongate:actiongate@localhost:5432/actiongate
+```
+
+Restart the API and use the seeded `agk_...` key instead of `ag_test_local`. Redis now coordinates decisions, idempotency, grants, revocation, and one-time consumption. PostgreSQL stores tenant keys, policies, the tool registry, reviews, corrections, and encrypted audit events.
+
+The complete local stack can also be started with:
+
+```bash
+docker compose -f infra/docker-compose.yml up --build
+```
+
+On the first run, read the one-time bootstrap key from the `seed` service logs and place it in the dashboard environment if needed. This Compose file is development infrastructure, not a hardened deployment template.
+
+## 4. Create least-privilege API keys
+
+Available roles are:
+
+| Role | Capability |
+|---|---|
+| `authorize` | Create decisions |
+| `consume` | Consume grants |
+| `decision_reader` | Read decisions and policies |
+| `policy_admin` | Create policy versions, manage tools, retention, and grant revocation |
+| `reviewer` | Create/resolve reviews, correct decisions, and revoke grants |
+| `key_admin` | Issue, list, and revoke API keys |
+| `audit_exporter` | Export audit records and execute retention |
+
+Create separate runtime and operator keys instead of sharing the bootstrap key:
+
+```bash
+curl --request POST http://localhost:8080/v1/api-keys \
+  --header "Authorization: Bearer $ACTIONGATE_BOOTSTRAP_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "name": "refund-runtime",
+    "environment": "development",
+    "roles": ["authorize", "consume"]
+  }'
+```
+
+The new plaintext token appears only in this response. `GET /v1/api-keys` returns metadata, prefix, roles, last-use, and revocation state—never plaintext or hashes. Revoke it with `POST /v1/api-keys/:id/revoke`.
+
+## 5. Register tools and policies
+
+The default seed contains `refund_payment`, `get_order`, `send_email`, and a disabled `delete_record`. A tool registration contains:
+
+- normalized name and operation;
+- JSON Schema for arguments;
+- risk class and data sensitivity;
+- owning team or service;
+- linked immutable policy ID;
+- enabled state.
+
+Create the corresponding immutable policy version first, then register or update the tool with a `policy_admin` key:
+
+```bash
+curl --request PUT http://localhost:8080/v1/tools/refund_payment \
+  --header "Authorization: Bearer $ACTIONGATE_ADMIN_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "operation": "refund",
+    "riskClass": "FINANCIAL",
+    "argumentSchema": {
+      "type": "object",
+      "properties": {
+        "transactionId": { "type": "string", "minLength": 1 },
+        "amountCents": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["transactionId", "amountCents"],
+      "additionalProperties": false
+    },
+    "owner": "payments-platform",
+    "dataSensitivity": "RESTRICTED",
+    "policyId": "support-agent-default",
+    "policyVersion": "1.0.0",
+    "enabled": true
+  }'
+```
+
+Invalid schemas are rejected at registration. Missing policy tools, operation/risk mismatch, unknown tools, disabled tools, risk downgrades, and invalid runtime arguments fail before a semantic-provider call.
+
+## 6. Use the TypeScript wrapper
+
+The workspace package `@actiongate/sdk` provides the complete authorize/consume/execute sequence:
 
 ```ts
 import { ActionGate } from "@actiongate/sdk";
 
 const gate = new ActionGate({
-  apiKey: process.env.ACTIONGATE_API_KEY!,
+  apiKey: process.env.ACTIONGATE_RUNTIME_KEY!,
   baseUrl: process.env.ACTIONGATE_URL ?? "http://localhost:8080"
 });
-```
 
-Use `wrapTool` for the complete enforced lifecycle. It authorizes the exact inputs, requires a grant, consumes the grant, and calls `execute` only after consumption succeeds:
-
-```ts
 const guardedRefund = gate.wrapTool({
   name: "refund_payment",
   operation: "refund",
@@ -99,17 +189,19 @@ const guardedRefund = gate.wrapTool({
       authorizedByRbac: runtime.canRefund,
       amountCents: input.amountCents,
       currency: input.currency,
-      resourceExists: true
+      resourceExists: runtime.transactionExists
     }
   })
 });
 ```
 
-For `mode: "shadow"`, the wrapper remains observational: it executes after the decision without asking for a grant. Never use shadow mode as an enforcement boundary.
+`execute` is called only after an enforced `ALLOW` returns a grant and that exact grant is consumed. Keep `refundPayment` and its credential private to this process. Shadow Mode is observational and executes without a grant, so never treat it as an enforcement boundary.
 
-### REST grant lifecycle
+Workspace packages are not yet published to a package registry. Use a workspace dependency or the REST API until versioned releases ship.
 
-An enforced `ALLOW` response includes a short-lived grant:
+## 7. Understand the grant lifecycle
+
+An enforced `ALLOW` response includes a short-lived token:
 
 ```json
 {
@@ -117,72 +209,34 @@ An enforced `ALLOW` response includes a short-lived grant:
   "mode": "enforce",
   "policy": { "id": "support-agent-default", "version": "1.0.0" },
   "grant": {
-    "token": "ag1.<payload>.<signature>",
+    "token": "ag2.grant_2026_09.<payload>.<signature>",
     "grantId": "0f4b4512-c8b9-46f8-a756-817f95dcaaf4",
-    "expiresAt": "2026-09-19T10:00:30.000Z"
+    "expiresAt": "2026-09-20T10:00:30.000Z"
   }
 }
 ```
 
-Present the token with the exact same action immediately before execution:
+Present the token with the same tenant, environment, actor, tool, operation, arguments, and risk immediately before execution at `POST /v1/grants/consume`.
 
-```bash
-curl --request POST http://localhost:8080/v1/grants/consume \
-  --header 'Authorization: Bearer ag_test_local' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "token": "ag1.<payload>.<signature>",
-    "tenantId": "demo",
-    "environment": "development",
-    "actor": { "agentId": "support-agent" },
-    "proposedAction": {
-      "tool": "refund_payment",
-      "operation": "refund",
-      "arguments": { "transactionId": "txn_duplicate", "amountCents": 4900 },
-      "riskClass": "FINANCIAL"
-    }
-  }'
-```
+| Failure | Response |
+|---|---|
+| Invalid signature or malformed token | `401` |
+| Changed binding or revoked grant | `403` |
+| Unknown grant | `404` |
+| Replay | `409` |
+| Expired grant | `410` |
 
-A grant is valid only once. Mutation returns `403`, an invalid signature `401`, replay `409`, and expiry `410`. A consumed grant gives at-most-once authorization, not exactly-once execution: if the process fails after consumption but before the side effect, obtain a new authorization with a new idempotency key after reconciling downstream state.
+Grant consumption is at-most-once authorization. If the process fails after consumption but before the side effect commits, reconcile the downstream system before obtaining a new authorization.
 
-## 4. Enable shared Redis enforcement
+## 8. Put MCP tools behind the gateway
 
-Memory mode is convenient for local exploration but covers only one API process. For multiple replicas or restart persistence:
+Use `@actiongate/mcp-gateway` when an MCP handler should be unreachable until consumption succeeds. It owns registered operation and risk metadata and can keep downstream credentials in server-only runtime state.
 
-```bash
-docker compose -f infra/docker-compose.yml up -d redis
-```
+Prefer the combined `authorizeAndCall` flow, which keeps the grant out of model-visible state. The split `callWithGrant` flow carries it through protected MCP metadata, never tool arguments. See [mcp-gateway.md](mcp-gateway.md).
 
-```env
-ACTIONGATE_STORAGE=redis
-REDIS_URL=redis://localhost:6379
-ACTIONGATE_REDIS_PREFIX=actiongate
-ACTIONGATE_IDEMPOTENCY_LEASE_MS=15000
-ACTIONGATE_IDEMPOTENCY_WAIT_MS=10000
-```
+The current gateway is embeddable. A standalone authenticated proxy and credential broker are P1; see [integrations.md](integrations.md).
 
-Redis mode provides:
-
-- first-write-wins decision storage;
-- distributed idempotency leases and conflict detection;
-- the same decision and grant for identical retries across instances;
-- atomic one-time consumption across API replicas;
-- decision and consumption state across process restarts.
-
-The lease must remain longer than the maximum semantic-provider request. Production startup validates that it exceeds `JEV_TIMEOUT_MS`. Repository failures fail closed.
-
-The included local Redis uses append-only persistence. A production service also requires authentication, TLS, replication, backups, monitoring, and private networking.
-
-The current adapter retains decision and grant records indefinitely to prevent an old idempotency key or decision from minting a fresh permit. Define and implement tenant-specific archival/deletion policy before storing production traffic long-term.
-
-## 5. Put MCP tools behind the gateway
-
-Use `@actiongate/mcp-gateway` when the tool handler should be unreachable until grant consumption succeeds. The gateway owns the registered operation and risk class, and can retain downstream credentials in server-only runtime state.
-
-The combined `authorizeAndCall` path keeps the grant away from the model. The split `callWithGrant` path accepts it through MCP `_meta`, never through tool arguments. See the [MCP gateway guide](mcp-gateway.md) for both patterns.
-
-## 6. Connect TypeSafe Jev through OpenRouter
+## 9. Connect Jev through OpenRouter
 
 Set server-only environment variables:
 
@@ -193,65 +247,62 @@ JEV_MODEL=typesafe/jev-1.13
 JEV_TIMEOUT_MS=2000
 ```
 
-Never expose the OpenRouter key through `NEXT_PUBLIC_*`, frontend JavaScript, agent prompts, logs, or tool arguments.
+Never expose the provider key through browser variables, frontend JavaScript, prompts, logs, fixtures, or tool arguments.
 
-Validate the live contract and record the cost baseline:
+Validate the live contract and record a local cost snapshot:
 
 ```bash
 pnpm jev:smoke
-RUN_LIVE_JEV_TESTS=true pnpm test:jev:live
+pnpm test:jev:live
 pnpm cost:track
 ```
 
-## 7. Add a tool policy
+`pnpm test:jev:live` runs authorize, grant issue, single-use consume, and replay rejection against the real Decisions endpoint and fails loudly if the provider key is missing. Run it before treating any change on the decision path as verified; fixtures prove plumbing, not integration.
 
-Tool risk is server-owned. Add the tool to the policy/registry before accepting agent requests:
+Cost snapshots remain in the gitignored `.actiongate/` directory. Provider cost, latency, semantic quality, and enforcement correctness are separate measurements.
 
-```ts
-send_email: {
-  enabled: true,
-  operation: "send",
-  riskClass: "EXTERNAL_COMMUNICATION",
-  semanticPolicy: [
-    "Send only to recipients supported by the user's explicit request.",
-    "Do not include sensitive information unnecessary for the request."
-  ],
-  thresholdProfile: "reversible-write-v1"
-}
+## 10. Configure production keys
+
+Production does not accept the development static API key or single legacy grant secret. Generate independent key material and configure key rings:
+
+```bash
+openssl rand -base64 32
+openssl rand -base64 32
 ```
 
-Do not allow the agent to lower the registered risk class.
+```env
+NODE_ENV=production
+ACTIONGATE_STORAGE=redis
+ACTIONGATE_CONTROL_PLANE=postgres
+ACTIONGATE_GRANT_KEYS={"grant_2026_09":"<first-generated-secret>"}
+ACTIONGATE_GRANT_ACTIVE_KID=grant_2026_09
+ACTIONGATE_EVIDENCE_KEYS={"evidence_2026_09":"<second-generated-secret>"}
+ACTIONGATE_EVIDENCE_ACTIVE_KID=evidence_2026_09
+```
 
-## 8. Roll out safely
+For rotation, add the new key beside the old one, switch the active ID, deploy, wait past the longest required verification/decryption window, then retire the old key. Signing and encryption secrets must be independent and stored in a secret manager.
+
+## Safe rollout
 
 1. Start with sandbox tools and the fake provider.
 2. Enable Jev in Shadow Mode.
-3. Inspect decisions, signal distributions, latency, and provider cost.
-4. Label false positives and false negatives with overrides.
-5. Calibrate thresholds per risk class and tool.
-6. Enable enforcement for one low-impact tool.
-7. Expand only after unsafe-allow and false-block metrics meet your target.
-
-## Response handling
-
-| Decision | Caller behavior |
-|---|---|
-| enforced `ALLOW` | Consume the Action Grant with the exact action, then execute |
-| shadow `ALLOW` | Observe `wouldHaveDecision`; this is intentionally not enforcement |
-| `REVIEW` | Pause and request human/user confirmation |
-| `BLOCK` | Do not execute; surface the deterministic reason code |
-
-Do not execute from a model probability directly. Use only the composed ActionGate decision.
+3. Inspect decisions, review reasons, latency, and provider cost.
+4. Record verified false positives/negatives as corrections.
+5. Calibrate thresholds by tool and risk on independently reviewed cases.
+6. Enable enforcement for one low-impact tool with a private handler.
+7. Exercise tenant, role, schema, mutation, expiry, revocation, replay, restart, and dependency-failure paths.
+8. Expand only after the evidence meets your own safety and availability targets.
 
 ## Production checklist
 
-- Replace the development API key and store only a strong hash.
-- Replace the development grant secret and plan key rotation.
-- Enable Redis storage for shared decisions, idempotency, and atomic consumption.
-- Operate Redis with persistence, authentication, TLS, replication, backups, and monitoring.
-- Keep policy versions immutable.
-- Configure TLS, tenant isolation, rate limiting, and retention.
-- Export latency, provider-error, unsafe-allow, override, and cost metrics.
-- Keep raw handlers and credentials private to the guarded executor or MCP gateway; any separately exposed path bypasses enforcement.
-- Run provider-backed evaluation on representative, reviewed cases.
-- Read the [threat model](threat-model.md).
+- use Redis and PostgreSQL; run migrations before API rollout;
+- store only scoped, least-privilege tenant keys and test revocation;
+- use independent signing and encryption key rings with documented rotation;
+- derive deterministic facts from trusted services;
+- keep raw handlers and credentials unavailable outside the guarded boundary;
+- enable TLS, private networking, authentication, replication, backups, monitoring, and restore drills for both stores;
+- set retention rules and protect tenant exports;
+- add per-tenant quotas, service telemetry, alerts, and incident procedures;
+- run provider-backed evaluation on representative, independently reviewed cases;
+- complete supply-chain hardening and an external security review;
+- read the [threat model](threat-model.md) and [architecture](architecture.md).
