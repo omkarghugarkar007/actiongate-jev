@@ -74,7 +74,9 @@ markdown.push("---", "", "Contributing a connector? Start with the [manifest for
 
 await mkdir(new URL("../docs/", import.meta.url), { recursive: true });
 await writeFile(new URL("../docs/catalog.md", import.meta.url), markdown.join("\n"));
-await writeFile(new URL("../docs/api/catalog.json", import.meta.url), `${JSON.stringify({ generatedAt: new Date().toISOString(), connectors: manifests }, null, 2)}\n`);
+// No timestamp: a generated artifact that changes on every run cannot be
+// diffed for drift, and git already records when it last changed.
+await writeFile(new URL("../docs/api/catalog.json", import.meta.url), `${JSON.stringify({ connectors: manifests }, null, 2)}\n`);
 console.log(JSON.stringify({ ok: true, connectors: manifests.length, byLevel: Object.fromEntries(LEVELS.map((level) => [level, manifests.filter((item) => item.level === level).length])) }, null, 2));
 
 function requirements(manifest: ConnectorManifest): string {
