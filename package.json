@@ -70,7 +70,8 @@
     "verify:live": "tsx scripts/verify-live.ts",
     "examples:embedded": "tsx examples/guarded-tools/src/embedded-demo.ts",
     "conformance:record": "tsx scripts/record-conformance.ts",
-    "examples:embedded:python": "python3 examples/guarded-tools/embedded_demo.py"
+    "examples:embedded:python": "python3 examples/guarded-tools/embedded_demo.py",
+    "mcp:guard": "tsx scripts/mcp-guard.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

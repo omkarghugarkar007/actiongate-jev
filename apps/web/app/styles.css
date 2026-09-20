@@ -20,3 +20,9 @@ button.primary:disabled { opacity:.55; cursor:default }
 .verdict .pill { font-size:15px; font-weight:750; padding:7px 14px; letter-spacing:.3px }
 .reasons { padding:6px 0 4px }
 .reasons .row { min-width:0; grid-template-columns:.9fr .5fr 2fr }
+
+/* Evidence loop */
+.row.threeCol { grid-template-columns: 3fr 1fr .8fr; min-width: 0 }
+.row.threeCol em { display:block; font-style:normal; color:var(--muted); font-size:12px; margin-top:3px }
+a.ghost { color:var(--muted); text-decoration:none; font-size:13px; border:1px solid var(--line); border-radius:7px; padding:8px 13px }
+a.ghost:hover { color:var(--text); border-color:#4a5b8c }

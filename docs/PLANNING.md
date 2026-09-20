@@ -108,30 +108,40 @@ requires standing up a service is one most people never evaluate at all.
 
 ### 2. Visible value before any integration
 
-**Partly shipped.** The simulator shows the same tool allowed and refused on
-meaning alone, which is the fastest way to make the problem legible. It still
-requires cloning the repository. Reaching it through `npx` or a hosted page
-would remove the last step between curiosity and understanding.
+**Shipped for the clone path.** The simulator shows the same tool allowed and
+refused on meaning alone, and `docs/a-real-refusal.md` records one live decision
+with its signals, cost, and latency for anyone who has not cloned anything. A
+hosted page would still remove the last step, but that needs somewhere to host.
 
 ### 3. Attach where agents already are
 
-**Partly shipped.** MCP is the wedge. Every MCP client already has a config file
-listing servers; if guarding one is a three-line change to that file, the
-addressable set is every MCP user rather than every team willing to adopt an SDK.
-The proxy exists; the packaged, config-only path does not yet.
+**Shipped.** `scripts/mcp-guard.ts` is a stdio MCP proxy: the client spawns it,
+it spawns the real server, and every `tools/call` is authorized and consumed in
+between. Guarding an existing server is moving its `command` and `args` into the
+guard's env. Combined with embedded mode it needs no ActionGate server at all.
+Two honest defaults make it usable rather than merely safe: hard rules are off,
+because a proxy resolves no facts and would otherwise block everything it
+touches, and unknown upstream tools are adopted at a default risk class, which
+is a guess the startup banner names as one.
 
 ### 4. A reason to keep it after the novelty
 
-**Partly shipped.** Blocking is not a retention hook, because a blocked action is
-invisible when nothing goes wrong. The evidence loop is: what did my agents try
-to do this week, what was refused, and what changed. Execution outcomes,
-calibration, and drift all feed this; nothing surfaces it yet.
+**Shipped.** The dashboard now leads with refusals rather than counts: why
+actions were refused, tallied by reason and by whether rules or meaning decided,
+and a refusal rate per risk class. A spike in one reason on one tool is something
+an operator can act on. Counts alone were not.
 
 ### 5. Distribution
 
-**Not shipped.** The packages build and are gated for publishing but are not on
-any registry, so every adopter still clones a repository. Nothing else on this
-list matters until this one is done.
+**Deliberately not done.** `@actiongate/sdk` on npm belongs to another project
+and `actiongate` on PyPI is taken, so publishing would mean a different name or
+squatting near one in use. The call was that a clone path which genuinely works
+beats a registry entry under a compromised name.
+
+That makes the clone path the product, so it is held to the same standard as
+anything else here: verified from a fresh clone on every change, both SDKs, with
+and without a model key. `pnpm build:packages` and `pnpm packages:check` stay
+ready for the day a name is settled.
 
 ## Product moats
 

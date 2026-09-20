@@ -95,20 +95,33 @@ Packaging and the API description move into the P1 adoption track above; what re
 - [x] Publish a browsable connector catalog driven by connector manifests
 - [x] Add an interactive policy/decision simulator — *`POST /v1/simulate` plus a UI page. Hosting a public sandbox is a deployment decision, not a code change.*
 
-## P4 — adoption
+## P4 — adoption: complete
 
-P0–P3 made ActionGate correct and complete. P4 is about whether anyone reaches
-it. The reasoning behind these, and why an authorization layer cannot copy a
-consumer install story, is in [PLANNING.md](PLANNING.md#what-adoption-actually-requires).
+P0–P3 made ActionGate correct and complete. P4 was about whether anyone reaches
+it. The reasoning, and why an authorization layer cannot copy a consumer install
+story, is in [PLANNING.md](PLANNING.md#what-adoption-actually-requires).
 
 - [x] Run with no server, no API key, and no base URL (`ActionGate.embedded()`, TypeScript and Python)
-- [ ] Publish the packages to npm and PyPI so adopters stop cloning a repository
-- [ ] Reach the simulator without cloning, through `npx` or a hosted page
-- [ ] Guard an MCP server by editing an MCP client config, with no code at all
-- [ ] Ship a `create-actiongate` template for a guarded agent
-- [ ] Surface the evidence loop: what agents tried, what was refused, what changed
-- [ ] Publish one honest write-up of a real refusal, with the decision record
+- [x] Guard an MCP server by editing an MCP client config, with no code at all
+- [x] Surface the evidence loop: what agents tried, what was refused, what changed
+- [x] Publish one honest write-up of a real refusal, with the decision record
+- [x] Make a fresh clone work first time, verified end to end for both SDKs
+- [ ] ~~Publish the packages to npm and PyPI~~ — **deliberately not done**
 
-Nothing else on this list matters until the packages are published.
+### Why the packages are not published
+
+`@actiongate/sdk` on npm belongs to someone else's project, and `actiongate` on
+PyPI is taken. Publishing would mean either a different name or squatting near
+one already in use, and the decision was that a clone-and-use path is worth more
+right now than a registry entry under a compromised name.
+
+So the clone path is the product. It is verified from a genuinely fresh clone on
+every change: install, `pnpm dev`, both SDK demos with and without a model key,
+both test suites, and the MCP guard driven over real stdio.
+
+If that changes, the gate is ready: `pnpm build:packages` builds all eight
+packages and `pnpm packages:check` refuses one that would publish an empty
+tarball or point at a file that does not exist. What is missing is a name, not
+machinery.
 
 The detailed acceptance gates are in [PLANNING.md](PLANNING.md), and the integration strategy is in [integrations.md](integrations.md).

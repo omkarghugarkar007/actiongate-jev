@@ -167,9 +167,23 @@ createSidecar({
 }).listen({ port: 8090 });
 ```
 
-An unmapped route is a 404, never a pass-through. `@actiongate/mcp-proxy` does the
-same for MCP. One screen per integration level is in the [quickstarts](docs/quickstarts.md),
-and every connector states what it does *not* protect in the [catalog](docs/catalog.md).
+An unmapped route is a 404, never a pass-through.
+
+For MCP, guarding a server is a **config edit with no code** — your client spawns
+ActionGate, ActionGate spawns the real server:
+
+```json
+{ "mcpServers": { "payments": {
+  "command": "npx",
+  "args": ["tsx", "/path/to/actiongate-jev/scripts/mcp-guard.ts"],
+  "env": { "UPSTREAM_COMMAND": "npx", "UPSTREAM_ARGS": "-y your-mcp-server", "OPENROUTER_API_KEY": "sk-or-v1-..." }
+}}}
+```
+
+See [guarding an MCP server](docs/guard-an-mcp-server.md) for what that does and
+does not protect. One screen per integration level is in the
+[quickstarts](docs/quickstarts.md), and every connector states its boundary in
+the [catalog](docs/catalog.md).
 
 ## What it costs to adopt
 
@@ -213,6 +227,9 @@ pnpm e2e                                      # real browser
 pnpm test:jev:live                            # real OpenRouter; spends credits
 ```
 
+See [a real refusal](docs/a-real-refusal.md) for one live decision record with
+its signals, cost, and latency.
+
 `pnpm verify:live` runs everything end to end against a real stack — Redis,
 PostgreSQL, live OpenRouter, both SDKs over HTTP, both proxies with real upstream
 servers, the credential broker, the signed audit chain, and the UI in a real
@@ -224,10 +241,16 @@ the unsafe-allow rate. See the [annotator guidance](docs/annotation-guide.md).
 
 ## Status
 
-P0–P3 are engineering-complete: tenant-safe control plane, non-bypassable
+Not on npm or PyPI: `@actiongate/sdk` there belongs to another project and
+`actiongate` on PyPI is taken. Cloning is the supported path, and it is verified
+from a fresh clone on every change — install, `pnpm dev`, both SDKs with and
+without a model key, both test suites, and the MCP guard over real stdio.
+
+P0–P4 are engineering-complete: tenant-safe control plane, non-bypassable
 execution, review and incident workflow, calibration with drift gating, telemetry
-and quotas, tamper-evident exports, supply-chain provenance, and the connector
-catalog.
+and quotas, tamper-evident exports, supply-chain provenance, the connector
+catalog, embedded mode in both SDKs, config-only MCP guarding, and the evidence
+loop.
 
 **Two things are open, and neither is a code change.** The semantic dataset's
 labels were authored alongside the system they test, so they stay `generated` and
