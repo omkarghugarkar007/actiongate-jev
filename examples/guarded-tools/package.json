@@ -1,0 +1,11 @@
+{
+  "name": "@actiongate/example-guarded-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@actiongate/adapters": "workspace:*",
+    "@actiongate/core": "workspace:*",
+    "@actiongate/proxy-core": "workspace:*"
+  }
+}

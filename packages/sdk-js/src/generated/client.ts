@@ -147,6 +147,11 @@ export class ActionGateApiClient {
     return this.request("POST", `/v1/executions`, undefined);
   }
 
+  /** Run a decision without storing it or issuing a grant */
+  async postSimulate(): Promise<ApiResult> {
+    return this.request("POST", `/v1/simulate`, undefined);
+  }
+
   /** Disable tools in bulk */
   async postIncidentsDisableTools(): Promise<ApiResult> {
     return this.request("POST", `/v1/incidents/disable-tools`, undefined);

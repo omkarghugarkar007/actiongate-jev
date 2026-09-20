@@ -22,6 +22,7 @@
       "@actiongate/http-proxy": ["packages/http-proxy/src/index.ts"],
       "@actiongate/connector-manifest": ["packages/connector-manifest/src/index.ts"],
       "@actiongate/conformance": ["packages/conformance/src/index.ts"],
+      "@actiongate/adapters": ["packages/adapters/src/index.ts"],
       "@actiongate/db": ["packages/db/src/index.ts"]
     }
   },

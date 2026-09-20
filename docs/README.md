@@ -14,6 +14,7 @@ Start with the [integration guide](integration-guide.md) to protect an agent too
 | [MCP gateway](mcp-gateway.md) | Guarded tool registration, combined execution, split-grant flow, and security requirements |
 | [MCP proxy manifest](integrations.md#worked-example-the-mcp-proxy-manifest) | The standalone network proxy: what it protects, what it requires, and what still bypasses it |
 | [Annotator guidance](annotation-guide.md) | What a semantic label means, the review process, and what a report may claim |
+| [SLOs and alerts](../infra/observability/slo.yml) | Service objectives and what an operator should do about each alert |
 | [Runbooks](runbooks.md) | Deployment, migration, key rotation, retention, restore, and incident procedures |
 | [Threat model](threat-model.md) | Assets, trust boundaries, abuse cases, mitigations, and current limitations |
 | [Roadmap](roadmap.md) | Planned durability, integrations, observability, and release milestones |

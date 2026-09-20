@@ -139,6 +139,18 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
+  examples/guarded-tools:
+    dependencies:
+      '@actiongate/adapters':
+        specifier: workspace:*
+        version: link:../../packages/adapters
+      '@actiongate/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@actiongate/proxy-core':
+        specifier: workspace:*
+        version: link:../../packages/proxy-core
+
   examples/refund-agent:
     dependencies:
       '@actiongate/sdk':
@@ -147,6 +159,15 @@ importers:
       dotenv:
         specifier: ^17.2.2
         version: 17.4.2
+
+  packages/adapters:
+    dependencies:
+      '@actiongate/core':
+        specifier: workspace:*
+        version: link:../core
+      '@actiongate/proxy-core':
+        specifier: workspace:*
+        version: link:../proxy-core
 
   packages/conformance:
     dependencies:

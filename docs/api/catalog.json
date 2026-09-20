@@ -1,6 +1,41 @@
 {
-  "generatedAt": "2026-09-20T07:36:55.003Z",
+  "generatedAt": "2026-09-20T07:45:44.642Z",
   "connectors": [
+    {
+      "name": "@actiongate/adapters",
+      "version": "0.1.0",
+      "level": "guard",
+      "summary": "Adapters for tool-calling agent loops, plain async functions, and inbound automation webhooks.",
+      "protects": "The dispatch path an agent framework, workflow step, or automation platform uses to reach a handler.",
+      "bypass": [
+        "Anything that can call the handler outside this dispatch path is unguarded; the adapter protects the wrapper, not the callee.",
+        "An inbound webhook is only as trustworthy as its shared secret; whoever holds that secret can present a valid delivery.",
+        "Relayed user intent comes from the model or the automation platform and is evidence only; it can never override a hard rule."
+      ],
+      "requires": {
+        "providerKey": false,
+        "redis": false,
+        "postgres": false,
+        "minimumTier": 0
+      },
+      "tools": [
+        {
+          "name": "declared-per-call",
+          "operation": "varies"
+        }
+      ],
+      "facts": [],
+      "setup": {
+        "steps": 2,
+        "requiredSettings": 0
+      },
+      "negativeTests": [
+        "BLOCK, REVIEW, a missing grant, a failed consumption, and an unreachable ActionGate never dispatch",
+        "Unknown and disabled tools give an identical refusal, so probing reveals nothing",
+        "Malformed tool arguments are refused before any authorization is attempted",
+        "A forged, tampered, or replayed webhook is refused before any provider spend"
+      ]
+    },
     {
       "name": "@actiongate/http-proxy",
       "version": "0.1.0",

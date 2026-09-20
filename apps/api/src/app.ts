@@ -91,6 +91,12 @@ const GrantExchangeSchema = ActionGrantConsumeRequestSchema.extend({
   audience: z.string().min(1).max(255).optional()
 }).strict();
 const IncidentDisableSchema = z.object({ tools: z.array(z.string().min(1).max(128)).min(1).max(100) }).strict();
+const SimulationSchema = z.object({
+  request: AuthorizationRequestSchema.omit({ requestId: true, idempotencyKey: true, tenantId: true, environment: true, mode: true })
+    .extend({ mode: z.enum(["shadow", "enforce"]).optional() }),
+  /** A candidate policy to try. Omit to simulate against the tool's current one. */
+  policy: PolicySchema.optional()
+}).strict();
 const IncidentRevokeSchema = z.object({ tool: z.string().min(1).max(128).optional() }).strict();
 
 export interface BuildAppOptions {
@@ -265,6 +271,12 @@ export function buildApp(options: BuildAppOptions = {}) {
   // Reuses the evidence key ring: an export attestation is audit evidence.
   const exportKeyEntry = evidenceKeyEntries.find((key) => key.id === (evidenceActiveKeyId ?? evidenceKeyEntries[0]?.id)) ?? evidenceKeyEntries[0];
   const exportKey = exportKeyEntry ? { id: exportKeyEntry.id, secret: exportKeyEntry.secret } : undefined;
+  // Its own engine so a simulation can never touch stored decision state.
+  const simulationEngine = new AuthorizationEngine(provider, {
+    timeoutMs: config.JEV_TIMEOUT_MS,
+    failOpenReadOnly: config.failOpenReadOnly,
+    ...(options.factProviders ? { factProviders: options.factProviders } : {})
+  });
   const telemetry = new Telemetry(options.metricsSalt ?? grantSecret);
   const quotas = new QuotaEnforcer(options.quotas ?? {}, options.defaultQuota ?? {}, options.clock ?? Date.now);
   const credentialIssuer = options.credentialIssuer;
@@ -660,6 +672,52 @@ export function buildApp(options: BuildAppOptions = {}) {
     await audit(principal, "review.escalated", review.id, review);
     void notify({ type: "review.escalated", tenantId: principal.tenantId, objectId: review.id, payload: review });
     return review;
+  });
+
+  // --- Policy and decision simulator --------------------------------------
+  // Runs the full decision path and throws the result away: nothing is stored,
+  // no idempotency key is consumed, and no grant is ever issued. It exists so a
+  // policy change can be tried against a real action before it is committed.
+  app.post("/v1/simulate", async (request, reply) => {
+    if (!hasRole(request, reply, "policy_admin")) return;
+    const principal = getPrincipal(request);
+    const parsed = SimulationSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: { code: "INVALID_REQUEST", issues: parsed.error.issues } });
+
+    const tool = await registeredAction(principal, parsed.data.request.proposedAction, reply);
+    if (!tool) return;
+    const storedPolicy = await controlPlane!.getPolicy(principal.tenantId, tool.policyId, tool.policyVersion);
+    const policy = parsed.data.policy ?? storedPolicy;
+    if (!policy) return reply.code(404).send({ error: { code: "POLICY_NOT_FOUND" } });
+    const policyTool = policy.tools[tool.name];
+    if (!policyTool) return reply.code(409).send({ error: { code: "TOOL_NOT_IN_CANDIDATE_POLICY" } });
+
+    const simulated: AuthorizationRequest = {
+      ...parsed.data.request,
+      requestId: `simulate-${randomUUID()}`,
+      idempotencyKey: `simulate-${randomUUID()}`,
+      tenantId: principal.tenantId,
+      environment: principal.environment,
+      mode: parsed.data.request.mode ?? "enforce",
+      proposedAction: { ...parsed.data.request.proposedAction, tool: tool.name, operation: tool.operation, riskClass: tool.riskClass }
+    };
+
+    // The engine directly, not the service: the service records and deduplicates.
+    const response = await simulationEngine.authorize(simulated, policy as Policy);
+    telemetry.increment("actiongate_simulations_total", "Policy simulations run.", { tenant: telemetry.tenantLabel(principal.tenantId), decision: response.decision });
+    return {
+      simulated: true,
+      decision: response.decision,
+      wouldHaveDecision: response.wouldHaveDecision ?? null,
+      riskClass: response.riskClass,
+      reasons: response.reasons,
+      signals: response.signals,
+      timing: response.timing,
+      policy: response.policy,
+      ...(response.model ? { model: response.model } : {}),
+      // Stated explicitly so a caller cannot mistake a simulation for a permit.
+      note: "Simulation only. Nothing was stored and no Action Grant was issued."
+    };
   });
 
   // --- Incident response --------------------------------------------------

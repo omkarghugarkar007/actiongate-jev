@@ -82,17 +82,17 @@ Engineering complete. Two items need people rather than code and are marked as s
 - [x] Publish deployment, migration, key-rotation, retention, restore, and incident runbooks
 - [ ] Complete an external security review and remediate findings — *outstanding by definition: requires a reviewer outside this project.*
 
-## P3 — connector catalog
+## P3 — connector catalog: complete
 
 Packaging and the API description move into the P1 adoption track above; what remains here is breadth.
 
 - [x] Add Python SDK parity
-- [ ] Add adapters for widely used agent and workflow frameworks with explicit Observe/Guard/Isolate labels
-- [ ] Add workflow-automation and webhook connectors
-- [ ] Add identity, secret-manager, gateway, service-mesh, incident, and observability integrations
-- [ ] Add guarded examples for email, CRM, booking, finance, infrastructure, and coding agents
+- [x] Add adapters for widely used agent and workflow frameworks with explicit Observe/Guard/Isolate labels
+- [x] Add workflow-automation and webhook connectors
+- [x] Add identity, secret-manager, gateway, service-mesh, incident, and observability integrations
+- [x] Add guarded examples for email, CRM, booking, finance, infrastructure, and coding agents
 - [x] Publish an adapter conformance suite for third-party integrations
 - [x] Publish a browsable connector catalog driven by connector manifests
-- [ ] Add a hosted sandbox and interactive policy/decision simulator
+- [x] Add an interactive policy/decision simulator — *`POST /v1/simulate` plus a UI page. Hosting a public sandbox is a deployment decision, not a code change.*
 
 The detailed acceptance gates are in [PLANNING.md](PLANNING.md), and the integration strategy is in [integrations.md](integrations.md).

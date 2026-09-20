@@ -1297,6 +1297,43 @@
         }
       }
     },
+    "/v1/simulate": {
+      "post": {
+        "summary": "Run a decision without storing it or issuing a grant",
+        "operationId": "postSimulate",
+        "description": "Requires role: policy_admin.",
+        "security": [
+          {
+            "ActionGateKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Simulated decision"
+          },
+          "403": {
+            "description": "Risk or operation downgrade, or missing role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The candidate policy does not contain the tool",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/incidents/disable-tools": {
       "post": {
         "summary": "Disable tools in bulk",
