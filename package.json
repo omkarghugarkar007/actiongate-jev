@@ -68,7 +68,9 @@
     "catalog:build": "tsx scripts/build-catalog.ts",
     "examples:guarded": "tsx examples/guarded-tools/src/demo.ts",
     "verify:live": "tsx scripts/verify-live.ts",
-    "examples:embedded": "tsx examples/guarded-tools/src/embedded-demo.ts"
+    "examples:embedded": "tsx examples/guarded-tools/src/embedded-demo.ts",
+    "conformance:record": "tsx scripts/record-conformance.ts",
+    "examples:embedded:python": "python3 examples/guarded-tools/embedded_demo.py"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

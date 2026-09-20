@@ -34,7 +34,7 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Server-owned tools | P0 complete | Operation, JSON Schema, risk, owner, sensitivity, policy, and enabled state are tenant-owned; downgrades fail closed. |
 | Key/evidence lifecycle | P0 complete | Signing and encryption key IDs support active-key rotation overlap; sensitive evidence is encrypted at rest. |
 | Data governance | P0 complete at application layer | Tenant export plus cutoff-based Redis minimization and PostgreSQL evidence deletion are role-gated. |
-| Zero-infrastructure adoption | Shipped | `ActionGate.embedded()` needs no server, key, or base URL and keeps the same issue-and-consume guarantees. Its weaker boundary is stated in the API docs. |
+| Zero-infrastructure adoption | Shipped | `ActionGate.embedded()` in both SDKs needs no server, key, or base URL and keeps the same issue-and-consume guarantees. Cross-language fixtures keep the two cores in step. Its weaker boundary is stated in the API docs. |
 | TypeScript integrations | Shipped | SDK, MCP gateway, MCP proxy, and HTTP proxy build as versioned packages with declared exports, a generated OpenAPI 3.1 description, and a generated typed client. Nothing is published to a registry yet. |
 | Non-bypassable network boundary | Shipped | MCP proxy, HTTP reverse proxy, and credential broker all consume before forwarding. A reference topology publishes only the proxy; everything else is on an unreachable network. |
 | Trusted facts | Shipped | Server-side providers resolve RBAC, spend, duplicate, and allowlist facts. Provenance and freshness are recorded, and `requireTrustedFacts` refuses caller-asserted facts. |
@@ -97,8 +97,12 @@ category, which needs five things rather than one.
 
 ### 1. Nothing to install or operate
 
-**Shipped.** `ActionGate.embedded()` runs the whole decision path in the calling
-process: no server, no API key, no base URL, no database. The guarantees are
+**Shipped in both SDKs.** `ActionGate.embedded()` runs the whole decision path in
+the calling process: no server, no API key, no base URL, no database. The Python
+client carries its own port of the deterministic core, kept in step with
+TypeScript by a shared fixture suite that compares canonical fingerprints,
+deterministic rules, and thresholds — two implementations of an authorization
+core drift unless something forces them not to. The guarantees are
 identical to hosted mode, so graduating changes one line. A guardrail that
 requires standing up a service is one most people never evaluate at all.
 

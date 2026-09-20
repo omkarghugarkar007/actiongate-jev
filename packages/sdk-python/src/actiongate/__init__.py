@@ -8,6 +8,7 @@ Standard library only, so adding it to an application pulls in no dependency tre
 """
 
 from .client import ActionGate, ActionGateOptions
+from .embedded import EmbeddedPolicyError, EmbeddedTransport
 from .errors import (
     ActionBlockedError,
     ActionGateApiError,
@@ -27,6 +28,8 @@ from .models import (
 __all__ = [
     "ActionGate",
     "ActionGateOptions",
+    "EmbeddedTransport",
+    "EmbeddedPolicyError",
     "ActionGateError",
     "ActionGateApiError",
     "ActionBlockedError",

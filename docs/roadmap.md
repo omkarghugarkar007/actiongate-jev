@@ -101,7 +101,7 @@ P0–P3 made ActionGate correct and complete. P4 is about whether anyone reaches
 it. The reasoning behind these, and why an authorization layer cannot copy a
 consumer install story, is in [PLANNING.md](PLANNING.md#what-adoption-actually-requires).
 
-- [x] Run with no server, no API key, and no base URL (`ActionGate.embedded()`)
+- [x] Run with no server, no API key, and no base URL (`ActionGate.embedded()`, TypeScript and Python)
 - [ ] Publish the packages to npm and PyPI so adopters stop cloning a repository
 - [ ] Reach the simulator without cloning, through `npx` or a hosted page
 - [ ] Guard an MCP server by editing an MCP client config, with no code at all

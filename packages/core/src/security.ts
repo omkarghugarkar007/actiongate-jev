@@ -11,10 +11,19 @@ export function redactSecrets(value: unknown): unknown {
   return value;
 }
 
+/**
+ * Stable JSON used for action fingerprints.
+ *
+ * Keys sort by code point, not `localeCompare`. `localeCompare` is
+ * locale-dependent, so two runtimes with different ICU data could order
+ * mixed-case keys differently and produce different fingerprints for the same
+ * action. Code-point order is the same everywhere, and is what the Python
+ * implementation produces, so a grant fingerprints identically in both.
+ */
 export function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
   if (value && typeof value === "object") {
-    return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
+    return `{${Object.entries(value).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
   }
   return JSON.stringify(value);
 }

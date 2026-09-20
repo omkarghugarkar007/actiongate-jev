@@ -44,8 +44,8 @@ def _urllib_transport(method: str, url: str, headers: dict[str, str], body: byte
 
 @dataclass
 class ActionGateOptions:
-    api_key: str
-    base_url: str
+    api_key: str = ""
+    base_url: str = ""
     transport: Transport | None = None
 
 
@@ -57,13 +57,28 @@ class ActionGate:
     wraps it, or another caller can reach it without a grant.
     """
 
-    def __init__(self, options: ActionGateOptions | None = None, **kwargs: Any) -> None:
+    def __init__(self, options: ActionGateOptions | None = None, *, embedded: Any = None, **kwargs: Any) -> None:
+        self._embedded = embedded
         self._options = options or ActionGateOptions(**kwargs)
         self._transport = self._options.transport or _urllib_transport
+
+    @classmethod
+    def embedded(cls, **kwargs: Any) -> "ActionGate":
+        """Run everything in this process: no server, no API key, no base URL.
+
+        The guarantees match hosted mode, so ``wrap_tool`` code is identical and
+        graduating to a server changes only this line. See
+        :mod:`actiongate.embedded` for what embedding costs you.
+        """
+        from .embedded import EmbeddedTransport
+
+        return cls(embedded=EmbeddedTransport(**kwargs))
 
     # -- raw API ---------------------------------------------------------
 
     def authorize(self, request: AuthorizationRequest) -> AuthorizationResponse:
+        if self._embedded is not None:
+            return AuthorizationResponse.from_payload(self._embedded.authorize(request.to_payload()))
         payload = self._request(
             "POST",
             "/v1/authorize",
@@ -81,17 +96,16 @@ class ActionGate:
         actor: Actor,
         proposed_action: ProposedAction,
     ) -> dict[str, Any]:
-        return self._request(
-            "POST",
-            "/v1/grants/consume",
-            {
-                "token": token,
-                "tenantId": tenant_id,
-                "environment": environment,
-                "actor": actor.to_payload(),
-                "proposedAction": proposed_action.to_payload(),
-            },
-        )
+        payload = {
+            "token": token,
+            "tenantId": tenant_id,
+            "environment": environment,
+            "actor": actor.to_payload(),
+            "proposedAction": proposed_action.to_payload(),
+        }
+        if self._embedded is not None:
+            return self._embedded.consume_grant(payload)
+        return self._request("POST", "/v1/grants/consume", payload)
 
     def record_execution(
         self,

@@ -8,10 +8,16 @@ Authorize an action, consume a single-use grant, then call a private handler.
 
 Standard library only — adding it pulls in no dependency tree.
 
+`ActionGate.embedded()` runs the whole decision path in your process. Swap it for
+`ActionGate(api_key=..., base_url=...)` to use a server; the guarantees and the
+`wrap_tool` code are identical. Embedded keeps grants in memory, so they do not
+survive a restart or coordinate across replicas, and the policy sits in the
+agent's own process.
+
 ```python
 from actiongate import ActionGate, Actor, UserIntent
 
-gate = ActionGate(api_key=os.environ["ACTIONGATE_API_KEY"], base_url=os.environ["ACTIONGATE_URL"])
+gate = ActionGate.embedded()      # no server, no API key, no base URL
 
 def _refund(arguments, runtime):          # keep private
     return payments.refund(arguments["transactionId"], arguments["amountCents"])

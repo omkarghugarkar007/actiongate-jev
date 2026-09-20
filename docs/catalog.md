@@ -131,13 +131,14 @@ TypeScript client that authorizes and consumes a grant before calling a private 
 
 ### `actiongate-python`
 
-Python client that authorizes and consumes a grant before calling a private handler.
+Python client that authorizes and consumes a grant before calling a private handler, in-process or against a server.
 
 **Protects.** The application's own tool function, which must stay private to the module that wraps it.
 
 **Does not protect.**
 - Any other caller that can reach the same function directly is unguarded; wrap_tool protects the wrapper, not the callee.
 - A downstream credential held by the application rather than the wrapper remains reachable without a grant.
+- In embedded mode the policy lives in the agent's own process, so code that can edit the policy can raise its own limits.
 
 **Requires.** nothing beyond ActionGate itself
 
@@ -148,6 +149,7 @@ Python client that authorizes and consumes a grant before calling a private hand
 - A missing grant in enforce mode never calls the handler
 - A failed consumption never calls the handler
 - An unreachable API never calls the handler
+- Embedded mode refuses an unknown tool, a disabled tool, a risk downgrade, a replayed grant, and a mutated action
 
 ---
 

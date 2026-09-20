@@ -2,20 +2,35 @@
   "name": "actiongate-python",
   "version": "0.1.0",
   "level": "guard",
-  "summary": "Python client that authorizes and consumes a grant before calling a private handler.",
+  "summary": "Python client that authorizes and consumes a grant before calling a private handler, in-process or against a server.",
   "protects": "The application's own tool function, which must stay private to the module that wraps it.",
   "bypass": [
     "Any other caller that can reach the same function directly is unguarded; wrap_tool protects the wrapper, not the callee.",
-    "A downstream credential held by the application rather than the wrapper remains reachable without a grant."
+    "A downstream credential held by the application rather than the wrapper remains reachable without a grant.",
+    "In embedded mode the policy lives in the agent's own process, so code that can edit the policy can raise its own limits."
   ],
-  "requires": { "providerKey": false, "redis": false, "postgres": false, "minimumTier": 0 },
-  "tools": [{ "name": "declared-per-wrap-tool-call", "operation": "varies" }],
+  "requires": {
+    "providerKey": false,
+    "redis": false,
+    "postgres": false,
+    "minimumTier": 0
+  },
+  "tools": [
+    {
+      "name": "declared-per-wrap-tool-call",
+      "operation": "varies"
+    }
+  ],
   "facts": [],
-  "setup": { "steps": 2, "requiredSettings": 0 },
+  "setup": {
+    "steps": 2,
+    "requiredSettings": 0
+  },
   "negativeTests": [
     "BLOCK and REVIEW never call the handler",
     "A missing grant in enforce mode never calls the handler",
     "A failed consumption never calls the handler",
-    "An unreachable API never calls the handler"
+    "An unreachable API never calls the handler",
+    "Embedded mode refuses an unknown tool, a disabled tool, a risk downgrade, a replayed grant, and a mutated action"
   ]
 }

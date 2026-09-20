@@ -59,10 +59,7 @@ For live decisions, set `DECISION_PROVIDER=openrouter` and `OPENROUTER_API_KEY`.
 
 ## Guard a tool
 
-### TypeScript — no server required
-
-`ActionGate.embedded()` runs the whole decision path in your process. No server,
-no API key, no base URL, no database. Just an OpenRouter key.
+### TypeScript
 
 ```ts
 import { ActionGate } from "@actiongate/sdk";
@@ -88,13 +85,13 @@ const guardedRefund = gate.wrapTool({
 await guardedRefund({ transactionId: "txn_8923", amountCents: 4900 }, runtime);
 ```
 
-Run it: `pnpm examples:embedded`. Against the live model, the action the user
-asked for executes and a transaction they never named is blocked on meaning.
-
-When you outgrow one process, swap the constructor and nothing else:
+When you outgrow one process, swap the constructor and nothing else changes:
 
 ```ts
 const gate = new ActionGate({ apiKey: process.env.ACTIONGATE_API_KEY!, baseUrl: process.env.ACTIONGATE_URL! });
+```
+```python
+gate = ActionGate(api_key=os.environ["ACTIONGATE_API_KEY"], base_url=os.environ["ACTIONGATE_URL"])
 ```
 
 Embedded keeps the same issue-and-consume guarantees but costs you a real
@@ -105,10 +102,13 @@ Hosted mode exists so the registry is somewhere the agent cannot reach.
 
 ### Python
 
+Same thing, no server:
+
+
 ```python
 from actiongate import ActionGate, Actor, UserIntent, ActionBlockedError
 
-gate = ActionGate(api_key=os.environ["ACTIONGATE_API_KEY"], base_url=os.environ["ACTIONGATE_URL"])
+gate = ActionGate.embedded()          # reads OPENROUTER_API_KEY
 
 def _refund(arguments, runtime):            # keep private
     return payments.refund(arguments["transactionId"], arguments["amountCents"])
@@ -133,9 +133,18 @@ except ActionBlockedError as error:
     print(error.decision, [reason["code"] for reason in error.reasons])
 ```
 
-Both wrappers authorize, consume a single-use grant, and only then call the
-handler. Every error means the handler was **not** called. (The Python client is
-hosted-mode only for now; embedded is TypeScript.)
+Both SDKs authorize, consume a single-use grant, and only then call the handler.
+Every error means the handler was **not** called.
+
+`ActionGate.embedded()` runs the whole decision path in your process — no server,
+no API key, no base URL, no database. Run either demo to see it:
+`pnpm examples:embedded` or `pnpm examples:embedded:python`. Against the live
+model both refuse a transaction the user never named, on meaning rather than on
+a missing record.
+
+A shared fixture suite makes the two implementations agree on canonical
+fingerprints, deterministic rules, and thresholds, so a grant issued by one
+verifies in the other.
 
 > **Guard level.** These protect the wrapper, not the function it calls. Keep the
 > handler private, or another caller reaches it without a grant.

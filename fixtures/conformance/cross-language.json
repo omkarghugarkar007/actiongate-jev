@@ -1,0 +1,110 @@
+{
+  "description": "Shared cases both SDK implementations must agree on. The TypeScript suite and the Python suite each run every case; a divergence fails CI rather than producing two systems that quietly disagree.",
+  "canonicalJson": [
+    { "name": "sorts keys", "value": { "b": 1, "a": 2 }, "expected": "{\"a\":2,\"b\":1}" },
+    { "name": "nested and arrays", "value": { "z": [1, true, null, "x"], "a": { "n": 2 } }, "expected": "{\"a\":{\"n\":2},\"z\":[1,true,null,\"x\"]}" },
+    { "name": "camelCase keys keep code-point order", "value": { "transactionId": "t", "amountCents": 1 }, "expected": "{\"amountCents\":1,\"transactionId\":\"t\"}" },
+    { "name": "mixed case keys", "value": { "Zebra": 1, "apple": 2, "Apple": 3 }, "expected": "{\"Apple\":3,\"Zebra\":1,\"apple\":2}" },
+    { "name": "integral floats render as integers", "value": { "amount": 4900.0 }, "expected": "{\"amount\":4900}" },
+    { "name": "empty object", "value": {}, "expected": "{}" },
+    { "name": "unicode is preserved", "value": { "note": "café" }, "expected": "{\"note\":\"café\"}" }
+  ],
+  "fingerprints": [
+    {
+      "name": "lowercases tool and operation",
+      "binding": {
+        "tenantId": "acme", "environment": "development", "agentId": "agent-1",
+        "proposedAction": { "tool": "Refund_Payment", "operation": "REFUND", "arguments": { "transactionId": "txn_1", "amountCents": 4900 }, "riskClass": "FINANCIAL" }
+      },
+      "policyVersion": "1.0.0"
+    },
+    {
+      "name": "argument order does not matter",
+      "binding": {
+        "tenantId": "acme", "environment": "production", "agentId": "agent-1", "userId": "u_1", "sessionId": "s_1",
+        "proposedAction": { "tool": "send_email", "operation": "send", "arguments": { "to": "a@example.com", "body": "hi" }, "riskClass": "EXTERNAL_COMMUNICATION" }
+      },
+      "policyVersion": "2.1.0"
+    },
+    {
+      "name": "absent optional identity is bound as null",
+      "binding": {
+        "tenantId": "acme", "environment": "staging", "agentId": "agent-2",
+        "proposedAction": { "tool": "get_order", "operation": "read", "arguments": { "orderId": "8841" }, "riskClass": "READ_ONLY" }
+      },
+      "policyVersion": "1.0.0"
+    }
+  ],
+  "deterministicRules": [
+    {
+      "name": "no facts blocks every configured hard rule",
+      "tool": "refund_payment",
+      "proposedAction": { "tool": "refund_payment", "operation": "refund", "arguments": {}, "riskClass": "FINANCIAL" },
+      "facts": null,
+      "expectedDecision": "BLOCK",
+      "expectedCodes": ["AUTH_FACT_MISSING", "RBAC_FACT_MISSING", "DUPLICATE_FACT_MISSING", "AMOUNT_FACT_MISSING", "CURRENCY_FACT_MISSING"]
+    },
+    {
+      "name": "complete facts satisfy every rule",
+      "tool": "refund_payment",
+      "proposedAction": { "tool": "refund_payment", "operation": "refund", "arguments": {}, "riskClass": "FINANCIAL" },
+      "facts": { "authenticated": true, "authorizedByRbac": true, "duplicate": false, "amountCents": 4900, "currency": "USD" },
+      "expectedDecision": null,
+      "expectedCodes": []
+    },
+    {
+      "name": "an explicit denial is distinct from an absent fact",
+      "tool": "refund_payment",
+      "proposedAction": { "tool": "refund_payment", "operation": "refund", "arguments": {}, "riskClass": "FINANCIAL" },
+      "facts": { "authenticated": true, "authorizedByRbac": false, "duplicate": false, "amountCents": 4900, "currency": "USD" },
+      "expectedDecision": "BLOCK",
+      "expectedCodes": ["RBAC_DENIED"]
+    },
+    {
+      "name": "an amount over the limit blocks",
+      "tool": "refund_payment",
+      "proposedAction": { "tool": "refund_payment", "operation": "refund", "arguments": {}, "riskClass": "FINANCIAL" },
+      "facts": { "authenticated": true, "authorizedByRbac": true, "duplicate": false, "amountCents": 49000, "currency": "USD" },
+      "expectedDecision": "BLOCK",
+      "expectedCodes": ["AMOUNT_EXCEEDS_LIMIT"]
+    },
+    {
+      "name": "a risk downgrade blocks",
+      "tool": "refund_payment",
+      "proposedAction": { "tool": "refund_payment", "operation": "refund", "arguments": {}, "riskClass": "READ_ONLY" },
+      "facts": { "authenticated": true, "authorizedByRbac": true, "duplicate": false, "amountCents": 4900, "currency": "USD" },
+      "expectedDecision": "BLOCK",
+      "expectedCodes": ["RISK_CLASS_MISMATCH"]
+    },
+    {
+      "name": "a tool without hard rules needs no facts",
+      "tool": "get_order",
+      "proposedAction": { "tool": "get_order", "operation": "read", "arguments": { "orderId": "1" }, "riskClass": "READ_ONLY" },
+      "facts": null,
+      "expectedDecision": null,
+      "expectedCodes": []
+    },
+    {
+      "name": "a missing resource blocks regardless of tool",
+      "tool": "get_order",
+      "proposedAction": { "tool": "get_order", "operation": "read", "arguments": { "orderId": "1" }, "riskClass": "READ_ONLY" },
+      "facts": { "resourceExists": false },
+      "expectedDecision": "BLOCK",
+      "expectedCodes": ["RESOURCE_NOT_FOUND"]
+    },
+    {
+      "name": "a disabled tool blocks",
+      "tool": "delete_record",
+      "proposedAction": { "tool": "delete_record", "operation": "delete", "arguments": {}, "riskClass": "DESTRUCTIVE" },
+      "facts": null,
+      "expectedDecision": "BLOCK",
+      "expectedCodes": ["TOOL_NOT_ALLOWED"]
+    }
+  ],
+  "thresholdProfiles": {
+    "read-only-v1": { "alignmentMinConfidence": 0.75, "targetYesMin": 0.65, "policyViolationBlockAt": 0.9, "sensitiveExposureBlockAt": 0.9, "scopeExpansionBlockAt": 0.9, "missingIntentReviewAt": 0.55 },
+    "reversible-write-v1": { "alignmentMinConfidence": 0.85, "targetYesMin": 0.8, "policyViolationBlockAt": 0.85, "sensitiveExposureBlockAt": 0.85, "scopeExpansionBlockAt": 0.85, "missingIntentReviewAt": 0.45 },
+    "financial-v1": { "alignmentMinConfidence": 0.92, "targetYesMin": 0.9, "policyViolationBlockAt": 0.75, "sensitiveExposureBlockAt": 0.8, "scopeExpansionBlockAt": 0.8, "missingIntentReviewAt": 0.35 },
+    "destructive-v1": { "alignmentMinConfidence": 0.97, "targetYesMin": 0.95, "policyViolationBlockAt": 0.65, "sensitiveExposureBlockAt": 0.7, "scopeExpansionBlockAt": 0.7, "missingIntentReviewAt": 0.25 }
+  }
+}

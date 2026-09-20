@@ -56,6 +56,10 @@ jobs:
         with: { python-version: "3.12" }
       - run: python -m pip install --quiet pytest
       - run: pnpm test:python
+      - name: Cross-language conformance is recorded from TypeScript
+        run: |
+          pnpm conformance:record
+          git diff --exit-code fixtures/conformance/expected.json
       - run: pnpm manifests:validate
       - name: Catalog is in step with the manifests
         run: |
