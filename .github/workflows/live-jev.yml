@@ -27,5 +27,9 @@ jobs:
       - run: pnpm jev:smoke
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Live authorization gate
+        run: pnpm test:jev:live
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       - name: Validate evaluation dataset integrity
         run: pnpm eval --dataset core-v1
