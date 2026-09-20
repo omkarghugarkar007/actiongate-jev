@@ -783,7 +783,9 @@ export function buildApp(options: BuildAppOptions = {}) {
     return result;
   });
 
-  return app;
+  // Exposed so a deployment can push the same snapshot to a collector without a
+  // second instrumentation path.
+  return Object.assign(app, { telemetry });
 }
 
 function grantErrorResponse(error: unknown, reply: FastifyReply) {

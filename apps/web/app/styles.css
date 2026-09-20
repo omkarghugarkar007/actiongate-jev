@@ -3,13 +3,20 @@
 .cards { grid-template-columns:repeat(5,1fr) }
 @media(max-width:900px){.cards{grid-template-columns:1fr 1fr}}
 
-/* Simulator */
-.presets { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
-.presets button { padding: .5rem .9rem; border-radius: 8px; border: 1px solid #d8dfeb; background: #fff; cursor: pointer; font-size: .9rem; }
-.presets button.active { border-color: #7185de; background: #eef3ff; font-weight: 600; }
-.field { display: block; margin-bottom: 1rem; }
-.field span { display: block; font-size: .8rem; font-weight: 600; color: #65718b; margin-bottom: .35rem; }
-.field textarea { width: 100%; padding: .6rem .75rem; border-radius: 8px; border: 1px solid #d8dfeb; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem; resize: vertical; }
-button.primary { padding: .6rem 1.2rem; border-radius: 8px; border: 0; background: #17213a; color: #fff; cursor: pointer; font-weight: 600; }
-button.primary:disabled { opacity: .6; cursor: default; }
-.muted { color: #667085; font-size: .85rem; }
+/* Simulator — matches the dark console theme. */
+.simPanel { padding:23px 25px }
+.presets { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 18px }
+.presets button { background:#1b2230; color:var(--muted); border:1px solid #30394a; border-radius:7px; padding:8px 13px; font-size:13px }
+.presets button.active { background:#1d2942; border-color:#4a5b8c; color:var(--text); font-weight:650 }
+.field { display:block; margin-bottom:16px }
+.field span { display:block; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-bottom:7px }
+.field textarea { width:100%; padding:11px 13px; border-radius:8px; border:1px solid var(--line); background:#0c0f14; color:var(--text);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; line-height:1.55; resize:vertical }
+.field textarea:focus { outline:none; border-color:#4a5b8c }
+button.primary { background:#2f4bd8; border-color:#4a5bd8; color:#fff; font-weight:650; padding:9px 18px }
+button.primary:disabled { opacity:.55; cursor:default }
+.muted { color:var(--muted); font-size:12px }
+.verdict { display:flex; align-items:center; gap:12px; padding:20px 25px; border-bottom:1px solid var(--line) }
+.verdict .pill { font-size:15px; font-weight:750; padding:7px 14px; letter-spacing:.3px }
+.reasons { padding:6px 0 4px }
+.reasons .row { min-width:0; grid-template-columns:.9fr .5fr 2fr }

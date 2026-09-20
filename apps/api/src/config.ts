@@ -25,7 +25,20 @@ const schema = z.object({
   ACTIONGATE_EVIDENCE_KEYS: z.string().optional(),
   ACTIONGATE_EVIDENCE_ACTIVE_KID: z.string().regex(/^[A-Za-z0-9_-]{1,32}$/).optional(),
   ACTIONGATE_GRANT_TTL_SECONDS: z.coerce.number().int().min(1).max(300).default(30),
-  ACTIONGATE_FAIL_OPEN_READ_ONLY: z.enum(["true", "false"]).default("false")
+  ACTIONGATE_FAIL_OPEN_READ_ONLY: z.enum(["true", "false"]).default("false"),
+  /** Enables POST /v1/grants/exchange. Independent of the grant and evidence keys. */
+  ACTIONGATE_CREDENTIAL_SECRET: z.string().min(32).optional(),
+  ACTIONGATE_CREDENTIAL_KID: z.string().regex(/^[A-Za-z0-9_-]{1,32}$/).default("cred_1"),
+  ACTIONGATE_CREDENTIAL_MAX_TTL_SECONDS: z.coerce.number().int().min(1).max(3600).default(120),
+  /** OTLP metric export. Omit to keep metrics on the /metrics endpoint only. */
+  ACTIONGATE_OTLP_ENDPOINT: z.string().url().optional(),
+  ACTIONGATE_OTLP_INTERVAL_MS: z.coerce.number().int().min(5000).max(600_000).default(60_000),
+  /** Signed outbound notifications. */
+  ACTIONGATE_WEBHOOK_URL: z.string().url().optional(),
+  ACTIONGATE_WEBHOOK_SECRET: z.string().min(32).optional(),
+  /** Per-tenant quotas as JSON: {"tenant":{"authorizePerMinute":60}}. */
+  ACTIONGATE_TENANT_QUOTAS: z.string().optional(),
+  ACTIONGATE_DEFAULT_QUOTA: z.string().optional()
 });
 
 const env = schema.parse(process.env);
@@ -35,6 +48,9 @@ if (env.NODE_ENV === "production" && env.ACTIONGATE_CONTROL_PLANE !== "postgres"
 if (env.NODE_ENV === "production" && env.ACTIONGATE_API_KEY) throw new Error("Production does not accept ACTIONGATE_API_KEY; provision a hashed tenant key in PostgreSQL");
 if (env.ACTIONGATE_IDEMPOTENCY_LEASE_MS <= env.JEV_TIMEOUT_MS) throw new Error("ACTIONGATE_IDEMPOTENCY_LEASE_MS must exceed JEV_TIMEOUT_MS");
 if (env.DECISION_PROVIDER === "openrouter" && !(env.OPENROUTER_API_KEY ?? env.OPENROUTER_KEY)) throw new Error("OPENROUTER_API_KEY is required for the OpenRouter provider");
+// A webhook URL with no secret would send unsigned notifications, which a
+// receiver cannot distinguish from a forgery.
+if (env.ACTIONGATE_WEBHOOK_URL && !env.ACTIONGATE_WEBHOOK_SECRET) throw new Error("ACTIONGATE_WEBHOOK_URL requires ACTIONGATE_WEBHOOK_SECRET");
 
 const grantKeys = parseKeyRing(env.ACTIONGATE_GRANT_KEYS, "ACTIONGATE_GRANT_KEYS");
 const evidenceKeys = parseKeyRing(env.ACTIONGATE_EVIDENCE_KEYS, "ACTIONGATE_EVIDENCE_KEYS");
@@ -48,8 +64,19 @@ export const config = {
   openRouterApiKey: env.OPENROUTER_API_KEY ?? env.OPENROUTER_KEY,
   failOpenReadOnly: env.ACTIONGATE_FAIL_OPEN_READ_ONLY === "true",
   grantKeys,
-  evidenceKeys
+  evidenceKeys,
+  tenantQuotas: parseJsonRecord(env.ACTIONGATE_TENANT_QUOTAS, "ACTIONGATE_TENANT_QUOTAS"),
+  defaultQuota: parseJsonRecord(env.ACTIONGATE_DEFAULT_QUOTA, "ACTIONGATE_DEFAULT_QUOTA")
 };
+
+function parseJsonRecord(value: string | undefined, name: string): Record<string, never> {
+  if (!value) return {};
+  let parsed: unknown;
+  try { parsed = JSON.parse(value); }
+  catch { throw new Error(`${name} must be a JSON object`); }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error(`${name} must be a JSON object`);
+  return parsed as Record<string, never>;
+}
 
 function parseKeyRing(value: string | undefined, name: string) {
   if (!value) return [];

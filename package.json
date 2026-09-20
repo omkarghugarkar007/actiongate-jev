@@ -66,7 +66,8 @@
     "sbom": "tsx scripts/generate-sbom.ts",
     "test:python": "python3 -m pytest packages/sdk-python/tests -q",
     "catalog:build": "tsx scripts/build-catalog.ts",
-    "examples:guarded": "tsx examples/guarded-tools/src/demo.ts"
+    "examples:guarded": "tsx examples/guarded-tools/src/demo.ts",
+    "verify:live": "tsx scripts/verify-live.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

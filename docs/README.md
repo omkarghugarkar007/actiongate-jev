@@ -5,6 +5,7 @@ Start with the [integration guide](integration-guide.md) to protect an agent too
 | Document | Purpose |
 |---|---|
 | [Connector catalog](catalog.md) | Every shipped connector, its level, and what it does not protect |
+| [Simulator](../README.md#the-problem) | Try a decision in the browser without making one |
 | [Quickstarts](quickstarts.md) | One screen per integration level: Observe, Guard, Isolate, Govern |
 | [Integration guide](integration-guide.md) | REST and TypeScript SDK setup, rollout modes, response handling, and production checklist |
 | [API description](api/openapi.json) | Versioned OpenAPI 3.1 document generated from the server's own schemas |
