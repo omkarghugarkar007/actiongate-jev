@@ -82,9 +82,37 @@ importers:
       '@actiongate/decision-provider':
         specifier: workspace:*
         version: link:../../packages/decision-provider
+      '@fastify/cors':
+        specifier: ^11.1.0
+        version: 11.3.0
+      '@fastify/rate-limit':
+        specifier: ^10.3.0
+        version: 10.3.0
+      '@fastify/sensible':
+        specifier: ^6.0.3
+        version: 6.0.5
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
+      dotenv:
+        specifier: ^17.2.2
+        version: 17.4.2
+      fastify:
+        specifier: ^5.6.0
+        version: 5.12.5
       ioredis:
         specifier: ^5.7.0
         version: 5.11.1
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
+      zod:
+        specifier: ^4.1.8
+        version: 4.6.5
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
 
   apps/web:
     dependencies:
@@ -113,16 +141,30 @@ importers:
       '@actiongate/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk-js
+      dotenv:
+        specifier: ^17.2.2
+        version: 17.4.2
 
-  packages/core: {}
+  packages/core:
+    dependencies:
+      zod:
+        specifier: ^4.1.8
+        version: 4.6.5
 
-  packages/db: {}
+  packages/db:
+    dependencies:
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/pg@8.23.1)(pg@8.23.0)
 
   packages/decision-provider:
     dependencies:
       '@actiongate/core':
         specifier: workspace:*
         version: link:../core
+      zod:
+        specifier: ^4.1.8
+        version: 4.6.5
 
   packages/evals:
     dependencies:

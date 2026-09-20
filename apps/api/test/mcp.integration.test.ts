@@ -9,7 +9,7 @@ afterEach(async () => Promise.all(apps.splice(0).map((app) => app.close())));
 
 describe("MCP gateway end to end", () => {
   it("authorizes, consumes, and executes while credentials stay in the gateway", async () => {
-    const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: "ag_mcp_test", logger: false });
+    const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: "ag_mcp_test", apiKeyTenantId: "tenant-mcp", logger: false });
     apps.push(app);
     const address = await app.listen({ port: 0, host: "127.0.0.1" });
     const client = new ActionGate({ apiKey: "ag_mcp_test", baseUrl: address });
@@ -34,7 +34,7 @@ describe("MCP gateway end to end", () => {
   });
 
   it("blocks changed arguments and replay before the handler runs", async () => {
-    const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: "ag_mcp_test", logger: false });
+    const app = buildApp({ provider: FakeDecisionProvider.allow(), apiKey: "ag_mcp_test", apiKeyTenantId: "tenant-mcp", logger: false });
     apps.push(app);
     const address = await app.listen({ port: 0, host: "127.0.0.1" });
     const client = new ActionGate({ apiKey: "ag_mcp_test", baseUrl: address });

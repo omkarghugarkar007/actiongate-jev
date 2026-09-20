@@ -1,4 +1,5 @@
-import type { RiskClass } from "./contracts.js";
+import { z } from "zod";
+import { RiskClassSchema, type RiskClass } from "./contracts.js";
 
 export interface ToolPolicy {
   enabled: boolean;
@@ -32,6 +33,31 @@ export const THRESHOLD_PROFILES = {
   "destructive-v1": { alignmentMinConfidence: .97, targetYesMin: .95, policyViolationBlockAt: .65, sensitiveExposureBlockAt: .70, scopeExpansionBlockAt: .70, missingIntentReviewAt: .25 }
 } as const;
 
+export const ToolPolicySchema = z.object({
+  enabled: z.boolean(),
+  operation: z.string().min(1).max(128),
+  riskClass: RiskClassSchema,
+  hardRules: z.object({
+    maxAmountCents: z.number().int().nonnegative().optional(),
+    allowedCurrencies: z.array(z.string().min(3).max(3)).optional(),
+    requireAuthenticatedUser: z.boolean().optional(),
+    requireRbac: z.boolean().optional(),
+    denyDuplicate: z.boolean().optional(),
+    requireAllowlistedDestination: z.boolean().optional()
+  }).strict().optional(),
+  semanticPolicy: z.array(z.string().min(1).max(2000)).max(100),
+  thresholdProfile: z.enum(Object.keys(THRESHOLD_PROFILES) as [keyof typeof THRESHOLD_PROFILES, ...(keyof typeof THRESHOLD_PROFILES)[]])
+}).strict();
+
+export const PolicySchema = z.object({
+  id: z.string().min(1).max(128),
+  version: z.string().min(1).max(64),
+  mode: z.enum(["shadow", "enforce"]),
+  skipSemanticAfterHardReview: z.boolean().optional(),
+  requireHumanForRisk: z.array(RiskClassSchema).optional(),
+  tools: z.record(z.string(), ToolPolicySchema)
+}).strict();
+
 export const DEFAULT_POLICY: Policy = {
   id: "support-agent-default",
   version: "1.0.0",
@@ -54,4 +80,3 @@ export const DEFAULT_POLICY: Policy = {
     delete_record: { enabled: false, operation: "delete", riskClass: "DESTRUCTIVE", semanticPolicy: ["Delete only with explicit user authorization."], thresholdProfile: "destructive-v1" }
   }
 };
-

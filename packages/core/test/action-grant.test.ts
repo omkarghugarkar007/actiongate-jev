@@ -70,6 +70,23 @@ describe("ActionGrantSigner", () => {
     expectGrantError(() => otherSigner.verifyToken(grant.token), "GRANT_INVALID_SIGNATURE");
   });
 
+  it("rotates signing keys while verifying grants from the overlap window", () => {
+    const oldKey = { id: "2026-09-a", secret: "old-rotation-secret-that-is-at-least-32-bytes" };
+    const nextKey = { id: "2026-09-b", secret: "next-rotation-secret-that-is-at-least-32-bytes" };
+    const oldSigner = new ActionGrantSigner({ keys: [oldKey], activeKeyId: oldKey.id, clock: () => now });
+    const oldGrant = oldSigner.issue(request, response).grant;
+    expect(oldGrant.token).toMatch(/^ag2\.2026-09-a\./);
+
+    const overlapSigner = new ActionGrantSigner({ keys: [oldKey, nextKey], activeKeyId: nextKey.id, clock: () => now });
+    expect(overlapSigner.verify(oldGrant.token, consumeRequest(oldGrant.token)).keyId).toBe(oldKey.id);
+    const nextGrant = overlapSigner.issue(request, response).grant;
+    expect(nextGrant.token).toMatch(/^ag2\.2026-09-b\./);
+
+    const retiredSigner = new ActionGrantSigner({ keys: [nextKey], activeKeyId: nextKey.id, clock: () => now });
+    expectGrantError(() => retiredSigner.verifyToken(oldGrant.token), "GRANT_INVALID_SIGNATURE");
+    expect(retiredSigner.verify(nextGrant.token, consumeRequest(nextGrant.token)).keyId).toBe(nextKey.id);
+  });
+
   it("keeps action arguments and user intent out of token claims", () => {
     const signer = new ActionGrantSigner({ secret, clock: () => now });
     const { grant } = signer.issue(request, response);

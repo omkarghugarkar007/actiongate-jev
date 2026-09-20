@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Redis } from "ioredis";
 import { ActionGrantError, type ActionGrantClaims } from "@actiongate/core";
+import { type EncryptedEnvelope, EvidenceCipher, isEncryptedEnvelope } from "../security/evidence-cipher.js";
 import type { AuditRecord, DecisionRepository, GrantRecord, GrantRepository, IdempotencyClaim } from "./repository.js";
 
 const CLAIM_SCRIPT = `
@@ -25,6 +26,7 @@ if existing then return existing end
 redis.call("SET", KEYS[1], ARGV[1])
 redis.call("SET", KEYS[2], ARGV[1])
 redis.call("ZADD", KEYS[3], ARGV[2], ARGV[3])
+redis.call("SET", KEYS[4], KEYS[1])
 return ARGV[1]
 `;
 
@@ -46,29 +48,44 @@ if not raw then return "NOT_FOUND" end
 local record = cjson.decode(raw)
 if record.tokenHash ~= ARGV[1] then return "NOT_FOUND" end
 if tonumber(ARGV[2]) >= tonumber(record.claims.expiresAt) * 1000 then return "EXPIRED" end
+if redis.call("GET", KEYS[3]) then return "REVOKED" end
 local consumed = redis.call("GET", KEYS[2])
 if consumed then return "ALREADY:" .. consumed end
 redis.call("SET", KEYS[2], ARGV[3])
 return "CONSUMED:" .. ARGV[3]
 `;
 
+const REVOKE_GRANT_SCRIPT = `
+local raw = redis.call("GET", KEYS[1])
+if not raw then return "NOT_FOUND" end
+local record = cjson.decode(raw)
+if record.claims.tenantId ~= ARGV[1] then return "NOT_FOUND" end
+local revoked = redis.call("GET", KEYS[2])
+if revoked then return "REVOKED:" .. revoked end
+redis.call("SET", KEYS[2], ARGV[2])
+return "REVOKED:" .. ARGV[2]
+`;
+
 export interface RedisRepositoryOptions {
   prefix?: string;
   idempotencyLeaseMs?: number;
+  evidenceCipher?: EvidenceCipher;
 }
 
 export class RedisDecisionRepository implements DecisionRepository {
   private readonly prefix: string;
   private readonly leaseMs: number;
+  private readonly evidenceCipher: EvidenceCipher | undefined;
 
   constructor(private readonly redis: Redis, options: RedisRepositoryOptions = {}) {
     this.prefix = validatePrefix(options.prefix ?? "actiongate");
     this.leaseMs = options.idempotencyLeaseMs ?? 15_000;
+    this.evidenceCipher = options.evidenceCipher;
     if (!Number.isInteger(this.leaseMs) || this.leaseMs < 1_000) throw new Error("Idempotency lease must be at least 1000ms");
   }
 
   async findIdempotent(tenantId: string, environment: string, key: string) {
-    return parseAuditRecord(await this.redis.get(this.idempotencyKey(tenantId, environment, key)));
+    return this.parseAuditRecord(await this.redis.get(this.idempotencyKey(tenantId, environment, key)));
   }
 
   async claimIdempotency(tenantId: string, environment: string, key: string, fingerprint: string): Promise<IdempotencyClaim> {
@@ -96,18 +113,19 @@ export class RedisDecisionRepository implements DecisionRepository {
   }
 
   async saveIdempotent(tenantId: string, environment: string, key: string, record: AuditRecord) {
-    const serialized = JSON.stringify(record);
+    const serialized = this.serializeAuditRecord(record);
     const stored = await this.redis.eval(
       SAVE_DECISION_SCRIPT,
-      3,
+      4,
       this.idempotencyKey(tenantId, environment, key),
       this.decisionKey(record.response.decisionId),
       this.tenantIndexKey(tenantId),
+      this.idempotencyByDecisionKey(record.response.decisionId),
       serialized,
       Date.parse(record.response.createdAt),
       record.response.decisionId
     );
-    return JSON.parse(String(stored)) as AuditRecord;
+    return this.parseAuditRecord(String(stored))!;
   }
 
   async list(tenantId: string) {
@@ -115,14 +133,36 @@ export class RedisDecisionRepository implements DecisionRepository {
     if (ids.length === 0) return [];
     const values = await this.redis.mget(ids.map((id) => this.decisionKey(id)));
     return values.flatMap((value) => {
-      const record = parseAuditRecord(value);
+      const record = this.parseAuditRecord(value);
       return record?.tenantId === tenantId ? [record] : [];
     });
   }
 
   async get(tenantId: string, id: string) {
-    const record = parseAuditRecord(await this.redis.get(this.decisionKey(id)));
+    const record = this.parseAuditRecord(await this.redis.get(this.decisionKey(id)));
     return record?.tenantId === tenantId ? record : undefined;
+  }
+
+  async deleteBefore(tenantId: string, before: Date) {
+    const ids = await this.redis.zrangebyscore(this.tenantIndexKey(tenantId), "-inf", `(${before.getTime()}`);
+    let deleted = 0;
+    for (const id of ids) {
+      const raw = await this.redis.get(this.decisionKey(id));
+      const record = this.parseAuditRecord(raw);
+      if (!record || record.tenantId !== tenantId) continue;
+      const idempotencyStorageKey = await this.redis.get(this.idempotencyByDecisionKey(id));
+      if (idempotencyStorageKey) {
+        const minimized = { ...record, sanitizedRequest: { retained: false } };
+        await this.redis.set(idempotencyStorageKey, this.serializeAuditRecord(minimized));
+      }
+      await this.redis.multi()
+        .del(this.decisionKey(id))
+        .del(this.idempotencyByDecisionKey(id))
+        .zrem(this.tenantIndexKey(tenantId), id)
+        .exec();
+      deleted += 1;
+    }
+    return deleted;
   }
 
   async ping() { return this.redis.ping(); }
@@ -134,7 +174,26 @@ export class RedisDecisionRepository implements DecisionRepository {
     return `${this.prefix}:decision:lock:${digest(`${tenantId}\0${environment}\0${key}`)}`;
   }
   private decisionKey(id: string) { return `${this.prefix}:decision:id:${id}`; }
+  private idempotencyByDecisionKey(id: string) { return `${this.prefix}:decision:idem-by-id:${id}`; }
   private tenantIndexKey(tenantId: string) { return `${this.prefix}:decision:tenant:${digest(tenantId)}`; }
+
+  private serializeAuditRecord(record: AuditRecord) {
+    if (!this.evidenceCipher) return JSON.stringify(record);
+    return JSON.stringify({
+      decisionId: record.response.decisionId,
+      encrypted: this.evidenceCipher.encrypt(record, `redis-decision:${record.response.decisionId}`)
+    } satisfies StoredEncryptedAuditRecord);
+  }
+
+  private parseAuditRecord(value: string | null): AuditRecord | undefined {
+    if (!value) return undefined;
+    const parsed = JSON.parse(value) as unknown;
+    if (isStoredEncryptedAuditRecord(parsed)) {
+      if (!this.evidenceCipher) throw new Error("Encrypted decision evidence requires the configured key ring");
+      return this.evidenceCipher.decrypt<AuditRecord>(parsed.encrypted, `redis-decision:${parsed.decisionId}`);
+    }
+    return parsed as AuditRecord;
+  }
 }
 
 export class RedisGrantRepository implements GrantRepository {
@@ -170,36 +229,57 @@ export class RedisGrantRepository implements GrantRepository {
   async consume(grantId: string, tokenHash: string, now: Date) {
     const result = String(await this.redis.eval(
       CONSUME_GRANT_SCRIPT,
-      2,
+      3,
       this.recordKey(grantId),
       this.consumedKey(grantId),
+      this.revokedKey(grantId),
       tokenHash,
       now.getTime(),
       now.toISOString()
     ));
     if (result === "NOT_FOUND") throw new ActionGrantError("GRANT_NOT_FOUND");
     if (result === "EXPIRED") throw new ActionGrantError("GRANT_EXPIRED");
+    if (result === "REVOKED") throw new ActionGrantError("GRANT_REVOKED");
     if (result.startsWith("ALREADY:")) throw new ActionGrantError("GRANT_ALREADY_CONSUMED");
     const raw = await this.redis.get(this.recordKey(grantId));
     if (!raw) throw new ActionGrantError("GRANT_NOT_FOUND");
     return { ...(JSON.parse(raw) as StoredGrantRecord), consumedAt: result.slice("CONSUMED:".length) };
   }
 
+  async revoke(grantId: string, tenantId: string, now: Date) {
+    const result = String(await this.redis.eval(
+      REVOKE_GRANT_SCRIPT,
+      2,
+      this.recordKey(grantId),
+      this.revokedKey(grantId),
+      tenantId,
+      now.toISOString()
+    ));
+    if (result === "NOT_FOUND") throw new ActionGrantError("GRANT_NOT_FOUND");
+    const raw = await this.redis.get(this.recordKey(grantId));
+    if (!raw) throw new ActionGrantError("GRANT_NOT_FOUND");
+    return { ...(JSON.parse(raw) as StoredGrantRecord), revokedAt: result.slice("REVOKED:".length) };
+  }
+
   async ping() { return this.redis.ping(); }
 
   private async withConsumption(record: StoredGrantRecord): Promise<GrantRecord> {
-    const consumedAt = await this.redis.get(this.consumedKey(record.claims.grantId));
-    return { ...record, ...(consumedAt ? { consumedAt } : {}) };
+    const [consumedAt, revokedAt] = await this.redis.mget(this.consumedKey(record.claims.grantId), this.revokedKey(record.claims.grantId));
+    return { ...record, ...(consumedAt ? { consumedAt } : {}), ...(revokedAt ? { revokedAt } : {}) };
   }
   private decisionKey(decisionId: string) { return `${this.prefix}:grant:decision:${decisionId}`; }
   private recordKey(grantId: string) { return `${this.prefix}:grant:id:${grantId}:record`; }
   private consumedKey(grantId: string) { return `${this.prefix}:grant:id:${grantId}:consumed`; }
+  private revokedKey(grantId: string) { return `${this.prefix}:grant:id:${grantId}:revoked`; }
 }
 
 interface StoredGrantRecord { claims: ActionGrantClaims; tokenHash: string }
+interface StoredEncryptedAuditRecord { decisionId: string; encrypted: EncryptedEnvelope }
 
-function parseAuditRecord(value: string | null): AuditRecord | undefined {
-  return value ? JSON.parse(value) as AuditRecord : undefined;
+function isStoredEncryptedAuditRecord(value: unknown): value is StoredEncryptedAuditRecord {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<StoredEncryptedAuditRecord>;
+  return typeof candidate.decisionId === "string" && isEncryptedEnvelope(candidate.encrypted);
 }
 
 function digest(value: string) { return createHash("sha256").update(value).digest("hex"); }

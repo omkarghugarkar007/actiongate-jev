@@ -6,6 +6,7 @@ import { actionBindingFingerprint, authorizationRequestBinding, grantConsumeBind
 const ActionGrantClaimsSchema = z.object({
   v: z.literal(1),
   issuer: z.literal("actiongate"),
+  keyId: z.string().regex(/^[A-Za-z0-9_-]{1,32}$/).optional(),
   grantId: z.string().uuid(),
   decisionId: z.string().uuid(),
   requestId: z.string().min(1).max(128),
@@ -29,6 +30,7 @@ export type ActionGrantErrorCode =
   | "GRANT_EXPIRED"
   | "GRANT_BINDING_MISMATCH"
   | "GRANT_NOT_FOUND"
+  | "GRANT_REVOKED"
   | "GRANT_ALREADY_CONSUMED";
 
 export class ActionGrantError extends Error {
@@ -39,21 +41,35 @@ export class ActionGrantError extends Error {
 }
 
 export interface ActionGrantSignerOptions {
-  secret: string | Buffer;
+  secret?: string | Buffer;
+  keys?: ReadonlyArray<{ id: string; secret: string | Buffer }>;
+  activeKeyId?: string;
   ttlSeconds?: number;
   clock?: () => number;
   maxClockSkewSeconds?: number;
 }
 
 export class ActionGrantSigner {
-  private readonly secret: Buffer;
+  private readonly legacySecret?: Buffer;
+  private readonly keys = new Map<string, Buffer>();
+  private readonly activeKeyId?: string;
   private readonly ttlSeconds: number;
   private readonly clock: () => number;
   private readonly maxClockSkewSeconds: number;
 
   constructor(options: ActionGrantSignerOptions) {
-    this.secret = Buffer.isBuffer(options.secret) ? Buffer.from(options.secret) : Buffer.from(options.secret, "utf8");
-    if (this.secret.byteLength < 32) throw new Error("Action Grant signing secret must be at least 32 bytes");
+    if (options.keys?.length) {
+      for (const entry of options.keys) {
+        if (!/^[A-Za-z0-9_-]{1,32}$/.test(entry.id)) throw new Error("Action Grant key ID is invalid");
+        if (this.keys.has(entry.id)) throw new Error(`Duplicate Action Grant key ID: ${entry.id}`);
+        this.keys.set(entry.id, checkedSecret(entry.secret));
+      }
+      this.activeKeyId = options.activeKeyId ?? options.keys[0]!.id;
+      if (!this.keys.has(this.activeKeyId)) throw new Error("Active Action Grant key ID was not provided");
+    } else {
+      if (!options.secret) throw new Error("An Action Grant signing secret or key ring is required");
+      this.legacySecret = checkedSecret(options.secret);
+    }
     this.ttlSeconds = options.ttlSeconds ?? 30;
     if (!Number.isInteger(this.ttlSeconds) || this.ttlSeconds < 1 || this.ttlSeconds > 300) throw new Error("Action Grant TTL must be an integer from 1 to 300 seconds");
     this.clock = options.clock ?? Date.now;
@@ -66,6 +82,7 @@ export class ActionGrantSigner {
     const claims: ActionGrantClaims = {
       v: 1,
       issuer: "actiongate",
+      ...(this.activeKeyId ? { keyId: this.activeKeyId } : {}),
       grantId: randomUUID(),
       decisionId: response.decisionId,
       requestId: response.requestId,
@@ -94,21 +111,41 @@ export class ActionGrantSigner {
 
   verifyToken(token: string): ActionGrantClaims {
     const parts = token.split(".");
-    if (parts.length !== 3 || parts[0] !== "ag1" || !parts[1] || !parts[2]) throw new ActionGrantError("GRANT_MALFORMED");
-    const signingInput = `${parts[0]}.${parts[1]}`;
-    const suppliedSignature = decodeBase64Url(parts[2], "GRANT_MALFORMED");
-    const expectedSignature = createHmac("sha256", this.secret).update(signingInput).digest();
+    let payload: string;
+    let signature: string;
+    let signingInput: string;
+    let secret: Buffer | undefined;
+    let tokenKeyId: string | undefined;
+    if (parts.length === 3 && parts[0] === "ag1" && parts[1] && parts[2]) {
+      payload = parts[1];
+      signature = parts[2];
+      signingInput = `ag1.${payload}`;
+      secret = this.legacySecret;
+    } else if (parts.length === 4 && parts[0] === "ag2" && parts[1] && parts[2] && parts[3]) {
+      tokenKeyId = parts[1];
+      if (!/^[A-Za-z0-9_-]{1,32}$/.test(tokenKeyId)) throw new ActionGrantError("GRANT_MALFORMED");
+      payload = parts[2];
+      signature = parts[3];
+      signingInput = `ag2.${tokenKeyId}.${payload}`;
+      secret = this.keys.get(tokenKeyId);
+    } else {
+      throw new ActionGrantError("GRANT_MALFORMED");
+    }
+    if (!secret) throw new ActionGrantError("GRANT_INVALID_SIGNATURE", "The signing key is unknown or retired");
+    const suppliedSignature = decodeBase64Url(signature, "GRANT_MALFORMED");
+    const expectedSignature = createHmac("sha256", secret).update(signingInput).digest();
     if (suppliedSignature.byteLength !== expectedSignature.byteLength || !timingSafeEqual(suppliedSignature, expectedSignature)) {
       throw new ActionGrantError("GRANT_INVALID_SIGNATURE");
     }
     let json: unknown;
     try {
-      json = JSON.parse(decodeBase64Url(parts[1], "GRANT_MALFORMED").toString("utf8"));
+      json = JSON.parse(decodeBase64Url(payload, "GRANT_MALFORMED").toString("utf8"));
     } catch {
       throw new ActionGrantError("GRANT_MALFORMED");
     }
     const result = ActionGrantClaimsSchema.safeParse(json);
     if (!result.success) throw new ActionGrantError("GRANT_MALFORMED");
+    if (result.data.keyId !== tokenKeyId) throw new ActionGrantError("GRANT_MALFORMED", "Grant key ID does not match its protected header");
     const now = Math.floor(this.clock() / 1000);
     if (result.data.issuedAt > now + this.maxClockSkewSeconds || result.data.expiresAt <= result.data.issuedAt) throw new ActionGrantError("GRANT_MALFORMED");
     if (now >= result.data.expiresAt) throw new ActionGrantError("GRANT_EXPIRED");
@@ -118,8 +155,11 @@ export class ActionGrantSigner {
   signClaims(claims: ActionGrantClaims): string {
     const checked = ActionGrantClaimsSchema.parse(claims);
     const payload = Buffer.from(JSON.stringify(checked), "utf8").toString("base64url");
-    const signingInput = `ag1.${payload}`;
-    const signature = createHmac("sha256", this.secret).update(signingInput).digest("base64url");
+    const keyId = checked.keyId;
+    const secret = keyId ? this.keys.get(keyId) : this.legacySecret;
+    if (!secret) throw new ActionGrantError("GRANT_INVALID_SIGNATURE", "The signing key is unknown or retired");
+    const signingInput = keyId ? `ag2.${keyId}.${payload}` : `ag1.${payload}`;
+    const signature = createHmac("sha256", secret).update(signingInput).digest("base64url");
     return `${signingInput}.${signature}`;
   }
 
@@ -130,6 +170,12 @@ export class ActionGrantSigner {
       expiresAt: new Date(claims.expiresAt * 1000).toISOString()
     };
   }
+}
+
+function checkedSecret(value: string | Buffer): Buffer {
+  const secret = Buffer.isBuffer(value) ? Buffer.from(value) : Buffer.from(value, "utf8");
+  if (secret.byteLength < 32) throw new Error("Action Grant signing secret must be at least 32 bytes");
+  return secret;
 }
 
 function decodeBase64Url(value: string, code: ActionGrantErrorCode): Buffer {

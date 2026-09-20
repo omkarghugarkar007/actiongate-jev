@@ -32,6 +32,11 @@ export class ActionGrantService {
       consumedAt: consumed.consumedAt!
     };
   }
+
+  async revoke(grantId: string, tenantId: string) {
+    const revoked = await this.repository.revoke(grantId, tenantId, new Date(this.clock()));
+    return { grantId, decisionId: revoked.claims.decisionId, status: "REVOKED" as const, revokedAt: revoked.revokedAt! };
+  }
 }
 
 function tokenHash(token: string): string {

@@ -4,18 +4,18 @@
   "answers": {
     "action_matches_request": {
       "type": "noul",
-      "noul": 0.83
+      "noul": 0.82
     },
     "alignment": {
       "type": "choice",
       "choice": "exact",
       "probabilities": {
-        "partial": 0.22,
         "unrelated": 0,
-        "conflicting": 0,
-        "exact": 0.78
+        "partial": 0.25,
+        "exact": 0.75,
+        "conflicting": 0
       },
-      "confidence": 0.71
+      "confidence": 0.66
     }
   },
   "usage": {
@@ -26,7 +26,7 @@
   "metadata": {
     "upstreamProvider": "TypeSafe",
     "endpoint": "https://openrouter.ai/api/alpha/decisions",
-    "capturedAt": "2026-09-19T06:29:52.758Z",
-    "latencyMs": 824
+    "capturedAt": "2026-09-20T06:01:17.828Z",
+    "latencyMs": 1203
   }
 }

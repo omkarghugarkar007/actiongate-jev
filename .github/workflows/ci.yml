@@ -17,6 +17,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: actiongate
+          POSTGRES_PASSWORD: actiongate
+          POSTGRES_DB: actiongate
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U actiongate"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
       redis:
         image: redis:8-alpine
         ports: ["6379:6379"]
@@ -37,5 +49,7 @@ jobs:
       - run: pnpm test
       - run: pnpm test:integration
       - run: pnpm test:redis
+      - run: pnpm db:migrate
+      - run: pnpm test:postgres
       - run: pnpm build
       - run: pnpm audit --prod

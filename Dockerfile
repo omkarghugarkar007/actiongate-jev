@@ -15,4 +15,4 @@ COPY examples/refund-agent/package.json examples/refund-agent/package.json
 RUN pnpm install --frozen-lockfile
 COPY . .
 USER node
-CMD ["pnpm", "start"]
+CMD ["./node_modules/.bin/tsx", "apps/api/src/server.ts"]

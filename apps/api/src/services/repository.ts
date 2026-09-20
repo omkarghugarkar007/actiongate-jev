@@ -12,6 +12,7 @@ export interface DecisionRepository {
   saveIdempotent(tenantId: string, environment: string, key: string, record: AuditRecord): Promise<AuditRecord>;
   list(tenantId: string): Promise<AuditRecord[]>;
   get(tenantId: string, id: string): Promise<AuditRecord | undefined>;
+  deleteBefore?(tenantId: string, before: Date): Promise<number>;
   claimIdempotency?(tenantId: string, environment: string, key: string, fingerprint: string): Promise<IdempotencyClaim>;
   releaseIdempotency?(tenantId: string, environment: string, key: string, leaseToken: string): Promise<void>;
 }
@@ -20,12 +21,14 @@ export interface GrantRecord {
   claims: ActionGrantClaims;
   tokenHash: string;
   consumedAt?: string;
+  revokedAt?: string;
 }
 
 export interface GrantRepository {
   findByDecision(decisionId: string): Promise<GrantRecord | undefined>;
   saveIfAbsent(record: GrantRecord): Promise<GrantRecord>;
   consume(grantId: string, tokenHash: string, now: Date): Promise<GrantRecord>;
+  revoke(grantId: string, tenantId: string, now: Date): Promise<GrantRecord>;
 }
 
 export class InMemoryGrantRepository implements GrantRepository {
@@ -49,8 +52,16 @@ export class InMemoryGrantRepository implements GrantRepository {
     const record = this.byId.get(grantId);
     if (!record || record.tokenHash !== tokenHash) throw new ActionGrantError("GRANT_NOT_FOUND");
     if (now.getTime() >= record.claims.expiresAt * 1000) throw new ActionGrantError("GRANT_EXPIRED");
+    if (record.revokedAt) throw new ActionGrantError("GRANT_REVOKED");
     if (record.consumedAt) throw new ActionGrantError("GRANT_ALREADY_CONSUMED");
     record.consumedAt = now.toISOString();
+    return record;
+  }
+
+  async revoke(grantId: string, tenantId: string, now: Date) {
+    const record = this.byId.get(grantId);
+    if (!record || record.claims.tenantId !== tenantId) throw new ActionGrantError("GRANT_NOT_FOUND");
+    if (!record.revokedAt) record.revokedAt = now.toISOString();
     return record;
   }
 }
@@ -68,6 +79,16 @@ export class InMemoryDecisionRepository implements DecisionRepository {
   }
   async list(tenant: string) { return [...this.records.values()].filter((x) => x.tenantId === tenant).sort((a, b) => b.response.createdAt.localeCompare(a.response.createdAt)); }
   async get(tenant: string, id: string) { return [...this.records.values()].find((x) => x.tenantId === tenant && x.response.decisionId === id); }
+  async deleteBefore(tenant: string, before: Date) {
+    let deleted = 0;
+    for (const [key, record] of this.records) {
+      if (record.tenantId === tenant && Date.parse(record.response.createdAt) < before.getTime()) {
+        this.records.set(key, { ...record, sanitizedRequest: { retained: false } });
+        deleted += 1;
+      }
+    }
+    return deleted;
+  }
 }
 
 export class InMemoryPolicyRepository {

@@ -37,6 +37,7 @@ describe.skipIf(!enabled)("Redis cross-instance enforcement", () => {
     const common = {
       provider,
       apiKey: "ag_redis_test",
+      apiKeyTenantId: "tenant-redis",
       grantSecret: "redis-integration-grant-secret-at-least-32-bytes",
       storage: "redis" as const,
       redisUrl,
@@ -101,6 +102,7 @@ describe.skipIf(!enabled)("Redis cross-instance enforcement", () => {
     const common = {
       provider,
       apiKey: "ag_redis_test",
+      apiKeyTenantId: "tenant-redis",
       grantSecret: "redis-integration-grant-secret-at-least-32-bytes",
       storage: "redis" as const,
       redisUrl,
