@@ -23,6 +23,11 @@ All notable changes to ActionGate will be documented here. The project follows [
 - Signed notification webhooks with a replay window, bounded retries, destination allowlisting, and dead letters
 - A reference deployment where the guarded proxy is the only reachable service, with a topology test
 - Versioned publishable packages, a generated OpenAPI 3.1 description, a generated typed client, validated connector manifests, and one-screen quickstarts
+- Dataset label provenance, provider-backed calibration with confidence intervals, and a drift gate that blocks promotion on any increase in unsafe allows
+- Tenant-safe Prometheus metrics with hashed tenant labels, per-tenant rate limits and provider-cost budgets, and an OTLP exporter
+- Hash-chained, signed audit exports, a dependency-loss and restore drill, SLOs and alerts, a CycloneDX SBOM, and a release workflow with image scanning and build provenance
+- Runbooks for deployment, migration, key rotation, retention, restore, and incidents
+- Python SDK, adapter conformance suite, generated connector catalog, framework and webhook adapters, six guarded examples, secret resolution, and a non-persisting policy simulator
 - Trusted fact providers: a server-side interface plus function and HTTP adapters that resolve deterministic facts ActionGate can vouch for
 - Fact provenance and freshness in decision evidence, with `requireTrustedFacts` and `maxFactAgeSeconds` hard rules
 

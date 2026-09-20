@@ -294,11 +294,15 @@ packages/
   mcp-proxy/              Standalone MCP network proxy that owns the upstream credential
   http-proxy/             HTTP reverse proxy and sidecar for anything that is not MCP
   connector-manifest/     Schema and validator for connector manifests
+  adapters/               Tool-calling loops, plain functions, inbound webhooks
+  conformance/            Suite a third-party adapter runs to prove its level
+  sdk-python/             Python client with parity to the TypeScript SDK
   db/                     Drizzle schema and PostgreSQL migrations
-  evals/                  Starter dataset and integrity validation CLI
+  evals/                  Datasets with label provenance, calibration, and drift gating
 examples/
   curl/                   Copy-paste REST authorization request
   refund-agent/           Safe, in-memory end-to-end example
+  guarded-tools/          Six guarded domains, all in-memory
 fixtures/openrouter/      Sanitized live Jev contract fixtures
 infra/                    Docker Compose, k6 profiles, and an isolated reference deployment
 docs/                     Integration, architecture, and threat model
@@ -358,7 +362,9 @@ The repository includes unit, provider-contract, API integration, browser E2E, l
 
 ActionGate is an independent community project and is not affiliated with or endorsed by TypeSafe AI or OpenRouter. TypeSafe, Jev, and OpenRouter are names of their respective owners.
 
-P0 (tenant-safe durable control plane) and P1 (non-bypassable execution, review, and incident workflow) are complete, along with the adoption track: versioned packages, a generated OpenAPI 3.1 description and typed client, validated connector manifests, presets, and quickstarts. P2 — independently reviewed semantic evaluation, telemetry, quotas, failover drills, supply-chain provenance, and an external security review — remains.
+P0 through P3 are engineering-complete: the tenant-safe control plane, non-bypassable execution and review workflow, the adoption track, calibration with drift gating, telemetry and quotas, tamper-evident exports, supply-chain provenance, and the connector catalog.
+
+**Two things are deliberately still open, and neither is a code change.** The semantic dataset's labels were authored alongside the system they test, so they are marked `generated` and excluded from quality reports until someone who did not write them reviews them. And no external security review has happened. Until both are done, treat this as an early public release: use mock or sandbox tools.
 
 The API defaults to in-memory repositories for a zero-dependency demo. The durable path uses Redis for runtime coordination and PostgreSQL for tenant-scoped keys, policy, registry, reviews, executions, corrections, and encrypted audit evidence. The MCP and HTTP proxies and the credential broker hold downstream credentials so the guarded path is the only route to them, which isolates only when the upstream endpoint is not otherwise routable. An independent semantic benchmark, operations hardening, and an external security review remain on the [product plan](docs/PLANNING.md).
 
