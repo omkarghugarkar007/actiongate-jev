@@ -34,6 +34,7 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Server-owned tools | P0 complete | Operation, JSON Schema, risk, owner, sensitivity, policy, and enabled state are tenant-owned; downgrades fail closed. |
 | Key/evidence lifecycle | P0 complete | Signing and encryption key IDs support active-key rotation overlap; sensitive evidence is encrypted at rest. |
 | Data governance | P0 complete at application layer | Tenant export plus cutoff-based Redis minimization and PostgreSQL evidence deletion are role-gated. |
+| Zero-infrastructure adoption | Shipped | `ActionGate.embedded()` needs no server, key, or base URL and keeps the same issue-and-consume guarantees. Its weaker boundary is stated in the API docs. |
 | TypeScript integrations | Shipped | SDK, MCP gateway, MCP proxy, and HTTP proxy build as versioned packages with declared exports, a generated OpenAPI 3.1 description, and a generated typed client. Nothing is published to a registry yet. |
 | Non-bypassable network boundary | Shipped | MCP proxy, HTTP reverse proxy, and credential broker all consume before forwarding. A reference topology publishes only the proxy; everything else is on an unreachable network. |
 | Trusted facts | Shipped | Server-side providers resolve RBAC, spend, duplicate, and allowlist facts. Provenance and freshness are recorded, and `requireTrustedFacts` refuses caller-asserted facts. |
@@ -73,6 +74,60 @@ The answer to "is this heavy?" is that the weight is opt-in. Each tier is additi
 | 3 | PostgreSQL and key rings | Durable tenants, registry, reviews, encrypted audit, rotation, retention | Operating a database |
 
 A capability that cannot degrade down this ladder is not finished. A capability that forces a developer up a tier to get any value at all is a design failure, not a security requirement. Budgets are enforced in [AGENTS.md](../AGENTS.md#adoption-friction-budget).
+
+## What adoption actually requires
+
+A hub-and-plugin assistant platform like OpenClaw spreads because it is a
+*product*: one command installs it, it answers in a chat app you already use,
+and you get personal value the same day. It is worth being precise about why
+ActionGate cannot copy that shape, and what it should copy instead.
+
+| | A personal assistant platform | ActionGate |
+|---|---|---|
+| Who feels the problem | Anyone who wants an assistant | Teams whose agents already touch money, data, or infrastructure |
+| Value on day one | It answers you in your own chat app | A decision you wire into an agent you already built |
+| Why you open it again | You use the assistant | You never "use" a guardrail; when it works you notice nothing |
+| What spreads it | People show their friends | An incident, an audit, or a procurement question |
+
+The structural difference is that **ActionGate is infrastructure for a problem
+most people do not feel yet.** Copying a consumer install story does not change
+that, and chasing consumer-shaped virality for an authorization layer is the
+wrong target. The realistic goal is to become the default answer in its own
+category, which needs five things rather than one.
+
+### 1. Nothing to install or operate
+
+**Shipped.** `ActionGate.embedded()` runs the whole decision path in the calling
+process: no server, no API key, no base URL, no database. The guarantees are
+identical to hosted mode, so graduating changes one line. A guardrail that
+requires standing up a service is one most people never evaluate at all.
+
+### 2. Visible value before any integration
+
+**Partly shipped.** The simulator shows the same tool allowed and refused on
+meaning alone, which is the fastest way to make the problem legible. It still
+requires cloning the repository. Reaching it through `npx` or a hosted page
+would remove the last step between curiosity and understanding.
+
+### 3. Attach where agents already are
+
+**Partly shipped.** MCP is the wedge. Every MCP client already has a config file
+listing servers; if guarding one is a three-line change to that file, the
+addressable set is every MCP user rather than every team willing to adopt an SDK.
+The proxy exists; the packaged, config-only path does not yet.
+
+### 4. A reason to keep it after the novelty
+
+**Partly shipped.** Blocking is not a retention hook, because a blocked action is
+invisible when nothing goes wrong. The evidence loop is: what did my agents try
+to do this week, what was refused, and what changed. Execution outcomes,
+calibration, and drift all feed this; nothing surfaces it yet.
+
+### 5. Distribution
+
+**Not shipped.** The packages build and are gated for publishing but are not on
+any registry, so every adopter still clones a repository. Nothing else on this
+list matters until this one is done.
 
 ## Product moats
 

@@ -59,12 +59,15 @@ For live decisions, set `DECISION_PROVIDER=openrouter` and `OPENROUTER_API_KEY`.
 
 ## Guard a tool
 
-### TypeScript
+### TypeScript — no server required
+
+`ActionGate.embedded()` runs the whole decision path in your process. No server,
+no API key, no base URL, no database. Just an OpenRouter key.
 
 ```ts
 import { ActionGate } from "@actiongate/sdk";
 
-const gate = new ActionGate({ apiKey: process.env.ACTIONGATE_API_KEY!, baseUrl: process.env.ACTIONGATE_URL! });
+const gate = ActionGate.embedded();   // reads OPENROUTER_API_KEY
 
 const guardedRefund = gate.wrapTool({
   name: "refund_payment",
@@ -84,6 +87,21 @@ const guardedRefund = gate.wrapTool({
 
 await guardedRefund({ transactionId: "txn_8923", amountCents: 4900 }, runtime);
 ```
+
+Run it: `pnpm examples:embedded`. Against the live model, the action the user
+asked for executes and a transaction they never named is blocked on meaning.
+
+When you outgrow one process, swap the constructor and nothing else:
+
+```ts
+const gate = new ActionGate({ apiKey: process.env.ACTIONGATE_API_KEY!, baseUrl: process.env.ACTIONGATE_URL! });
+```
+
+Embedded keeps the same issue-and-consume guarantees but costs you a real
+boundary: grants live in memory, so they do not survive a restart or coordinate
+across replicas, there is no audit trail or review queue, and the policy sits in
+the same process as the agent — code that can edit it can raise its own limits.
+Hosted mode exists so the registry is somewhere the agent cannot reach.
 
 ### Python
 
@@ -116,7 +134,8 @@ except ActionBlockedError as error:
 ```
 
 Both wrappers authorize, consume a single-use grant, and only then call the
-handler. Every error means the handler was **not** called.
+handler. Every error means the handler was **not** called. (The Python client is
+hosted-mode only for now; embedded is TypeScript.)
 
 > **Guard level.** These protect the wrapper, not the function it calls. Keep the
 > handler private, or another caller reaches it without a grant.
@@ -149,10 +168,10 @@ The boundary is strict; the on-ramp is not. Each tier is additive.
 
 | Tier | You add | You get |
 |---|---|---|
-| 0 | Nothing | Decisions, reasons, grants, dashboard, examples — no key, no database, no spend |
-| 1 | A provider key | Real Jev semantic evidence |
-| 2 | Redis | Restart-safe state, distributed idempotency, cross-replica consumption |
-| 3 | PostgreSQL and key rings | Durable tenants, registry, reviews, encrypted audit, rotation, retention |
+| 0 | `ActionGate.embedded()` | Guarded tools in one process — no server, no key, no database |
+| 1 | An OpenRouter key | Real Jev semantic evidence instead of the deterministic fake |
+| 2 | The API server | A registry the agent cannot edit, plus audit, reviews, and incident controls |
+| 3 | Redis and PostgreSQL | Restart-safe state, cross-replica consumption, encrypted durable evidence |
 
 ## How it works
 

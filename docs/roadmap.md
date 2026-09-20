@@ -95,4 +95,20 @@ Packaging and the API description move into the P1 adoption track above; what re
 - [x] Publish a browsable connector catalog driven by connector manifests
 - [x] Add an interactive policy/decision simulator — *`POST /v1/simulate` plus a UI page. Hosting a public sandbox is a deployment decision, not a code change.*
 
+## P4 — adoption
+
+P0–P3 made ActionGate correct and complete. P4 is about whether anyone reaches
+it. The reasoning behind these, and why an authorization layer cannot copy a
+consumer install story, is in [PLANNING.md](PLANNING.md#what-adoption-actually-requires).
+
+- [x] Run with no server, no API key, and no base URL (`ActionGate.embedded()`)
+- [ ] Publish the packages to npm and PyPI so adopters stop cloning a repository
+- [ ] Reach the simulator without cloning, through `npx` or a hosted page
+- [ ] Guard an MCP server by editing an MCP client config, with no code at all
+- [ ] Ship a `create-actiongate` template for a guarded agent
+- [ ] Surface the evidence loop: what agents tried, what was refused, what changed
+- [ ] Publish one honest write-up of a real refusal, with the decision record
+
+Nothing else on this list matters until the packages are published.
+
 The detailed acceptance gates are in [PLANNING.md](PLANNING.md), and the integration strategy is in [integrations.md](integrations.md).

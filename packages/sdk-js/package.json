@@ -10,7 +10,8 @@
     }
   },
   "dependencies": {
-    "@actiongate/core": "workspace:*"
+    "@actiongate/core": "workspace:*",
+    "@actiongate/decision-provider": "workspace:*"
   },
   "description": "TypeScript client for ActionGate: authorize, consume a single-use grant, then call a private handler.",
   "license": "Apache-2.0",

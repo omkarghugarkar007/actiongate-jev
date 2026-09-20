@@ -1,11 +1,43 @@
 import type { ActionGrantConsumeRequest, ActionGrantConsumeResponse, AuthorizationRequest, AuthorizationResponse, RiskClass } from "@actiongate/core";
 import { ActionBlockedError, ActionGateApiError, ActionGrantMissingError } from "./errors.js";
+import { EmbeddedTransport, type ActionGateTransport, type EmbeddedOptions } from "./embedded.js";
 
 export interface ActionGateOptions { apiKey: string; baseUrl: string; fetch?: typeof globalThis.fetch }
+
 export class ActionGate {
   private readonly fetcher: typeof globalThis.fetch;
-  constructor(private readonly options: ActionGateOptions) { this.fetcher = options.fetch ?? globalThis.fetch; }
+  /** Set when running in-process; when absent, calls go over HTTP. */
+  private readonly transport: ActionGateTransport | undefined;
+
+  constructor(options: ActionGateOptions);
+  constructor(options: ActionGateOptions | { transport: ActionGateTransport });
+  constructor(options: ActionGateOptions | { transport: ActionGateTransport }) {
+    if ("transport" in options) {
+      this.transport = options.transport;
+      this.options = { apiKey: "embedded", baseUrl: "embedded" };
+      this.fetcher = globalThis.fetch;
+      return;
+    }
+    this.options = options;
+    this.fetcher = options.fetch ?? globalThis.fetch;
+  }
+
+  private readonly options!: ActionGateOptions;
+
+  /**
+   * Runs everything in this process: no server, no API key, no base URL.
+   *
+   * The guarantees are the same as hosted mode — a grant is issued only for an
+   * enforced ALLOW and consumed once before the handler runs — so `wrapTool`
+   * code is identical either way and graduating to a server changes only this
+   * line. See EmbeddedOptions for what embedding costs you.
+   */
+  static embedded(options: EmbeddedOptions = {}): ActionGate {
+    return new ActionGate({ transport: new EmbeddedTransport(options) });
+  }
+
   async authorize(request: AuthorizationRequest): Promise<AuthorizationResponse> {
+    if (this.transport) return this.transport.authorize(request);
     const response = await this.fetcher(`${this.options.baseUrl.replace(/\/$/, "")}/v1/authorize`, {
       method: "POST",
       headers: { Authorization: `Bearer ${this.options.apiKey}`, "Content-Type": "application/json", "Idempotency-Key": request.idempotencyKey },
@@ -17,6 +49,7 @@ export class ActionGate {
   }
 
   async consumeGrant(request: ActionGrantConsumeRequest): Promise<ActionGrantConsumeResponse> {
+    if (this.transport) return this.transport.consumeGrant(request);
     const response = await this.fetcher(`${this.options.baseUrl.replace(/\/$/, "")}/v1/grants/consume`, {
       method: "POST",
       headers: { Authorization: `Bearer ${this.options.apiKey}`, "Content-Type": "application/json" },

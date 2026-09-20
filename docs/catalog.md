@@ -110,13 +110,14 @@ Embeddable MCP tool registry that owns tool metadata and consumes before executi
 
 ### `@actiongate/sdk`
 
-TypeScript client that authorizes and consumes a grant before calling a private function.
+TypeScript client that authorizes and consumes a grant before calling a private handler, in-process or against a server.
 
 **Protects.** The application's own tool function, which must stay private to the module that wraps it.
 
 **Does not protect.**
 - Any other caller that can reach the same function directly is unguarded; wrapTool protects the wrapper, not the callee.
 - A downstream credential held by the application rather than the wrapper remains reachable without a grant.
+- In embedded mode the policy lives in the agent's own process, so code that can edit the policy can raise its own limits.
 
 **Requires.** nothing beyond ActionGate itself
 
@@ -126,6 +127,7 @@ TypeScript client that authorizes and consumes a grant before calling a private 
 - BLOCK and REVIEW never call the wrapped function
 - A missing grant in enforce mode never calls the wrapped function
 - A failed consumption never calls the wrapped function
+- Embedded mode refuses an unknown tool, a risk downgrade, a replayed grant, and a mutated action
 
 ### `actiongate-python`
 

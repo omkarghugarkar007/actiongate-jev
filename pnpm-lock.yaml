@@ -258,6 +258,9 @@ importers:
       '@actiongate/core':
         specifier: workspace:*
         version: link:../core
+      '@actiongate/decision-provider':
+        specifier: workspace:*
+        version: link:../decision-provider
 
 packages:
 

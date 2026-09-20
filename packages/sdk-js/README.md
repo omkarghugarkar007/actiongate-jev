@@ -4,6 +4,12 @@ TypeScript client for ActionGate. `wrapTool` authorizes, consumes a single-use g
 
 > Guard level: it protects the wrapper, not the callee. Keep the handler private to its module.
 
+Runs in-process with `ActionGate.embedded()` — no server, no API key, no base URL —
+or against a server with `new ActionGate({ apiKey, baseUrl })`. Same guarantees,
+same `wrapTool` code. Embedded keeps grants in memory, so they do not survive a
+restart or coordinate across replicas, and the policy sits in the agent's own
+process.
+
 Its full boundary, including what it does **not** protect, is in [`connector.manifest.json`](./connector.manifest.json).
 
 
