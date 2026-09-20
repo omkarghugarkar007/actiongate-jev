@@ -6,7 +6,7 @@ const request = (overrides: Partial<AuthorizationRequest> = {}): AuthorizationRe
   requestId: "req-1", idempotencyKey: "idem-key-001", tenantId: "tenant-1", environment: "development", mode: "enforce",
   actor: { agentId: "support" }, userIntent: { text: "Refund the duplicate $49 charge.", source: "user_message" },
   proposedAction: { tool: "refund_payment", operation: "refund", arguments: { transactionId: "txn_duplicate", amountCents: 4900 }, riskClass: "FINANCIAL" },
-  deterministicFacts: { authenticated: true, authorizedByRbac: true, amountCents: 4900, currency: "USD", resourceExists: true },
+  deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD", resourceExists: true },
   ...overrides
 });
 
@@ -19,7 +19,7 @@ describe("AuthorizationEngine", () => {
   });
   it("blocks an exact numeric limit violation before Jev", async () => {
     const provider = FakeDecisionProvider.allow();
-    const result = await new AuthorizationEngine(provider).authorize(request({ deterministicFacts: { authenticated: true, authorizedByRbac: true, amountCents: 49_000 } }), DEFAULT_POLICY);
+    const result = await new AuthorizationEngine(provider).authorize(request({ deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 49_000, currency: "USD" } }), DEFAULT_POLICY);
     expect(result.decision).toBe("BLOCK");
     expect(result.reasons[0]?.code).toBe("AMOUNT_EXCEEDS_LIMIT");
     expect(provider.calls).toBe(0);

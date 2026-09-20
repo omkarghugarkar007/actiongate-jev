@@ -31,6 +31,7 @@ curl --fail-with-body --silent --show-error \
     \"deterministicFacts\": {
       \"authenticated\": true,
       \"authorizedByRbac\": true,
+      \"duplicate\": false,
       \"amountCents\": 4900,
       \"currency\": \"USD\"
     }

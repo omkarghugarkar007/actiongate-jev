@@ -15,7 +15,7 @@ const protectedRefund = gate.wrapTool({
   buildRequest: async ({ input }: { input: { transactionId: string; amountCents: number } }) => ({
     requestId: randomUUID(), idempotencyKey: randomUUID(), tenantId: "tenant-1", environment: "development" as const, mode: "enforce" as const,
     actor: { agentId: "refund-demo" }, userIntent: { text: "Refund the duplicate $49 charge.", source: "user_message" as const },
-    deterministicFacts: { authenticated: true, authorizedByRbac: true, amountCents: input.amountCents, currency: "USD", resourceExists: fakePayments.has(input.transactionId) },
+    deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: fakePayments.get(input.transactionId)?.refunded === true, amountCents: input.amountCents, currency: "USD", resourceExists: fakePayments.has(input.transactionId) },
     context: { resources: { transaction: fakePayments.get(input.transactionId) } }
   })
 });

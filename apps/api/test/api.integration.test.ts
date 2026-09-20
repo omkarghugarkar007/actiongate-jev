@@ -4,7 +4,7 @@ import { ActionGrantSigner, DEFAULT_POLICY, type AuthorizationRequest, type Deci
 import { buildApp } from "../src/app.js";
 
 const apps: ReturnType<typeof buildApp>[] = [];
-const body = { requestId: "req-api", idempotencyKey: "idem-api-001", tenantId: "tenant-1", environment: "development", mode: "enforce", actor: { agentId: "agent" }, userIntent: { text: "Refund the duplicate charge", source: "user_message" }, proposedAction: { tool: "refund_payment", operation: "refund", arguments: { amountCents: 4900 }, riskClass: "FINANCIAL" }, deterministicFacts: { authenticated: true, authorizedByRbac: true, amountCents: 4900, currency: "USD" } };
+const body = { requestId: "req-api", idempotencyKey: "idem-api-001", tenantId: "tenant-1", environment: "development", mode: "enforce", actor: { agentId: "agent" }, userIntent: { text: "Refund the duplicate charge", source: "user_message" }, proposedAction: { tool: "refund_payment", operation: "refund", arguments: { amountCents: 4900 }, riskClass: "FINANCIAL" }, deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD" } };
 afterEach(async () => Promise.all(apps.splice(0).map((app) => app.close())));
 
 describe("POST /v1/authorize", () => {

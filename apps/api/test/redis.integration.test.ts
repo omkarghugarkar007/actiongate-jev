@@ -132,7 +132,7 @@ function authorizationBody(suffix: string) {
     actor: { agentId: "refund-agent", userId: "user-42", sessionId: "session-1" },
     userIntent: { text: "Refund the duplicate $49 charge", source: "user_message" as const },
     proposedAction: { tool: "refund_payment", operation: "refund", arguments: { transactionId: `txn-${suffix}`, amountCents: 4900 }, riskClass: "FINANCIAL" as const },
-    deterministicFacts: { authenticated: true, authorizedByRbac: true, amountCents: 4900, currency: "USD" }
+    deterministicFacts: { authenticated: true, authorizedByRbac: true, duplicate: false, amountCents: 4900, currency: "USD" }
   };
 }
 
