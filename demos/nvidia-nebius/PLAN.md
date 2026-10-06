@@ -19,7 +19,8 @@ visible; a real model plans its correction. The demonstration moves no money.
    production/workflow updates #12–#17. Hold the development updates because
    TypeScript 7 breaks the installed lint tooling. Dependabot superseded #11
    with #18; #18 still fails CI lint and remains unmerged. Preserve secrets and
-   fake-provider defaults.
+   fake-provider defaults. Narrow security fixes for `source-map-js` and
+   `shell-quote` passed full CI and merged separately as #20.
 2. **Add typed Nemotron evidence — complete for NVIDIA.** Reuse the existing
    provider contract and six-question battery. Validate a versioned JSON object,
    choice distributions, refusals and truncation. No policy-threshold change,

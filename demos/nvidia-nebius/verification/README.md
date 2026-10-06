@@ -1,6 +1,7 @@
 # Verification record — October 6, 2026
 
-Verified on Node.js 22.21.1 and pnpm 10.27.0 after merging dependency PRs #12–#17.
+Verified on Node.js 22.21.1 and pnpm 10.27.0. The baseline includes dependency
+PRs #12–#17 and the independently verified security-fix PR #20.
 The development-dependency update #18 remains unmerged because TypeScript 7
 fails the installed lint tooling. It supersedes #11.
 
