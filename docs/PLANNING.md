@@ -69,8 +69,8 @@ The answer to "is this heavy?" is that the weight is opt-in. Each tier is additi
 
 | Tier | Developer adds | They get | Cost |
 |---|---|---|---|
-| 0 | Nothing | Decisions, named reasons, grants, dashboard, guarded examples | No key, no database, no container, no spend |
-| 1 | A provider key | Jev through TypeSafe/OpenRouter or experimental Nemotron through NVIDIA/Nebius | Per-decision provider cost only |
+| 0 | Nothing | Decisions, named reasons, grants, dashboard, guarded examples, offline research lab | No key, no database, no container, no spend |
+| 1 | A provider key; optional Tavily key | Jev through TypeSafe/OpenRouter or Nemotron through NVIDIA/Nebius; guarded public research | Explicit opt-in model/search credits; bounded capture preset |
 | 2 | Redis | Restart-safe state, distributed idempotency, cross-replica consumption | One container |
 | 3 | PostgreSQL and key rings | Durable tenants, registry, reviews, encrypted audit, rotation, retention | Operating a database |
 

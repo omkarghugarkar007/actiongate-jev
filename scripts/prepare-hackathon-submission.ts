@@ -49,6 +49,7 @@ const materials = [
   "demos/nvidia-nebius/SERVICE_EXPANSION.md",
   "demos/nvidia-nebius/verification/TAVILY.md",
   "demos/nvidia-nebius/verification/tavily-usage-2026-10-07.json",
+  "demos/nvidia-nebius/verification/tavily-public-access-2026-10-07.json",
   ...["tavily-refund", "tavily-limit", "tavily-jev-first", "tavily-jev"].map((name) => `demos/nvidia-nebius/verification/${name}-2026-10-07.json`),
   "demos/nvidia-nebius/submission/assets/research-lab.png",
   "packages/evals/datasets/hackathon-refund-v1.json"
