@@ -5,6 +5,10 @@ PRs #12–#17 and the independently verified security-fix PR #20.
 The development-dependency update #18 remains unmerged because TypeScript 7
 fails the installed lint tooling. It superseded #11 and was closed during branch cleanup.
 
+## Initial provider integration regression checks
+
+These are the original extension checks; the later workbench gates follow below.
+
 | Check | Result |
 |---|---|
 | `pnpm lint`, `pnpm typecheck` | Pass |
@@ -42,4 +46,17 @@ Nebius runs and a reusable capture budget. One conservative clarification is
 retained; eleven desired flows were observed. Twenty calls used an estimated
 $0.0089817. This is a separate integration/reliability observation, not reviewed
 semantic accuracy. New desktop/mobile viewer checks bring E2E coverage to seven
-cases; publication validation remains separate from these local checks.
+cases. [PR #23](https://github.com/omkarghugarkar007/actiongate-jev/pull/23)
+and its merged `df8df4c` build passed 337 unit tests, 74 API integration tests,
+2 Redis tests, PostgreSQL migrations/test, 56 Python tests, lint/typecheck, build,
+package/contract checks and the production dependency audit. All seven browser
+checks and CodeQL passed on the PR. No live inference was run by CI.
+
+The [public page](https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2)
+was deployed by the [Pages workflow](https://github.com/omkarghugarkar007/actiongate-jev/actions/runs/37508996264).
+Anonymous desktop/mobile checks verified correction, clarification, holds, replay,
+zero provider requests and equality with all twelve source records. The new
+`df8df4c` public source ZIP was also downloaded without authentication and tested
+from a clean directory with no `.env`: frozen install, four offline scenarios,
+browser walkthrough, static build and blind review preparation all worked. See
+[public access verification](public-access-2026-10-06.json).
