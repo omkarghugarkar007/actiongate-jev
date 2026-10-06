@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 840" width="1200" height="840" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 958" width="1200" height="958" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
   <title id="title">ActionGate platform architecture</title>
-  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, and resolves deterministic facts from trusted deployment services rather than trusting the caller's claims. It combines those facts with Jev evidence from TypeSafe/OpenRouter or experimental Nemotron evidence from NVIDIA/Nebius and issues a single-use exact-action grant. A guarded execution boundary — the SDK wrapper, the embeddable MCP gateway, the standalone MCP and HTTP proxies that hold the downstream credential, or a credential broker that exchanges the grant for a short-lived signed request — consumes the grant before business tools run. Execution outcomes are recorded separately from authorization, and the evidence loop feeds calibration runs whose drift gate blocks a promotion that would raise the unsafe-allow rate. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state. Sanitized synthetic demo records feed a separate public static evidence viewer with no permits or executor; optional Nebius capture has a per-batch catalog-priced reservation guard.</desc>
-  <rect width="1200" height="840" fill="#f8fafc"/>
+  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, and resolves deterministic facts from trusted deployment services rather than trusting the caller's claims. It combines those facts with Jev evidence from TypeSafe/OpenRouter or experimental Nemotron evidence from NVIDIA/Nebius and issues a single-use exact-action grant. A guarded execution boundary — the SDK wrapper, the embeddable MCP gateway, the standalone MCP and HTTP proxies that hold the downstream credential, or a credential broker that exchanges the grant for a short-lived signed request — consumes the grant before business tools run. Execution outcomes are recorded separately from authorization, and the evidence loop feeds calibration runs whose drift gate blocks a promotion that would raise the unsafe-allow rate. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state. Sanitized synthetic demo records feed a separate public static evidence viewer with no permits or executor; optional Nebius capture has a per-batch catalog-priced reservation guard. Optional public research has its own registry-owned query and consumed search permit before a private Tavily executor checks free headroom and reserves credits. Bounded HTTPS sources return only as untrusted planner guidance; the separate refund permit and trusted facts stay independent.</desc>
+  <rect width="1200" height="958" fill="#f8fafc"/>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0 0 L10 5 L0 10 z" fill="#7c8aa5"/>
@@ -122,4 +122,18 @@
   <rect x="40" y="754" width="1120" height="62" rx="13" class="card"/>
   <text x="600" y="779" class="title" text-anchor="middle">Demo trace export → recorded public evidence viewer (read-only; no permits or executor)</text>
   <text x="600" y="802" class="body" text-anchor="middle">Optional Nebius capture reserves catalog-priced costs per batch; it is not an account-wide billing limit.</text>
+  <rect x="40" y="836" width="330" height="92" rx="13" class="green"/>
+  <text x="205" y="863" class="title" text-anchor="middle">Optional public research · Guard</text>
+  <text x="205" y="886" class="body" text-anchor="middle">Registry-owned query and domain</text>
+  <text x="205" y="907" class="body" text-anchor="middle">Authorize → consume search permit</text>
+  <path d="M374 882 H407" class="arrow"/>
+  <rect x="410" y="836" width="330" height="92" rx="13" class="card"/>
+  <text x="575" y="863" class="title" text-anchor="middle">Private Tavily search executor</text>
+  <text x="575" y="886" class="body" text-anchor="middle">Free-plan check · durable reservation</text>
+  <text x="575" y="907" class="body" text-anchor="middle">Bounded HTTPS source evidence</text>
+  <path d="M744 882 H777" class="arrow"/>
+  <rect x="780" y="836" width="380" height="92" rx="13" class="purple"/>
+  <text x="970" y="863" class="title" text-anchor="middle">Untrusted guidance → planner</text>
+  <text x="970" y="886" class="body" text-anchor="middle">Separate refund authorization and grant</text>
+  <text x="970" y="907" class="body" text-anchor="middle">Sources never supply trusted facts or policy</text>
 </svg>

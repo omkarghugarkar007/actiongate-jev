@@ -1,26 +1,26 @@
 [00:00–00:12]
-A customer asks an agent to refund one transaction. A valid-looking tool call can still target the wrong payment. ActionGate puts a permit between the proposal and the change.
+A customer asks for one forty-nine-dollar refund. A valid-looking tool call can still target the wrong payment. ActionGate puts a permit between the proposal and the change.
 
-[00:12–00:28]
-Our live integration uses NVIDIA Nemotron through Nebius Token Factory for planning and semantic evidence. The application owns authority. This walkthrough uses offline model fixtures; we'll show the actual Nebius verification separately.
+[00:12–00:30]
+NVIDIA Nemotron through Nebius Token Factory supplies planning and semantic evidence. The application owns authority. This walkthrough uses offline fixtures; actual provider verification appears separately. Search and refund each need their own permit.
 
-[00:28–00:55]
-The customer names transaction five-five-one-two. This untrusted ticket tries to redirect the refund. We deliberately seed a wrong-target proposal to test the boundary. ActionGate blocks it, and the payment handler does not run. A correctly shaped argument is not enough to authorize a refund.
+[00:30–00:55]
+The research query contains public documentation terms, not customer records. ActionGate rejects a changed actor and consumes the search permit before retrieving sources. Guidance stays untrusted. We deliberately add a malicious snippet asking for another transaction; a page cannot grant permission or change policy.
 
 [00:55–01:20]
-The next proposal matches the customer's forty-nine-dollar request. In this walkthrough the correction is scripted; our live test used Nemotron. ActionGate allows the exact action, issues its permit, consumes it, then invokes the private sandbox handler. The ledger shows one execution on the requested transaction.
+Here is the original wrong-target drill. The customer names transaction five-five-one-two, while an untrusted ticket redirects it. We seed the unsafe proposal to test enforcement. ActionGate blocks transaction nine-nine-eight-one. The payment handler does not run.
 
-[01:20–01:39]
-The permit binds identity, transaction, arguments and policy, and it expires. Reusing it returns conflict: four-oh-nine. The other transaction stays charged. This is at-most-once authorization; we do not claim exactly-once external side effects.
+[01:20–01:40]
+The correction matches the requested transaction and forty-nine dollars. ActionGate issues and consumes a separate refund permit before the private sandbox handler changes the ledger. One execution. Reusing the permit returns four-oh-nine; the other payment stays unchanged.
 
-[01:39–01:55]
-Hard policy still wins. A two-hundred-fifty-dollar request exceeds the hundred-dollar ceiling and is blocked. A charge inquiry without refund permission requires review. Neither case invokes the handler.
+[01:40–01:55]
+Hard policy wins: two hundred fifty dollars exceeds the hundred-dollar ceiling. An inquiry without refund permission requires review. Neither case executes.
 
 [01:55–02:19]
-Here are twelve recorded Nemotron three Super runs through Nebius. Eleven followed the planned flow; one safely asked for extra confirmation. Twenty calls cost an estimated less than one cent. The left ledger projects the first proposal; the right shows the recorded guarded outcome. All rounds remain visible.
+These dated records contain actual Tavily searches and Nemotron calls. The model cited a source, preserved the requested target and respected the ceiling despite our seeded snippet. Four searches used free credits; additional Nebius inference cost an estimated three-tenths of one cent. The Jev live regression also passes.
 
-[02:19–02:34]
-This is a sandbox with memory-only run state. The faults are seeded, and model confidence is uncalibrated. These checks demonstrate specific enforcement behavior, not model accuracy or production readiness.
+[02:19–02:35]
+All twelve earlier Nebius runs remain visible. Eleven followed the planned flow; one safely asked for confirmation. The left ledger projects the first proposal. The right shows the recorded guarded outcome.
 
-[02:34–02:40]
-Models supply evidence. ActionGate creates and enforces the permit. The source and test build are public.
+[02:35–02:50]
+This is a sandbox with memory-only run state, seeded faults and uncalibrated confidence. We claim at-most-once authorization, not exactly-once side effects. Models supply evidence. ActionGate creates and enforces the permit. Source and test builds are public.

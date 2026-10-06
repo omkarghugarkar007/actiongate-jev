@@ -49,7 +49,8 @@ The refund demo changes fixtures, not real payments. Its memory state resets
 each run. Nemotron scores are self-reported and uncalibrated; the recorded cases
 are integration/security evidence rather than accuracy benchmarks. ActionGate
 remains an early public release, and the independent Jev/OpenRouter regression
-rerun is still blocked by HTTP 401.
+rerun was blocked by HTTP 401 on October 6. The refreshed key passed all five
+enabled checks and the new research gate on October 7.
 
 Entrants should add each actual team member's contribution before submitting.
 Do not assign contributions, ownership or eligibility to someone without their
@@ -70,3 +71,15 @@ including one safe clarification. A frozen blind-review packet prepares human
 evaluation without creating reviewed labels. These additions merged October 6,
 2026 in PRs #19, #21, #22 and #23. We do not claim the
 pre-existing platform as newly built, production readiness or calibrated accuracy.
+
+## Guarded public research, October 7
+
+Added a fixed-query Tavily search tool with server-owned schema, policy and
+domain restrictions, consumption before its billable boundary, persistent
+free-credit reservations, unknown-usage halt and outcome/replay evidence.
+Source-aware Nemotron planning treats citations as untrusted guidance; it cannot
+change identity, policy or trusted ledger facts. A separate always-offline
+research UI preserves zero-config adoption and the original demo. This advances
+Custody, Binding, Enforcement and Evidence. Real Tavily/Nebius/Jev observations
+and costs are retained in [TAVILY.md](../verification/TAVILY.md); the seeded
+snippet is disclosed. No existing records were rewritten.

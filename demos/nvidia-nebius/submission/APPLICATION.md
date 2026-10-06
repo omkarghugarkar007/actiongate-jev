@@ -155,12 +155,14 @@ provisioning GPUs. The model catalog supplied the rates for our cost estimate.
 
 We also verified the NVIDIA-hosted gateway during development. Those calls are
 separate from the Nebius runtime-use record. Nebius AI Cloud compute, Serverless
-Jobs/Endpoints, Tavily and physical hardware were not used.
+Jobs/Endpoints, AWS and physical hardware were not used.
+
+**Tavily:** A working public-documentation search stage consumes an exact-query/domain permit before using the private Tavily credential. Retrieved guidance is untrusted planner context. Real Tavily searches returned cited Stripe documentation; Nemotron used a citation while preserving the requested target and amount ceiling under a seeded snippet attack. Four basic searches used free Researcher credits with paid overflow confirmed disabled. Two Nebius research captures used five model calls, estimated $0.0030396. The new Jev research gate also passed. [Actual runtime records](../verification/TAVILY.md). Select Best Use of Tavily as the optional bonus if available in the final form; its eligibility remains subject to the rules.
 
 ## Built with
 
 TypeScript, Node.js, pnpm, Fastify, Zod, NVIDIA Nemotron 3 Super, Nebius Token
-Factory, HTML/CSS/JavaScript, Vitest and Playwright. ActionGate's existing wider
+Factory, Tavily Search, HTML/CSS/JavaScript, Vitest and Playwright. ActionGate's existing wider
 platform includes PostgreSQL, Redis, a Next.js dashboard and JS/Python SDKs;
 those services are not required for this refund test build.
 

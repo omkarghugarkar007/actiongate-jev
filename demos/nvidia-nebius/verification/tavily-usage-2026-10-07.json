@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-06T18:57:13.750Z",
+  "plan": "Researcher",
+  "freePlanLimit": 1000,
+  "freePlanUsage": 0,
+  "keyUsage": 0,
+  "paygoUsage": 0,
+  "paygoLimit": null,
+  "paidOverflowDisabled": "Owner explicitly confirmed disabled; null limit is not proof",
+  "searchesInThisIteration": 4
+}

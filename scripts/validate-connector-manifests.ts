@@ -4,7 +4,7 @@ import { validateConnectorManifest } from "../packages/connector-manifest/src/in
 
 /** CI gate: every connector manifest in the workspace must be valid. */
 const paths: string[] = [];
-for await (const entry of glob("packages/*/connector.manifest.json")) paths.push(entry);
+for await (const entry of glob(["packages/*/connector.manifest.json", "demos/*/connector.manifest.json"])) paths.push(entry);
 paths.sort();
 
 if (paths.length === 0) {

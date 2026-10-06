@@ -47,6 +47,10 @@ const materials = [
   ...["README.md", "WORKBENCH.md", "public-access-2026-10-06.json", "nebius-workbench-2026-10-06.json", "nebius-live-2026-10-06.json", "nvidia-live-2026-10-06.json"].map((file) => `demos/nvidia-nebius/verification/${file}`),
   "demos/nvidia-nebius/IMPROVEMENT_PLAN.md",
   "demos/nvidia-nebius/SERVICE_EXPANSION.md",
+  "demos/nvidia-nebius/verification/TAVILY.md",
+  "demos/nvidia-nebius/verification/tavily-usage-2026-10-07.json",
+  ...["tavily-refund", "tavily-limit", "tavily-jev-first", "tavily-jev"].map((name) => `demos/nvidia-nebius/verification/${name}-2026-10-07.json`),
+  "demos/nvidia-nebius/submission/assets/research-lab.png",
   "packages/evals/datasets/hackathon-refund-v1.json"
 ];
 for (const path of materials) await readFile(resolve(root, path));

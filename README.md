@@ -78,7 +78,7 @@ live authorization and agent tests have passed. The bounded Nebius trial batch
 used an estimated $0.00219; see the [verification record](demos/nvidia-nebius/verification/nebius-live-2026-10-06.json).
 Live commands consume inference credits; check the available trial balance first.
 The demo is local. [APPLY.md](APPLY.md) contains the application kit, a pinned
-downloadable test build, judge instructions and a 2:40 video script. The video
+downloadable test build, judge instructions and a 2:50 video script. The video
 still needs recording/upload; no entry has been submitted.
 Nemotron scores are self-reported estimates, not calibrated probabilities.
 
@@ -90,6 +90,14 @@ confirmation. Twenty requests used an estimated $0.0089817 under a $1 batch cap.
 Run `pnpm hackathon:workbench` locally; the actual execution lab stays separate.
 The [improvement plan](demos/nvidia-nebius/IMPROVEMENT_PLAN.md) tracks reviewed
 semantic evidence and final recording as the next iterations.
+
+Optional **Tavily research is Guard-level**: a server-owned public query gets its
+own consumed permit before search; citations are untrusted planner guidance.
+`pnpm demo:research` opens the always-offline rehearsal at `127.0.0.1:8097`.
+[Actual Tavily/Nebius/Jev records](demos/nvidia-nebius/verification/TAVILY.md)
+show four free basic searches, preserved outcomes and approximately $0.00304
+of additional Nebius promotional credit. No key or new service is required
+for Tier 0; the research extension is disabled in the original lab.
 
 For live decisions, choose either direct TypeSafe or OpenRouter:
 
@@ -264,7 +272,7 @@ The boundary is strict; the on-ramp is not. Each tier is additive.
 ## How it works
 
 <p align="center">
-  <img src="docs/assets/platform-architecture.svg" alt="Applications connect through adapters to server-owned identity, registry, trusted facts and model evidence; an exact-action grant is consumed at the guarded boundary. Optional stores support durability, while sanitized demo traces feed a separate public viewer with no permits or executor." width="100%" />
+  <img src="docs/assets/platform-architecture.svg" alt="Applications connect through adapters to server-owned identity, registry, trusted facts and model evidence; an exact-action grant is consumed at the guarded boundary. Optional stores support durability. An optional guarded Tavily search returns untrusted planner guidance, while sanitized demo traces feed a separate public viewer with no permits or executor." width="100%" />
 </p>
 
 ActionGate asks six narrow semantic questions in one request — alignment, target match,
