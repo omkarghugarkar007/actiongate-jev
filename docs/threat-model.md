@@ -10,7 +10,7 @@ Protected assets include tenant identity, API keys, signing and encryption keys,
 
 - Agent-generated arguments, user or retrieved text, request tenant fields, requested operation/risk, and model-visible state are untrusted.
 - Authenticated tenant/environment/roles, the durable tool registry, immutable policy version, trusted fact adapters, secret manager, Redis, PostgreSQL, and guarded executor are trusted only within their deployment boundary.
-- TypeSafe's direct System One endpoint and OpenRouter are external evidence processors. Their API keys stay server-side, their responses are untrusted until schema validation, and neither route has authority to issue or consume a grant.
+- TypeSafe, OpenRouter, NVIDIA and Nebius are external evidence processors. Their API keys stay server-side, responses are untrusted until schema validation, and none has authority to issue or consume a grant.
 - Administrator and reviewer credentials are powerful principals and require operational protection outside this repository.
 
 ## Principal threats and controls
@@ -22,6 +22,8 @@ Protected assets include tenant identity, API keys, signing and encryption keys,
 | Invalid or adversarial arguments | Registered JSON Schema must be a closed top-level object and is validated at registration and before evaluation; undeclared fields fail before provider spend | Business invariants still need deterministic rules and trusted resource lookup |
 | Caller fabricates or omits RBAC or resource facts | Caller `deterministicFacts` are always untrusted and cannot satisfy any fact-backed hard rule. Only a server-side provider can supply usable evidence; absent, stale, or unavailable evidence blocks | Fact providers are only as trustworthy as the services behind them, and those services must not be reachable by the agent |
 | Prompt injection or misleading retrieved text | Minimal structured state, fixed narrow questions, strict response validation, and uncertainty review | A decision model can still misclassify; representative calibration remains necessary |
+| Nemotron returns persuasive but inconsistent scores | A strict versioned schema rejects missing/extra answers, out-of-range values, invalid choices, inconsistent distributions, refusals and truncated completions | Self-reported scores are not calibrated probabilities. A passing demo is plumbing/enforcement evidence, not semantic accuracy |
+| A browser spends a local demo key or reaches its raw payment handler | Loopback-only demo host, local Host/Origin checks, fixed scenarios, one active run, live cooldown, private ledger mutation after consume, and sanitized streaming | The local demo is Guard-level and in memory; it is not a production multi-tenant hosting surface, and host code remains privileged |
 | Model score overrides a hard failure | Fixed precedence makes authentication, RBAC, schema, limit, duplicate, and dependency failures authoritative, and an unevaluable control counts as a failure | New rule types must preserve this invariant and must treat an absent fact as unsatisfied, never as satisfied |
 | Decision reused for another action | Signed fingerprint binds tenant, environment, actor, tool, operation, canonical arguments, risk, policy, and decision | The downstream system must be reachable only through the guarded path |
 | Grant replay or concurrent double use | Atomic Redis consumption; exactly one connected replica succeeds | Redis compromise or loss can disrupt availability; consumption is not exactly-once business execution |

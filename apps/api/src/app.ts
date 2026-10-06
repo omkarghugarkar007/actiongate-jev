@@ -23,7 +23,7 @@ import {
   type DecisionProvider,
   type Policy
 } from "@actiongate/core";
-import { FakeDecisionProvider, OpenRouterJevProvider, TypeSafeJevProvider } from "@actiongate/decision-provider";
+import { FakeDecisionProvider, OpenRouterJevProvider, TypeSafeJevProvider, NemotronDecisionProvider } from "@actiongate/decision-provider";
 import { config } from "./config.js";
 import { EvidenceCipher } from "./security/evidence-cipher.js";
 import { AuthorizationService, IdempotencyBusyError, IdempotencyConflictError } from "./services/authorization-service.js";
@@ -101,6 +101,8 @@ const IncidentRevokeSchema = z.object({ tool: z.string().min(1).max(128).optiona
 
 export interface BuildAppOptions {
   provider?: DecisionProvider;
+  /** Provider timeout; the idempotency lease must be longer than this. */
+  timeoutMs?: number;
   apiKey?: string;
   apiKeyTenantId?: string;
   apiKeyEnvironment?: ApiEnvironment;
@@ -138,6 +140,9 @@ export interface BuildAppOptions {
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
+  const timeoutMs = options.timeoutMs ?? config.semanticTimeoutMs;
+  const idempotencyLeaseMs = options.idempotencyLeaseMs ?? config.ACTIONGATE_IDEMPOTENCY_LEASE_MS;
+  if (idempotencyLeaseMs <= timeoutMs) throw new Error("The idempotency lease must exceed the decision timeout");
   const app = Fastify({ logger: options.logger === false ? false : { redact: ["req.headers.authorization", "req.body.token", "req.body.proposedAction.arguments.password", "req.body.proposedAction.arguments.token"] } });
   const provider = options.provider ?? createProvider();
   const storage = options.storage ?? config.ACTIONGATE_STORAGE;
@@ -157,7 +162,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   }
   const repositoryOptions = {
     prefix: options.redisPrefix ?? config.ACTIONGATE_REDIS_PREFIX,
-    idempotencyLeaseMs: options.idempotencyLeaseMs ?? config.ACTIONGATE_IDEMPOTENCY_LEASE_MS,
+    idempotencyLeaseMs,
     evidenceCipher
   };
   const decisions: DecisionRepository = storage === "redis" && redis ? new RedisDecisionRepository(redis, repositoryOptions) : new InMemoryDecisionRepository();
@@ -181,7 +186,7 @@ export function buildApp(options: BuildAppOptions = {}) {
 
   const service = new AuthorizationService(
     new AuthorizationEngine(provider, {
-      timeoutMs: config.JEV_TIMEOUT_MS,
+      timeoutMs,
       failOpenReadOnly: config.failOpenReadOnly,
       ...(options.factProviders ? { factProviders: options.factProviders } : {})
     }),
@@ -275,7 +280,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   const exportKey = exportKeyEntry ? { id: exportKeyEntry.id, secret: exportKeyEntry.secret } : undefined;
   // Its own engine so a simulation can never touch stored decision state.
   const simulationEngine = new AuthorizationEngine(provider, {
-    timeoutMs: config.JEV_TIMEOUT_MS,
+    timeoutMs,
     failOpenReadOnly: config.failOpenReadOnly,
     ...(options.factProviders ? { factProviders: options.factProviders } : {})
   });
@@ -828,6 +833,13 @@ function grantErrorResponse(error: unknown, reply: FastifyReply) {
 
 function createProvider(): DecisionProvider {
   if (config.DECISION_PROVIDER === "fake") return FakeDecisionProvider.allow();
+  if (config.DECISION_PROVIDER === "nvidia" || config.DECISION_PROVIDER === "nebius") {
+    return new NemotronDecisionProvider({
+      backend: config.DECISION_PROVIDER,
+      apiKey: config.DECISION_PROVIDER === "nvidia" ? config.NVIDIA_API_KEY! : config.NEBIUS_API_KEY!,
+      model: config.DECISION_PROVIDER === "nvidia" ? config.NVIDIA_MODEL : config.NEBIUS_MODEL
+    });
+  }
   if (config.DECISION_PROVIDER === "typesafe") {
     return new TypeSafeJevProvider({ apiKey: config.typeSafeApiKey!, model: config.TYPESAFE_MODEL });
   }

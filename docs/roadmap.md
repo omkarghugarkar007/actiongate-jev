@@ -4,7 +4,20 @@ ActionGate is developed in public. Work is ordered around durable identity and e
 
 The destination is a hub with a connector catalog: a small core that owns identity, policy, and enforcement, surrounded by thin connectors that any application can add in minutes. Breadth is only worth building once the boundary it plugs into is real, which is why enforcement leads and the catalog follows.
 
-Last reconciled: **2026-09-21**. P0 application controls are complete and verified against real Redis, PostgreSQL, and the live OpenRouter endpoint; the direct TypeSafe adapter is fixture-tested but awaits a key for live verification. ActionGate remains an early public release and does not yet claim production readiness.
+Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron evidence and a sandbox agent that consumes permits before execution. Nebius awaits a key and live verification. Existing P0 controls retain their regression gates; the current OpenRouter key returns HTTP 401, so the latest Jev live rerun is blocked by authentication. ActionGate remains an early public release.
+
+## NVIDIA × Nebius delivery
+
+- [x] Keep sponsor-specific code under `demos/nvidia-nebius` and reuse the provider-independent core.
+- [x] Add strictly validated, versioned Nemotron evidence with NVIDIA and Nebius presets.
+- [x] Verify NVIDIA authorization, exact-action mutation refusal, consume and replay against the live gateway.
+- [x] Run a live support agent through wrong-target refusal, model-planned correction and one sandbox refund.
+- [x] Keep a working offline demo, sanitized action trace and private payment handler.
+- [ ] Run the Nebius live gate with a Token Factory key.
+- [ ] Freeze an independently reviewed semantic suite; self-reported scores are not calibration.
+- [ ] Publish a controlled hosted test build and record a video under three minutes.
+
+The [demo plan](../demos/nvidia-nebius/PLAN.md) records the submission requirements and remaining work.
 
 ## Standing constraints
 

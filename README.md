@@ -4,11 +4,12 @@
 
 # ActionGate
 
-**Open-source Jev tool-calling authorization for AI agents.** ActionGate is a
+**Open-source tool-calling authorization for AI agents.** ActionGate is a
 runtime security gateway that evaluates a proposed tool call with deterministic
 policy plus [TypeSafe Jev](https://docs.typesafe.ai/concepts/system-one), called
 [directly through TypeSafe](https://docs.typesafe.ai/introduction/quickstart) or
-through [OpenRouter](https://openrouter.ai/typesafe/jev-1.13), binds approval to
+through [OpenRouter](https://openrouter.ai/typesafe/jev-1.13), or experimental
+[NVIDIA Nemotron](demos/nvidia-nebius/README.md) evidence, binds approval to
 that exact action, and refuses expired, changed, or replayed permits.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/omkarghugarkar007/actiongate-jev/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/omkarghugarkar007/actiongate-jev/actions/workflows/ci.yml)
@@ -40,7 +41,7 @@ it approved. Here it is against the live model:
   <img src="docs/assets/simulator.gif" alt="The ActionGate simulator: the same refund tool is allowed for the transaction the user named, then blocked for a transaction they never mentioned, and blocked again when a question is treated as a request." width="100%" />
 </p>
 
-**Jev supplies evidence. Code owns authority.** A model score never overrides an
+**Jev supplies evidence; ActionGate creates and enforces the permit.** A model score never overrides an
 RBAC, schema, limit, or duplicate failure.
 
 ## Quick start
@@ -57,6 +58,26 @@ pnpm install && pnpm dev
 Dashboard on [:3000](http://localhost:3000), simulator on
 [:3000/simulator](http://localhost:3000/simulator), API on [:8080](http://localhost:8080).
 Then `pnpm refund:demo` runs a guarded refund that cannot move real money.
+
+## NVIDIA × Nebius refund lab
+
+[Run the hackathon demo](demos/nvidia-nebius/README.md): a support agent proposes
+a refund, ActionGate blocks a seeded wrong target, Nemotron plans a correction,
+and the server consumes an exact-action permit before changing a sandbox ledger.
+Replay is refused. The private ledger handler gives this demo a **Guard** boundary;
+it uses memory and moves no real money.
+
+```bash
+pnpm demo:nvidia       # offline fixtures, no credentials
+pnpm demo:nvidia:live  # live NVIDIA planner + evidence; uses NVIDIA_API_KEY
+# Open http://127.0.0.1:8095
+```
+
+`pnpm demo:nebius` selects Token Factory with `NEBIUS_API_KEY`. NVIDIA live
+authorization and agent tests have passed; Nebius is implemented but awaits a
+key and its live gate. The competition requires actual Nebius runtime usage.
+The demo is local; a hosted test build and submission video remain to be made.
+Nemotron scores are self-reported estimates, not calibrated probabilities.
 
 For live decisions, choose either direct TypeSafe or OpenRouter:
 
@@ -223,10 +244,10 @@ The boundary is strict; the on-ramp is not. Each tier is additive.
 
 | Tier | You add | You get |
 |---|---|---|
-| 0 | `ActionGate.embedded()` | Guarded tools in one process — no server, no key, no database |
-| 1 | A TypeSafe or OpenRouter key | Real Jev semantic evidence instead of the deterministic fake |
-| 2 | The API server | A registry the agent cannot edit, plus audit, reviews, and incident controls |
-| 3 | Redis and PostgreSQL | Restart-safe state, cross-replica consumption, encrypted durable evidence |
+| 0 | `pnpm dev` or `ActionGate.embedded()` | Decisions, permits and dashboard, or guarded in-process tools; no key or database |
+| 1 | A provider key | Jev through TypeSafe/OpenRouter, or experimental Nemotron through NVIDIA/Nebius |
+| 2 | Redis | Restart-safe runtime state and cross-replica grant consumption |
+| 3 | PostgreSQL and key rings | Durable tenants, registry, reviews and encrypted audit with rotation |
 
 ## How it works
 
@@ -234,7 +255,7 @@ The boundary is strict; the on-ramp is not. Each tier is additive.
   <img src="docs/assets/platform-architecture.svg" alt="Applications connect through SDK, MCP, HTTP, or webhook adapters. ActionGate combines tenant identity, a server-owned registry, deterministic authority fed by trusted server-side fact providers, and decision-model evidence before issuing a single-use grant that is consumed at the guarded execution boundary." width="100%" />
 </p>
 
-ActionGate asks six narrow Jev questions in one request — alignment, target match,
+ActionGate asks six narrow semantic questions in one request — alignment, target match,
 policy conflict, sensitive-data exposure, scope expansion, missing intent — never
 one vague "is this safe?", and never uses model prose as an authorization reason.
 

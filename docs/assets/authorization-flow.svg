@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 430" width="980" height="430" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
   <title id="title">ActionGate authorization flow</title>
-  <desc id="description">A user request and an AI agent proposed action enter ActionGate. ActionGate checks hard rules and semantic alignment, then returns allow, review, or block. Only an allowed action may proceed.</desc>
+  <desc id="description">A user request and an AI agent proposed action enter ActionGate. ActionGate checks server-owned hard rules and semantic alignment using typed Jev or Nemotron evidence, then returns allow, review, or block. Only an enforced allow receives a signed permit that must be consumed before execution.</desc>
   <rect width="980" height="430" fill="#fbfbfd"/>
   <style>
     .heading { font-size:20px; font-weight:650; fill:#15213b }
