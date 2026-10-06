@@ -52,7 +52,7 @@ jobs:
       - run: pnpm db:migrate
       - run: pnpm test:postgres
       - run: pnpm build
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
       - run: python -m pip install --quiet pytest
       - run: pnpm test:python
