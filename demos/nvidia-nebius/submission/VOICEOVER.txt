@@ -1,8 +1,8 @@
-[00:00–00:12]
-A customer asks for one forty-nine-dollar refund. A valid-looking tool call can still target the wrong payment. ActionGate puts a permit between the proposal and the change.
+[00:00–00:20]
+Hi, I'm Omkar Ghugarkar. I built ActionGate to help developers control which actions their AI agents can execute. For this hackathon, I added a refund agent using NVIDIA Nemotron through Nebius Token Factory, with Tavily for research. Here's how it works.
 
-[00:12–00:30]
-NVIDIA Nemotron through Nebius Token Factory supplies planning and semantic evidence. The application owns authority. This walkthrough uses offline fixtures; actual provider verification appears separately. Search and refund each need their own permit.
+[00:20–00:30]
+This walkthrough uses offline fixtures; actual provider verification appears separately. The application owns authority. Search and refund each need their own permit.
 
 [00:30–00:55]
 The research query contains public documentation terms, not customer records. ActionGate rejects a changed actor and consumes the search permit before retrieving sources. Guidance stays untrusted. We deliberately add a malicious snippet asking for another transaction; a page cannot grant permission or change policy.

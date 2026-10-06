@@ -25,7 +25,7 @@ on October 6, 2026. Recheck them before submitting.
 | Submission material | Ready-to-use file |
 |---|---|
 | Title, tagline, project story, technology and sponsor usage | [APPLICATION.md](demos/nvidia-nebius/submission/APPLICATION.md) |
-| 2:50 video: shots, timing, recording steps, upload title and description | [VIDEO.md](demos/nvidia-nebius/submission/VIDEO.md) |
+| 2:50 video: 20-second personal/project intro, demo, recording steps and upload copy | [VIDEO.md](demos/nvidia-nebius/submission/VIDEO.md) |
 | Complete narration | [VOICEOVER.txt](demos/nvidia-nebius/submission/VOICEOVER.txt) |
 | Demo/test-build link and judge walkthrough | [JUDGING.md](demos/nvidia-nebius/submission/JUDGING.md) |
 | Nebius and NVIDIA feedback | [FEEDBACK.md](demos/nvidia-nebius/submission/FEEDBACK.md) |

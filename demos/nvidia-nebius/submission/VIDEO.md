@@ -1,10 +1,28 @@
 # Demo video: 2 minutes 50 seconds
 
-Record the functioning desktop application. Show both search and refund permit
+Start with a short introduction on camera, then switch to the functioning
+desktop application. Show both search and refund permit
 boundaries, cited untrusted guidance, a seeded wrong target, a corrected refund,
 replay and a hard amount ceiling. Show dated runtime evidence separately. This
 is a recording script, not a completed video; the YouTube URL remains pending.
 The complete narration is [VOICEOVER.txt](VOICEOVER.txt).
+
+## Opening: introduce yourself and the project
+
+Use the first **20 seconds** for your introduction. Look at the camera and use
+the lower-third **Omkar Ghugarkar · ActionGate**. A plain background and clear
+audio are enough. If you prefer voiceover, show your name and the project cover
+during the same introduction.
+
+> Hi, I'm Omkar Ghugarkar. I built ActionGate to help developers control which
+> actions their AI agents can execute. For this hackathon, I added a refund agent
+> using NVIDIA Nemotron through Nebius Token Factory, with Tavily for research.
+> Here's how it works.
+
+Cut to the application on “Here's how it works.” This introduces you and the
+product before the demo while accurately describing the hackathon additions
+to an existing project. Keep the complete video at 2:50, with 2:30 for the demo,
+runtime evidence and closing.
 
 ## Prepare with zero spend
 
@@ -26,8 +44,8 @@ The complete narration is [VOICEOVER.txt](VOICEOVER.txt).
 
 | Time | Capture | What the viewer should see |
 |---|---|---|
-| 00:00–00:12 | Cover and original lab | A request names one $49 transaction; a tool call can still choose the wrong one. |
-| 00:12–00:30 | Research lab heading, badge and flow | The application owns authority; search and refund need separate consumed permits. |
+| 00:00–00:20 | You on camera; name/project lower-third | Introduce yourself, what ActionGate does and the Nemotron/Nebius/Tavily refund workflow. |
+| 00:20–00:30 | Cut to research lab heading, offline badge and flow | Start the demo: the application owns authority; search and refund need separate consumed permits. |
 | 00:30–00:55 | Run the requested refund in research lab; show sources and trace | Fixed public query, actor mutation refusal, consumption before sources; seeded snippet labeled as a local drill. |
 | 00:55–01:20 | Original lab: wrong-target attack, first BLOCK | Seeded `txn_9981` proposal; no execution until correction. |
 | 01:20–01:40 | Corrected proposal, permit, consumption and ledger | `txn_5512`, $49, one execution; replay 409; other transaction unchanged. |
