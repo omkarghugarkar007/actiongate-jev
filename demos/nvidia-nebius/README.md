@@ -45,8 +45,24 @@ pnpm nemotron:smoke -- --nebius
 The Token Factory preset uses `nvidia/nemotron-3-super-120b-a12b`, following the
 [official model guide](https://github.com/nebius/token-factory-cookbook/blob/main/models/nemotron/nemotron3-super-120B.md).
 `NEBIUS_MODEL` can select a model available to the account. Its transport and
-normalization are fixture-tested; a Nebius key was unavailable for live validation.
+normalization are fixture-tested, and all three live authorization/agent checks
+passed against Token Factory on October 6, 2026.
 There is no fallback to another backend. Missing live keys fail loudly.
+
+The [Nebius verification record](verification/nebius-live-2026-10-06.json) covers
+five requests including a connectivity check: 5,218 input and 697 output tokens,
+estimated at $0.0021927 using the authenticated model catalog's rates. A local
+verification guard reserved each call's full model context and output cap before
+dispatch, limited the batch to $0.50 of the observed $1 trial credit, retained
+reservations on unknown outcomes, and closed the batch afterward. This is a
+token-rate estimate; a post-run billing ledger was not available.
+
+For free-credit-only use, verify the current trial balance before live commands.
+An API key does not identify the source of credits. Nebius's
+[billing rules](https://docs.tokenfactory.nebius.com/other-capabilities/billing-new)
+allow automatic card charging when the balance becomes negative or a billing
+threshold is reached. The verification cap belonged to that one batch;
+application deployments still need their own spend controls.
 
 You can also run without a browser:
 
@@ -119,7 +135,7 @@ This minimizes unrelated evidence and cost. A supported proposal can still be
 held for review if the model's self-reported confidence is insufficient; no
 score is increased and no threshold is lowered to make the demo pass.
 
-NVIDIA's live gate verifies actual gateway attribution, model resolution,
+NVIDIA's and Nebius's live gates verify actual gateway attribution, model resolution,
 authorization, exact-action mutation rejection, one successful consumption and
 replay denial. The live agent gate verifies wrong-target refusal, model-planned
 correction and one sandbox refund. The UI shows latency and actual input/output
@@ -128,8 +144,8 @@ tokens; the gateway does not report cost, so the demo does not invent it.
 The [delivery plan](PLAN.md) separates completed local work from remaining
 submission work. The [competition](https://nebiusglobalaihackathon.devpost.com/rules)
 requires actual Token Factory runtime calls or Nebius AI Cloud execution.
-NVIDIA-hosted inference alone does not meet that requirement. A Nebius live
-trace, controlled hosted test build and public video remain pending.
+The recorded Nebius calls satisfy the runtime-use verification milestone.
+A controlled hosted test build and public video remain pending.
 
 ## 90-second demo script
 

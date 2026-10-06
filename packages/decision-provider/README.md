@@ -38,7 +38,8 @@ no retry or fallback; redirects are refused. API keys stay out of error messages
 Nemotron's scores are **self-reported and uncalibrated**. Policy thresholds are
 unchanged, and no provider can override deterministic failures. Legacy `JEV_*`
 error codes remain compatible; gateway attribution is `nvidia` or `nebius`.
-NVIDIA live gates pass; Nebius is fixture-tested and awaits a key for its live gate.
+NVIDIA and Nebius live authorization/agent gates pass. The recorded Nebius batch
+used an estimated $0.00219 of observed trial credit with local reservation limits.
 See the [refund lab](../../demos/nvidia-nebius/README.md) for setup and limitations.
 
 Early public release. Not production-ready: no external security review yet.

@@ -73,9 +73,10 @@ pnpm demo:nvidia:live  # live NVIDIA planner + evidence; uses NVIDIA_API_KEY
 # Open http://127.0.0.1:8095
 ```
 
-`pnpm demo:nebius` selects Token Factory with `NEBIUS_API_KEY`. NVIDIA live
-authorization and agent tests have passed; Nebius is implemented but awaits a
-key and its live gate. The competition requires actual Nebius runtime usage.
+`pnpm demo:nebius` selects Token Factory with `NEBIUS_API_KEY`. NVIDIA and Nebius
+live authorization and agent tests have passed. The bounded Nebius trial batch
+used an estimated $0.00219; see the [verification record](demos/nvidia-nebius/verification/nebius-live-2026-10-06.json).
+Live commands consume inference credits; check the available trial balance first.
 The demo is local; a hosted test build and submission video remain to be made.
 Nemotron scores are self-reported estimates, not calibrated probabilities.
 

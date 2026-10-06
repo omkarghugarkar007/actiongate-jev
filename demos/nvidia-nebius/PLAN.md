@@ -18,26 +18,29 @@ visible; a real model plans its correction. The demonstration moves no money.
 1. **Prepare the baseline — complete.** Review all seven open PRs. Merge passing
    production/workflow updates #12–#17. Hold the development updates because
    TypeScript 7 breaks the installed lint tooling. Dependabot superseded #11
-   with #18; #18 still fails CI lint and remains unmerged. Preserve secrets and
+   with #18; #18 failed CI lint and was closed during branch cleanup. Preserve secrets and
    fake-provider defaults. Narrow security fixes for `source-map-js` and
    `shell-quote` passed full CI and merged separately as #20.
-2. **Add typed Nemotron evidence — complete for NVIDIA.** Reuse the existing
+2. **Add typed Nemotron evidence — complete for NVIDIA and Nebius.** Reuse the existing
    provider contract and six-question battery. Validate a versioned JSON object,
    choice distributions, refusals and truncation. No policy-threshold change,
-   provider fallback or core vendor dependency. Nebius has a documented preset
-   and fixture coverage; its live test requires a key.
+   provider fallback or core vendor dependency. Both gateway presets have fixture
+   coverage and live authorization/agent verification.
 3. **Build the agent and product demo — complete locally.** Provide offline and
    explicit live modes, four scenarios, model-planned correction, private ledger,
    authorize → issue → consume → execute → replay, sanitized streaming, token
    usage, responsive UI and a headless runner.
-4. **Verify — local and NVIDIA gates complete; Jev live authentication blocked.**
+4. **Verify — local, NVIDIA and Nebius gates complete; Jev live authentication blocked.**
    Record model resolution, latency and usage. Check adversarial output, hard
    failures, exact-action binding and replay. Keep semantic accuracy distinct
    from enforcement correctness. Refresh the OpenRouter credential and rerun its
    required gate before calling the full provider regression verification complete.
-5. **Finish the submission — pending.** Add `NEBIUS_API_KEY`, run
-   `pnpm test:nebius:live`, record an actual Nebius runtime trace, host a controlled
-   test build and record a public video under three minutes. The local demo is
+   The Nebius suite passed with a local reservation guard against the observed
+   $1 trial credit. Five requests used an estimated $0.0021927; the batch is closed.
+   The [record](verification/nebius-live-2026-10-06.json) separates token-rate
+   estimates from account billing evidence.
+5. **Finish the submission — pending.** Host a controlled test build and record
+   a public video under three minutes. The local demo is
    deliberately not a production server; public hosting needs authentication or
    restricted access, shared spend limits and an explicit deployment boundary.
 

@@ -90,7 +90,7 @@ The catalog is only useful if adding a connector is cheaper than hand-rolling th
 | HTTP reverse proxy / sidecar | Isolate | Shipped in workspace | Declarative route-to-tool mapping; an unmapped route is a 404, never a pass-through |
 | Credential broker | Isolate | Shipped | Exchanges a consumed grant for a short-lived signed request bound to the exact action |
 | Trusted fact providers | Govern | Shipped | Function and HTTP adapters resolve RBAC, spend, and duplicate facts server-side |
-| NVIDIA × Nebius refund lab | Guard | NVIDIA live verified; Nebius live pending | Private sandbox ledger changes only after authenticated authorization and consumption; no payment credential or durable run state |
+| NVIDIA × Nebius refund lab | Guard | NVIDIA and Nebius live verified | Private sandbox ledger changes only after authenticated authorization and consumption; no payment credential or durable run state |
 | Signed webhooks | Govern | Shipped | HMAC-signed deliveries with a replay window, bounded retries, and dead-lettering |
 
 Every connector ships a [manifest](#connector-manifest), validated in CI by `pnpm manifests:validate`. Packages build with declared exports (`pnpm build:packages`, checked by `pnpm packages:check`) but are not yet published to a registry; until a release exists, use the REST contract, the generated client, or workspace dependencies.
