@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 840" width="1200" height="840" role="img" aria-labelledby="title description" font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
   <title id="title">ActionGate platform architecture</title>
-  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, and resolves deterministic facts from trusted deployment services rather than trusting the caller's claims. It combines those facts with Jev evidence from TypeSafe/OpenRouter or experimental Nemotron evidence from NVIDIA/Nebius and issues a single-use exact-action grant. A guarded execution boundary — the SDK wrapper, the embeddable MCP gateway, the standalone MCP and HTTP proxies that hold the downstream credential, or a credential broker that exchanges the grant for a short-lived signed request — consumes the grant before business tools run. Execution outcomes are recorded separately from authorization, and the evidence loop feeds calibration runs whose drift gate blocks a promotion that would raise the unsafe-allow rate. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state.</desc>
-  <rect width="1200" height="760" fill="#f8fafc"/>
+  <desc id="description">Applications enter through integration adapters. ActionGate authenticates the tenant, resolves server-owned tools and policy, and resolves deterministic facts from trusted deployment services rather than trusting the caller's claims. It combines those facts with Jev evidence from TypeSafe/OpenRouter or experimental Nemotron evidence from NVIDIA/Nebius and issues a single-use exact-action grant. A guarded execution boundary — the SDK wrapper, the embeddable MCP gateway, the standalone MCP and HTTP proxies that hold the downstream credential, or a credential broker that exchanges the grant for a short-lived signed request — consumes the grant before business tools run. Execution outcomes are recorded separately from authorization, and the evidence loop feeds calibration runs whose drift gate blocks a promotion that would raise the unsafe-allow rate. Redis protects short-lived runtime state and PostgreSQL preserves durable control-plane and audit state. Sanitized synthetic demo records feed a separate public static evidence viewer with no permits or executor; optional Nebius capture has a per-batch catalog-priced reservation guard.</desc>
+  <rect width="1200" height="840" fill="#f8fafc"/>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0 0 L10 5 L0 10 z" fill="#7c8aa5"/>
@@ -118,4 +118,8 @@
   <path d="M570 523 V610 H215 V642" class="arrow"/>
   <path d="M570 523 V642" class="arrow"/>
   <path d="M1032 484 V610 H985 V642" class="arrow"/>
+  <path d="M985 726 V750" class="arrow"/>
+  <rect x="40" y="754" width="1120" height="62" rx="13" class="card"/>
+  <text x="600" y="779" class="title" text-anchor="middle">Demo trace export → recorded public evidence viewer (read-only; no permits or executor)</text>
+  <text x="600" y="802" class="body" text-anchor="middle">Optional Nebius capture reserves catalog-priced costs per batch; it is not an account-wide billing limit.</text>
 </svg>

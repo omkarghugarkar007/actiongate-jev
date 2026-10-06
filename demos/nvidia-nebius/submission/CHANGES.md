@@ -27,7 +27,9 @@ predate the start of the event.
 | Dedicated demo UI, CLI and four cases | Developers can inspect an entire lifecycle with zero credentials, or explicitly select real NVIDIA/Nebius inference. Unsafe proposals are labeled seeded faults. | PR #19, `demos/nvidia-nebius/frontend/`, `src/cli.ts` |
 | Live NVIDIA integration record | Actual gateway/model resolution, correction, holds, permit consumption and replay were exercised. | [NVIDIA trace](../verification/nvidia-live-2026-10-06.json) |
 | Live Nebius Token Factory verification under trial credits | Sponsor runtime use was established with three live checks and a closed, bounded five-request batch. | [PR #21](https://github.com/omkarghugarkar007/actiongate-jev/pull/21), [Nebius record](../verification/nebius-live-2026-10-06.json) |
+| Budgeted repeated live evidence and browser viewer | An owner-confirmed promotional-credit batch retains all 12 runs, including clarification, while static playback makes inspection independent of keys and credit expiry. No provider questions or policy thresholds were changed. | [Repeated observations](../verification/WORKBENCH.md), `src/budget.ts`, `workbench/` |
 | Submission and recording package | Application copy, judge setup, video script, sponsor feedback, media and offline packaging reduce evaluation/adoption friction. | [APPLY.md](../../../APPLY.md) and this directory |
+| Independent-review preparation | A frozen 12-case refund corpus, blind JSON/CSV packet, source hash and annotator guidance make a real semantic review possible. Draft labels remain generated, with no invented reviewers or accuracy claim. | [Review instructions](REVIEW.md) |
 
 Dependency/workflow maintenance and security patches were reviewed separately.
 They are baseline upkeep, not the main innovation claimed for the entry.

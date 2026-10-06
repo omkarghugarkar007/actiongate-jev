@@ -6,6 +6,11 @@ one sandbox transaction, rejecting replay and enforcing an amount ceiling.
 Then show the existing, dated Nebius live verification record. This avoids
 additional inference spending while documenting the actual sponsor integration.
 
+The new [recorded workbench](https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2)
+is the preferred visual for the evidence segment. Keep its recorded-mode badge
+visible. Show the hypothetical/recorded ledger comparison, then select round 1
+briefly to disclose the safe clarification hold. It preserves all twelve runs.
+
 The complete spoken script is [VOICEOVER.txt](VOICEOVER.txt). Target 2:40 total;
 leave time for cursor movements. The script is a recording plan, not a finished
 video. The public YouTube URL remains empty until an actual upload exists.
@@ -43,7 +48,7 @@ necessary for this script.
 | 00:55–01:20 | Scroll to corrected proposal, allow, consumption and execution | `txn_5512`, `4900`, distinct ordered stages, **1 EXECUTION**. |
 | 01:20–01:39 | Replay evidence and ledger | Status `409`, only requested transaction refunded, other transaction unchanged. |
 | 01:39–01:55 | Run **03 · Above the limit**; brief missing-permission cut | `$250` vs `$100` gives `BLOCK`; inquiry drill gives `REVIEW`; neither executes. |
-| 01:55–02:19 | Public Nebius verification JSON | Provider `nebius`, resolved Super ID, 3 passing checks, 5 calls, 5218/697 tokens, `$0.0021927` estimate. Keep the recorded-evidence caption visible. |
+| 01:55–02:19 | Recorded Nebius workbench, round 2 then round 1 | Resolved Super ID; 12 runs, 11 planned outcomes and one safe clarification; 20 calls, 21281/2886 tokens, `$0.0089817` estimate. Explain the hypothetical left ledger and actual recorded right ledger. |
 | 02:19–02:34 | Return to lab footer/ledger; show boundary text | Sandbox, memory, seeded faults, uncalibrated confidence, at-most-once authorization. |
 | 02:34–02:40 | Cover/end card with repository | ActionGate: models supply evidence; the application enforces the permit. |
 
@@ -71,13 +76,15 @@ Copy-paste description:
 > of actual NVIDIA Nemotron 3 Super calls through Nebius Token Factory.
 >
 > The wrong-target and missing-permission faults are deliberately seeded. No
-> real money moves. The recorded Nebius batch passed three live checks; five
-> requests used 5,218 input and 697 output tokens, estimated $0.0021927 at the
-> October 6 catalog rates. This is enforcement verification, not model accuracy.
+> real money moves. The repeated live Nebius batch retained all 12 runs: 11
+> reached the planned flow and one safely asked for confirmation. Twenty calls
+> used 21,281 input and 2,886 output tokens, estimated $0.0089817 at the October 6
+> catalog rates. The left ledger is hypothetical; the right ledger is recorded.
+> This is enforcement/integration evidence, not model accuracy.
 >
 > Source and setup: https://github.com/omkarghugarkar007/actiongate-jev
 >
-> Nebius evidence: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/verification/nebius-live-2026-10-06.json
+> Nebius evidence: https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2
 
 Use the timestamps above as draft chapter boundaries, adjusting them to the
 actual cut. The final video must show the functioning application, not only

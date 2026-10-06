@@ -7,6 +7,16 @@ required for offline testing. No real money moves.
 
 ## Download and start
 
+For an immediate browser walkthrough, open:
+
+https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2
+
+This is **recorded live evidence**, with no new model calls or execution. Round 2
+shows the corrected refund and replay refusal. Select round 1 to inspect the
+retained clarification hold, and the other scenarios for ceiling/intent holds.
+The projected left ledger is hypothetical; the right ledger is recorded. Download
+and run the source below to exercise the actual enforcement code.
+
 Public source test build:
 
 https://github.com/omkarghugarkar007/actiongate-jev/archive/c03a5d3cbda5d6ff0e9eb001ecdcfc7c73353949.zip
@@ -65,6 +75,12 @@ This emits a sanitized offline JSON trace. Do not add `--live` or `--nebius`
 when testing without inference credits.
 
 ## Actual sponsor runtime verification
+
+The [repeated batch](../verification/WORKBENCH.md) retains twelve real Nebius
+runs, including a safe clarification instead of correction. Twenty calls used
+21,281 input / 2,886 output tokens, estimated $0.0089817 under a $1 batch cap.
+The provider request latency median was 1,358 ms (n=20); it is not a production
+latency promise or a semantic accuracy result.
 
 Offline testing is distinct from the real-model verification. The
 [Nebius record](../verification/nebius-live-2026-10-06.json) reports three passing

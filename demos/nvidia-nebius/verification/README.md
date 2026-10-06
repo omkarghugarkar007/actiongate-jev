@@ -36,3 +36,10 @@ the batch was closed. This estimate is separate from a provider billing invoice.
 The [application kit](../../../APPLY.md) tracks the downloadable test build,
 video and final entrant submission separately. No production readiness or
 complete provider-regression pass is claimed while these gates remain outstanding.
+
+The [repeated live batch and static workbench](WORKBENCH.md) add twelve recorded
+Nebius runs and a reusable capture budget. One conservative clarification is
+retained; eleven desired flows were observed. Twenty calls used an estimated
+$0.0089817. This is a separate integration/reliability observation, not reviewed
+semantic accuracy. New desktop/mobile viewer checks bring E2E coverage to seven
+cases; publication validation remains separate from these local checks.

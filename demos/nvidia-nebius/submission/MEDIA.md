@@ -7,6 +7,7 @@ image, logo or music is needed.
 | Use | Asset | Caption / alt text |
 |---|---|---|
 | Gallery cover / video title and end card | [cover.png](assets/cover.png), editable [cover.svg](assets/cover.svg) | ActionGate puts a bound permit and consume-before-execute boundary between an agent proposal and a private sandbox refund handler. |
+| Recorded real Nebius evidence | [evidence-workbench.png](assets/evidence-workbench.png) | Actual recorded round-2 wrong-target correction through Nebius; left ledger is a hypothetical first proposal, right ledger is the recorded guarded result. The 12-run summary includes a separate safe clarification hold. Playback does not execute or call a model. |
 | Functioning application | [refund-lab.png](../assets/refund-lab.png) | Offline scripted walkthrough: a seeded wrong-target refund is blocked; a corrected target is allowed, consumed and executed once; replay is refused. No real money moves. |
 | Technical explanation, optional | [platform architecture](../../../docs/assets/platform-architecture.svg) | The wider ActionGate platform separates provider evidence from authenticated policy, registry, grant lifecycle and guarded integration boundaries, with memory and opt-in durable storage. This is broader than the refund demo. |
 

@@ -35,6 +35,14 @@ in the spending boundary rather than a complaint about this batch's cost.
 
 ## NVIDIA Nemotron and tools used
 
+An additional repeated Super batch used 20 calls across 12 runs for an estimated
+$0.0089817. Eleven followed the planned flow; one blocked the seeded wrong target
+and then requested redundant confirmation. We retained that outcome as an
+availability/product observation rather than relabel it a success. Independent
+semantic review remains necessary. The new read-only viewer exposes every round,
+and the reusable local spending guard illustrates the value of an equivalent
+provider-side free-credit-only limit.
+
 **What helped:** Nemotron 3 Super produced typed planning responses and
 structured semantic evidence for a support-agent workflow. We verified the
 resolved `nvidia/nemotron-3-super-120b-a12b` model through both NVIDIA and Nebius
