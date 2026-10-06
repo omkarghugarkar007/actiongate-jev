@@ -41,8 +41,8 @@ jobs:
         run: docker build -t actiongate:${{ github.sha }} .
 
       - name: Scan image for known vulnerabilities
-        # 0.35.0 is an immutable, verified release published before the March
-        # 2026 tag compromise. Pin the commit so a mutable tag cannot retarget it.
+        # Pin the verified 0.36.0 release commit so a mutable tag cannot
+        # retarget the scanner after the March 2026 tag compromise.
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
         with:
           image-ref: actiongate:${{ github.sha }}

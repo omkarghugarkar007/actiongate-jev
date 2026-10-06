@@ -2,7 +2,7 @@
 
 ActionGate is a provider-independent authorization and enforcement plane for specialized decision models. Jev is the first semantic evidence provider; deterministic code remains the authority.
 
-![ActionGate platform architecture](assets/platform-architecture.svg)
+![Applications connect through adapters to authenticated identity, server-owned tools, trusted facts and provider evidence; signed grants are consumed before side effects, with Redis and PostgreSQL supplying optional durability.](assets/platform-architecture.svg)
 
 The architecture separates four concerns:
 
@@ -49,7 +49,7 @@ Step by step:
 3. The registered JSON Schema must be a closed top-level object (`additionalProperties: false`) and validates normalized arguments before any semantic-provider request.
 4. The registered policy version supplies hard rules, semantic questions, and risk-specific thresholds.
 5. Deployment-owned fact providers resolve authentication, RBAC, amount, currency, allowlist, duplicate, and availability evidence. Caller claims cannot satisfy a hard rule; missing, stale, or unavailable evidence blocks.
-6. Only a minimal, structured state is sent to the configured `DecisionProvider` for narrow intent, target, conflict, exposure, scope, and missing-intent evidence. The shipped Jev adapters use either TypeSafe's direct System One endpoint or OpenRouter; neither adapter owns authorization policy.
+6. Only a minimal, structured state is sent to the configured `DecisionProvider` for narrow intent, target, conflict, exposure, scope, and missing-intent evidence. Jev uses TypeSafe's direct endpoint or OpenRouter. The experimental Nemotron adapter uses NVIDIA or Nebius chat completions and strictly validates a versioned JSON evidence object. No adapter owns authorization policy.
 7. Fixed precedence composes the outcome: hard block, critical semantic hazard, deterministic review, semantic uncertainty, then allow. A probability cannot override a failed hard rule.
 8. The runtime decision and an encrypted long-term audit event are recorded. Raw API keys and raw grant tokens are never stored in evidence.
 9. Only an enforced `ALLOW` receives a signed grant. The grant binds the tenant, environment, actor, tool, operation, canonical arguments, risk, policy version, and decision.
@@ -102,6 +102,9 @@ See [integrations.md](integrations.md) for the plug-and-play integration strateg
 This is **at-most-once authorization**, not exactly-once business execution. If a process fails after consumption but before the downstream system commits, the caller must reconcile that system before requesting a fresh authorization.
 
 ## Current boundaries
+
+- `demos/nvidia-nebius` is a local, in-memory Guard demo: Nemotron proposes an action, the existing authenticated API authorizes and consumes, and a private closure mutates a sandbox ledger. It records execution separately, streams sanitized traces, and never gives the model or browser a permit token. It has no real payment credential, restart durability, or production hosting.
+- Nemotron v1 supports the six-question `noul`/`choice` battery. Its probabilities are self-reported and uncalibrated; score questions fail closed. `DECISION_PROVIDER=nvidia|nebius` is explicit, and keys never change the fake default. The SDK can receive a `NemotronDecisionProvider` through its existing explicit provider option. Legacy `JEV_*` errors and reason source `JEV` remain for contract compatibility; `model.provider` identifies the actual gateway.
 
 - `deterministicFacts` in a request is untrusted evidence and cannot satisfy a hard rule. A deployment must configure trusted providers for every fact-backed rule it enables; without them, authorization fails closed.
 - The standalone authenticated MCP proxy and HTTP sidecar own the downstream credential and consume before forwarding. The credential broker provides the same boundary for downstreams that verify short-lived signed requests. They isolate only when agents cannot route around them.

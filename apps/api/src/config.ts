@@ -5,7 +5,12 @@ const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(8080),
   APP_URL: z.string().url().default("http://localhost:3000"),
-  DECISION_PROVIDER: z.enum(["fake", "openrouter", "typesafe"]).default("fake"),
+  DECISION_PROVIDER: z.enum(["fake", "openrouter", "typesafe", "nvidia", "nebius"]).default("fake"),
+  NVIDIA_API_KEY: z.string().optional(),
+  NEBIUS_API_KEY: z.string().optional(),
+  NVIDIA_MODEL: z.string().min(1).default("nvidia/nemotron-3-super-120b-a12b"),
+  NEBIUS_MODEL: z.string().min(1).default("nvidia/nemotron-3-super-120b-a12b"),
+  DECISION_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_KEY: z.string().optional(),
   JEV_MODEL: z.string().default("typesafe/jev-1.13"),
@@ -47,14 +52,17 @@ const schema = z.object({
 });
 
 const env = schema.parse(process.env);
+const semanticTimeoutMs = env.DECISION_TIMEOUT_MS ?? (["nvidia", "nebius"].includes(env.DECISION_PROVIDER) ? 10_000 : env.JEV_TIMEOUT_MS);
 if (env.NODE_ENV === "production" && env.DECISION_PROVIDER === "openrouter" && env.JEV_MODEL !== "typesafe/jev-1.13") throw new Error("Production OpenRouter requires JEV_MODEL=typesafe/jev-1.13");
 if (env.NODE_ENV === "production" && env.DECISION_PROVIDER === "typesafe" && env.TYPESAFE_MODEL !== "jev-1.13.0") throw new Error("Production TypeSafe requires TYPESAFE_MODEL=jev-1.13.0");
 if (env.NODE_ENV === "production" && env.ACTIONGATE_STORAGE === "memory") throw new Error("Production requires ACTIONGATE_STORAGE=redis");
 if (env.NODE_ENV === "production" && env.ACTIONGATE_CONTROL_PLANE !== "postgres") throw new Error("Production requires ACTIONGATE_CONTROL_PLANE=postgres");
 if (env.NODE_ENV === "production" && env.ACTIONGATE_API_KEY) throw new Error("Production does not accept ACTIONGATE_API_KEY; provision a hashed tenant key in PostgreSQL");
-if (env.ACTIONGATE_IDEMPOTENCY_LEASE_MS <= env.JEV_TIMEOUT_MS) throw new Error("ACTIONGATE_IDEMPOTENCY_LEASE_MS must exceed JEV_TIMEOUT_MS");
+if (env.ACTIONGATE_IDEMPOTENCY_LEASE_MS <= semanticTimeoutMs) throw new Error("ACTIONGATE_IDEMPOTENCY_LEASE_MS must exceed the decision timeout (DECISION_TIMEOUT_MS or JEV_TIMEOUT_MS)");
 if (env.DECISION_PROVIDER === "openrouter" && !(env.OPENROUTER_API_KEY ?? env.OPENROUTER_KEY)) throw new Error("OPENROUTER_API_KEY is required for the OpenRouter provider");
 if (env.DECISION_PROVIDER === "typesafe" && !env.TYPESAFE_API_KEY) throw new Error("TYPESAFE_API_KEY is required for the direct TypeSafe provider");
+if (env.DECISION_PROVIDER === "nvidia" && !env.NVIDIA_API_KEY?.trim()) throw new Error("NVIDIA_API_KEY is required for the NVIDIA provider");
+if (env.DECISION_PROVIDER === "nebius" && !env.NEBIUS_API_KEY?.trim()) throw new Error("NEBIUS_API_KEY is required for the Nebius provider");
 if (env.ACTIONGATE_FACT_PROVIDER_TOKEN && !env.ACTIONGATE_FACT_PROVIDER_URL) throw new Error("ACTIONGATE_FACT_PROVIDER_TOKEN requires ACTIONGATE_FACT_PROVIDER_URL");
 // A webhook URL with no secret would send unsigned notifications, which a
 // receiver cannot distinguish from a forgery.
@@ -71,6 +79,7 @@ export const config = {
   ...env,
   openRouterApiKey: env.OPENROUTER_API_KEY ?? env.OPENROUTER_KEY,
   typeSafeApiKey: env.TYPESAFE_API_KEY,
+  semanticTimeoutMs,
   failOpenReadOnly: env.ACTIONGATE_FAIL_OPEN_READ_ONLY === "true",
   grantKeys,
   evidenceKeys,

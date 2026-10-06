@@ -21,7 +21,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["packages/**/*.live.test.ts", "apps/**/*.live.test.ts"],
+    include: ["packages/**/*.live.test.ts", "apps/**/*.live.test.ts", "demos/**/*.live.test.ts"],
     exclude: ["**/node_modules/**"]
   }
 });

@@ -5,6 +5,18 @@ const validGrantRing = JSON.stringify({ grant_2026_09: "g".repeat(32) });
 const validEvidenceRing = JSON.stringify({ evidence_2026_09: "e".repeat(32) });
 
 describe("production configuration guardrails", () => {
+  it.each(["nvidia", "nebius"])("requires %s credentials and preserves production storage requirements", (backend) => {
+    const name = backend === "nvidia" ? "NVIDIA_API_KEY" : "NEBIUS_API_KEY";
+    const base = { ACTIONGATE_STORAGE: "redis", ACTIONGATE_CONTROL_PLANE: "postgres", DECISION_PROVIDER: backend };
+    expect(loadConfig(base).stderr).toContain(`${name} is required`);
+    expect(loadConfig({ DECISION_PROVIDER: backend, [name]: "test-only" }).stderr).toContain("Production requires ACTIONGATE_STORAGE=redis");
+  });
+
+  it("checks the generic decision timeout against the idempotency lease", () => {
+    const result = loadConfig({ ACTIONGATE_STORAGE: "redis", ACTIONGATE_CONTROL_PLANE: "postgres", DECISION_TIMEOUT_MS: "15000" });
+    expect(result.stderr).toContain("must exceed the decision timeout");
+  });
+
   it.each([
     [{}, "Production requires ACTIONGATE_STORAGE=redis"],
     [{ ACTIONGATE_STORAGE: "redis" }, "Production requires ACTIONGATE_CONTROL_PLANE=postgres"],
