@@ -17,7 +17,7 @@ The permit binds identity, transaction, arguments and policy, and it expires. Re
 Hard policy still wins. A two-hundred-fifty-dollar request exceeds the hundred-dollar ceiling and is blocked. A charge inquiry without refund permission requires review. Neither case invokes the handler.
 
 [01:55–02:19]
-Here is the recorded live Nebius verification from October sixth. It resolved Nemotron three Super, and three checks passed through the real gateway. Five requests used five-thousand-two-hundred-eighteen input and six-hundred-ninety-seven output tokens, estimated at less than one cent within our trial-credit batch.
+Here are twelve recorded Nemotron three Super runs through Nebius. Eleven followed the planned flow; one safely asked for extra confirmation. Twenty calls cost an estimated less than one cent. The left ledger projects the first proposal; the right shows the recorded guarded outcome. All rounds remain visible.
 
 [02:19–02:34]
 This is a sandbox with memory-only run state. The faults are seeded, and model confidence is uncalibrated. These checks demonstrate specific enforcement behavior, not model accuracy or production readiness.

@@ -16,10 +16,15 @@ Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron eviden
 - [x] Run the Nebius live gate with a Token Factory key and record bounded trial-credit usage.
 - [ ] Freeze an independently reviewed semantic suite; self-reported scores are not calibration.
 - [x] Prepare application copy, sponsor feedback, change disclosure, media, judge instructions and a downloadable source test build.
+- [x] Add a persistent per-batch Nebius budget and record all 12 repeated runs, including a safe clarification; 20 calls cost an estimated $0.0089817.
+- [x] Build a static evidence workbench with hypothetical/recorded ledger comparison and desktop/mobile playback checks.
+- [ ] Publish and verify the read-only workbench on free GitHub Pages.
 - [ ] Record/upload the public video and complete entrant declarations and submission.
 
 The [application kit](../APPLY.md) and [demo plan](../demos/nvidia-nebius/PLAN.md)
-record the free-only submission route and remaining work.
+record the free-only submission route and remaining work. The
+[iteration plan](../demos/nvidia-nebius/IMPROVEMENT_PLAN.md) prioritizes evidence
+and adoption before new ecosystem breadth.
 
 ## Standing constraints
 

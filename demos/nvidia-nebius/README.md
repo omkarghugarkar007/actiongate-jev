@@ -127,6 +127,20 @@ fake provider remain unchanged. Financial tools still require deployment-owned
 trusted facts. For embedded JS, pass a `NemotronDecisionProvider` through the
 existing `ActionGate.embedded({ provider })` option.
 
+## Recorded evidence workbench
+
+Run `pnpm hackathon:workbench` to inspect all twelve actual Nebius runs without
+a provider key or model calls. The [public static walkthrough](https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2)
+labels recorded playback and compares a hypothetical first-proposal ledger with
+the actual guarded result. It has no executor; the original lab above exercises
+real authorization and consumption. The [batch record](verification/WORKBENCH.md)
+retains a safe clarification hold alongside completed flows.
+
+`pnpm hackathon:capture` is an explicit live command with a persisted reservation
+guard. Read the record for required owner confirmation, cap, request limits and
+accounting assumptions. Its guard is scoped to that batch, not ordinary live
+commands or the provider account.
+
 ## Verification and submission status
 
 The planner receives the ticket and ledger; the authorization provider receives

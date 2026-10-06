@@ -69,3 +69,9 @@ required. NVIDIA-hosted inference alone is development evidence, not eligibility
 
 No AWS integration is included in this scope. Future demos can reuse the same
 core and live in a separate folder without duplicating enforcement.
+
+## Evidence iteration
+
+The [improvement plan](IMPROVEMENT_PLAN.md) records the repeated live batch,
+credit guard, public recorded walkthrough and independent-review preparation.
+The four-scenario integration results remain separate from semantic quality.

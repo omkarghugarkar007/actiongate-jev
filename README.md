@@ -82,6 +82,15 @@ downloadable test build, judge instructions and a 2:40 video script. The video
 still needs recording/upload; no entry has been submitted.
 Nemotron scores are self-reported estimates, not calibrated probabilities.
 
+The [recorded evidence walkthrough](https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2)
+compares a hypothetical first-proposal outcome with the actual guarded ledger.
+It is read-only and makes no model calls. A [repeated live batch](demos/nvidia-nebius/verification/WORKBENCH.md)
+retains 12 cases: 11 followed the planned flow and one safely asked for additional
+confirmation. Twenty requests used an estimated $0.0089817 under a $1 batch cap.
+Run `pnpm hackathon:workbench` locally; the actual execution lab stays separate.
+The [improvement plan](demos/nvidia-nebius/IMPROVEMENT_PLAN.md) tracks reviewed
+semantic evidence and final recording as the next iterations.
+
 For live decisions, choose either direct TypeSafe or OpenRouter:
 
 ```env
@@ -255,7 +264,7 @@ The boundary is strict; the on-ramp is not. Each tier is additive.
 ## How it works
 
 <p align="center">
-  <img src="docs/assets/platform-architecture.svg" alt="Applications connect through SDK, MCP, HTTP, or webhook adapters. ActionGate combines tenant identity, a server-owned registry, deterministic authority fed by trusted server-side fact providers, and decision-model evidence before issuing a single-use grant that is consumed at the guarded execution boundary." width="100%" />
+  <img src="docs/assets/platform-architecture.svg" alt="Applications connect through adapters to server-owned identity, registry, trusted facts and model evidence; an exact-action grant is consumed at the guarded boundary. Optional stores support durability, while sanitized demo traces feed a separate public viewer with no permits or executor." width="100%" />
 </p>
 
 ActionGate asks six narrow semantic questions in one request — alignment, target match,

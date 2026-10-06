@@ -42,9 +42,11 @@ if (manifest.testBuild.url !== expectedBuildUrl) throw new Error("Test-build URL
 
 const materials = [
   "APPLY.md",
-  ...["APPLICATION.md", "JUDGING.md", "VIDEO.md", "VOICEOVER.txt", "FEEDBACK.md", "CHANGES.md", "MEDIA.md", "submission.json", "assets/cover.svg", "assets/cover.png"].map((file) => `demos/nvidia-nebius/submission/${file}`),
+  ...["APPLICATION.md", "JUDGING.md", "VIDEO.md", "VOICEOVER.txt", "FEEDBACK.md", "CHANGES.md", "MEDIA.md", "REVIEW.md", "submission.json", "assets/cover.svg", "assets/cover.png", "assets/evidence-workbench.png"].map((file) => `demos/nvidia-nebius/submission/${file}`),
   "demos/nvidia-nebius/assets/refund-lab.png",
-  ...["README.md", "nebius-live-2026-10-06.json", "nvidia-live-2026-10-06.json"].map((file) => `demos/nvidia-nebius/verification/${file}`)
+  ...["README.md", "WORKBENCH.md", "nebius-workbench-2026-10-06.json", "nebius-live-2026-10-06.json", "nvidia-live-2026-10-06.json"].map((file) => `demos/nvidia-nebius/verification/${file}`),
+  "demos/nvidia-nebius/IMPROVEMENT_PLAN.md",
+  "packages/evals/datasets/hackathon-refund-v1.json"
 ];
 for (const path of materials) await readFile(resolve(root, path));
 

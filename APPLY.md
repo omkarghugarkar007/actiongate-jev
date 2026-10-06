@@ -31,8 +31,10 @@ on October 6, 2026. Recheck them before submitting.
 | Nebius and NVIDIA feedback | [FEEDBACK.md](demos/nvidia-nebius/submission/FEEDBACK.md) |
 | Significant changes to the existing project | [CHANGES.md](demos/nvidia-nebius/submission/CHANGES.md) |
 | Gallery images, captions and video cover | [MEDIA.md](demos/nvidia-nebius/submission/MEDIA.md) |
+| Frozen refund cases and independent-review instructions | [REVIEW.md](demos/nvidia-nebius/submission/REVIEW.md) |
 | Links and remaining entrant fields | [submission.json](demos/nvidia-nebius/submission/submission.json) |
 | Live model, boundary and credit evidence | [Verification record](demos/nvidia-nebius/verification/README.md) |
+| Interactive recorded evidence and iteration plan | [Repeated batch](demos/nvidia-nebius/verification/WORKBENCH.md), [improvement plan](demos/nvidia-nebius/IMPROVEMENT_PLAN.md) |
 
 The submission needs English project text, public licensed source with setup
 instructions, a working demo or test-build URL, a publicly visible YouTube video
@@ -55,6 +57,14 @@ resolved model was `nvidia/nemotron-3-super-120b-a12b`; three live checks passed
 Five requests including connectivity used an **estimated $0.0021927**, under the
 observed $1 trial-credit budget. That batch is closed; the estimate is not an
 invoice or a current wallet balance.
+
+A later, separately bounded promotional-credit batch recorded twelve live
+scenario runs with twenty calls, estimated $0.0089817. Eleven reached the
+planned workflow; one safely requested additional confirmation. All outcomes
+remain in the [recorded browser walkthrough](https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2).
+This page has no executor or provider key; its left ledger is hypothetical,
+and its right ledger is recorded. Use the source test build to exercise actual
+enforcement. Independent semantic review remains outstanding.
 
 The supplied video plan records the working offline application and separately
 shows the existing live evidence. Preparing, rehearsing, packaging and checking

@@ -91,6 +91,14 @@ The catalog is only useful if adding a connector is cheaper than hand-rolling th
 | Credential broker | Isolate | Shipped | Exchanges a consumed grant for a short-lived signed request bound to the exact action |
 | Trusted fact providers | Govern | Shipped | Function and HTTP adapters resolve RBAC, spend, and duplicate facts server-side |
 | NVIDIA × Nebius refund lab | Guard | NVIDIA and Nebius live verified | Private sandbox ledger changes only after authenticated authorization and consumption; no payment credential or durable run state |
+| Recorded Nebius evidence walkthrough | Advisory / read-only | Static playback of 12 actual live runs | No credentials, provider calls, grants or executor. Hypothetical first-proposal ledger is explicitly separate from recorded guarded results; exercise the local lab for real enforcement |
+
+`pnpm hackathon:workbench` opens the recording locally without a model key.
+The public static walkthrough is designed for judge access through December;
+its source test build remains available separately. `pnpm hackathon:capture`
+is an explicit metered inference operation using owner-confirmed free credit
+and a bounded batch guard. It preserves unsuccessful outcomes and does not
+provide an account-wide budget. See [observations](../demos/nvidia-nebius/verification/WORKBENCH.md).
 | Signed webhooks | Govern | Shipped | HMAC-signed deliveries with a replay window, bounded retries, and dead-lettering |
 
 Every connector ships a [manifest](#connector-manifest), validated in CI by `pnpm manifests:validate`. Packages build with declared exports (`pnpm build:packages`, checked by `pnpm packages:check`) but are not yet published to a registry; until a release exists, use the REST contract, the generated client, or workspace dependencies.

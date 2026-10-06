@@ -2,7 +2,16 @@
 
 ActionGate is a provider-independent authorization and enforcement plane for specialized decision models. Jev is the first semantic evidence provider; deterministic code remains the authority.
 
-![Applications connect through adapters to authenticated identity, server-owned tools, trusted facts and provider evidence; signed grants are consumed before side effects, with Redis and PostgreSQL supplying optional durability.](assets/platform-architecture.svg)
+![Applications connect through authenticated identity, server-owned tools, trusted facts and provider evidence; grants are consumed before side effects, optional stores supply durability, and sanitized demo records feed a separate public viewer with no executor.](assets/platform-architecture.svg)
+
+The NVIDIA/Nebius lab also has a separate static evidence viewer. It reads
+published, sanitized synthetic run records; it cannot issue or consume a grant
+or reach a payment handler. Its hypothetical first-proposal ledger is a
+projection, not an unguarded execution path. The optional capture runner wraps
+both planner and semantic requests in a catalog-priced, persisted batch budget
+without changing model questions or core authority. Ordinary API/demo requests
+do not automatically inherit that batch budget. See the
+[record and limits](../demos/nvidia-nebius/verification/WORKBENCH.md).
 
 The architecture separates four concerns:
 

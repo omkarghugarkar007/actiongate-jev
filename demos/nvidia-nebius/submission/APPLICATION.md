@@ -104,6 +104,13 @@ ordinary live demo commands do not inherit that one-off guard.
   consumption and wrong-target correction were exercised.
 - Five Nebius requests including connectivity used 5,218 input and 697 output
   tokens, an estimated $0.0021927 at the catalog rates observed October 6, 2026.
+- A later bounded promotional-credit batch repeated all four cases three times.
+  Twenty real calls used 21,281 input / 2,886 output tokens, estimated $0.0089817.
+  Eleven of twelve runs reached the planned flow; one correctly blocked the
+  wrong target but asked for an unnecessary confirmation. Every run is retained.
+- A key-free browser workbench compares the hypothetical first-proposal ledger
+  with each recorded guarded outcome. It has no executor and makes no model
+  calls, so judges can inspect evidence after trial credits expire.
 - Existing regression checks covered unit/integration behavior, Redis,
   PostgreSQL, Python, package exports and desktop/mobile UI. Results and the
   unresolved Jev authentication gate are published in the verification record.
@@ -155,6 +162,7 @@ those services are not required for this refund test build.
 ## Links and evidence
 
 - Repository: https://github.com/omkarghugarkar007/actiongate-jev
+- Interactive recorded evidence: https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2
 - Test build: https://github.com/omkarghugarkar007/actiongate-jev/archive/c03a5d3cbda5d6ff0e9eb001ecdcfc7c73353949.zip
 - Setup/walkthrough: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/submission/JUDGING.md
 - Actual Nebius calls: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/verification/nebius-live-2026-10-06.json
@@ -164,4 +172,6 @@ those services are not required for this refund test build.
 - Public YouTube URL: **pending recording/upload; fill `submission.json`**
 
 The test build runs locally with offline fixtures. The live evidence link is a
-record of past calls, not an always-on hosted inference service.
+record of past calls, not an always-on hosted inference service. Round 2 is the
+selected correction example; the workbench includes all three rounds and the
+round-1 clarification hold. No reviewed semantic accuracy is claimed.

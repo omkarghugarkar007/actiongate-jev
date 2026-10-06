@@ -35,12 +35,12 @@ const scenarios = {
   missing: { intent: "Why was I charged twice?", ticket: "Customer is asking about charges txn_5512 and txn_9981, but has not asked for a refund." }
 } as const;
 
-export function createDemoModel(backend: DemoBackend, env: Record<string, string | undefined> = process.env) {
+export function createDemoModel(backend: DemoBackend, env: Record<string, string | undefined> = process.env, fetcher?: typeof globalThis.fetch) {
   if (backend === "fake") return { backend, provider: new OfflineEvidenceProvider() as DecisionProvider, planner: undefined };
   const apiKey = backend === "nvidia" ? env.NVIDIA_API_KEY : env.NEBIUS_API_KEY;
   if (!apiKey?.trim()) throw new Error(`${backend === "nvidia" ? "NVIDIA_API_KEY" : "NEBIUS_API_KEY"} is required for live mode`);
   const model = backend === "nvidia" ? env.NVIDIA_MODEL : env.NEBIUS_MODEL;
-  const options = { apiKey, backend, ...(model ? { model } : {}) };
+  const options = { apiKey, backend, ...(model ? { model } : {}), ...(fetcher ? { fetch: fetcher } : {}) };
   return { backend, provider: new NemotronDecisionProvider(options) as DecisionProvider, planner: new NemotronJsonClient(options) };
 }
 export type DemoModel = ReturnType<typeof createDemoModel>;
