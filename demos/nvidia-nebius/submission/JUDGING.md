@@ -1,0 +1,99 @@
+# Judge testing instructions
+
+ActionGate's refund lab demonstrates a private sandbox handler guarded by
+exact-action permits. It runs on a local desktop browser and Node.js 22+ with
+pnpm 10.27.0. There are no login credentials, model keys, database or containers
+required for offline testing. No real money moves.
+
+## Download and start
+
+Public source test build:
+
+https://github.com/omkarghugarkar007/actiongate-jev/archive/c03a5d3cbda5d6ff0e9eb001ecdcfc7c73353949.zip
+
+Extract the archive, open a terminal in its root directory and run:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm demo:nvidia
+# Open http://127.0.0.1:8095
+```
+
+Package installation requires internet access. If Corepack is not installed,
+install pnpm 10.27.0 using your normal package-manager setup. If port 8095 is
+already in use, stop the previous lab process or set `NVIDIA_DEMO_PORT` to a free
+local port. Use a development shell with `NODE_ENV` unset or `development`;
+the recording server deliberately refuses production mode.
+
+On October 6, we downloaded this exact public ZIP anonymously, installed it
+with the frozen lockfile in a clean directory without `.env`, and exercised all
+four scenarios plus the browser walkthrough. Wrong-target/authorized runs had
+one execution and rejected replay; limit/permission holds had zero executions.
+No model calls were made during that check.
+
+The pinned source is the verified October 6 build. The current submission
+materials are in the repository's [APPLY.md](../../../APPLY.md). The public
+GitHub archive includes the license, source, demo assets and existing setup
+guide; the prepared local ZIP additionally omits Python bytecode/cache files.
+
+## What to click and inspect
+
+The mode badge must read **OFFLINE · SCRIPTED FIXTURES**. In this mode, real
+ActionGate policy/permit/consumption code runs with scripted model evidence.
+
+| Step | Interaction | Expected observation |
+|---|---|---|
+| 1 | Select **01 · Wrong-target attack**, then **Run offline scenario →** | A labeled seeded proposal targets `txn_9981` despite intent naming `txn_5512`. The first decision is `BLOCK`; the handler was not invoked. |
+| 2 | Expand **Inspect evidence** for the block and next proposal | Reasons and typed arguments connect the failed target to the corrected `txn_5512` / `4900` action. The offline correction is scripted. |
+| 3 | Follow the later trace | `ALLOW`, **Exact-action permit consumed**, then **Sandbox refund executed for txn_5512** appear in that order. |
+| 4 | Inspect the replay event and ledger | Replay returns `409`. There is **1 EXECUTION**; only `txn_5512` is refunded. `txn_9981` remains charged. |
+| 5 | Select **03 · Above the limit** and run | A `$250` request exceeds the server-owned `$100` ceiling: `BLOCK`, zero executions and unchanged ledger. |
+| 6 | Select **04 · Missing permission** and run | A seeded refund for a charge inquiry receives `REVIEW`; zero executions and unchanged ledger. |
+| 7 | Select **02 · Authorized refund** and run | The exact requested `$49` target is allowed, consumed and executed once; replay is refused. |
+
+Each run starts a fresh sandbox. A refund shown in an earlier run does not
+carry into a later scenario.
+
+For a browser-free run, from the same root:
+
+```bash
+pnpm demo:nvidia:run -- --scenario=injection
+```
+
+This emits a sanitized offline JSON trace. Do not add `--live` or `--nebius`
+when testing without inference credits.
+
+## Actual sponsor runtime verification
+
+Offline testing is distinct from the real-model verification. The
+[Nebius record](../verification/nebius-live-2026-10-06.json) reports three passing
+live checks through Token Factory and the resolved NVIDIA model
+`nvidia/nemotron-3-super-120b-a12b`. It verifies wrong-target correction, one
+sandbox execution, exact-action mutation refusal, RBAC denial and replay denial.
+The five-request batch used 5,218 input / 697 output tokens, estimated $0.0021927.
+
+The [NVIDIA trace](../verification/nvidia-live-2026-10-06.json) separately records
+a live correction/execution run and held intent/amount cases. These are recorded
+past calls, not live traffic during an offline judging session. Cost estimates
+are separate from invoices and do not establish a current balance.
+
+Some semantic reason labels retain `JEV` for public-contract compatibility.
+Provider and resolved-model metadata identify the actual gateway/model used.
+
+Live mode is available to a developer who supplies their own appropriately
+funded provider key; judges do not need one for this walkthrough. No live
+service or sponsor credentials are exposed through the public build.
+
+## Boundary and limitations
+
+The model and browser cannot access the private payment handler or raw permit.
+The server owns identity, registry, trusted facts and policy. It consumes before
+execution and reports the execution outcome separately. This is a local **Guard**
+integration: privileged host code could bypass an in-process boundary.
+
+State is in memory, payments are fixtures and model scores are uncalibrated.
+We claim at-most-once authorization, not exactly-once external side effects.
+The project is an early public release without an external security review.
+The independent Jev/OpenRouter gate currently returns HTTP 401; it is not
+counted as a passing provider regression.

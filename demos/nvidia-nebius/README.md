@@ -145,21 +145,22 @@ The [delivery plan](PLAN.md) separates completed local work from remaining
 submission work. The [competition](https://nebiusglobalaihackathon.devpost.com/rules)
 requires actual Token Factory runtime calls or Nebius AI Cloud execution.
 The recorded Nebius calls satisfy the runtime-use verification milestone.
-A controlled hosted test build and public video remain pending.
+The [application kit](../../APPLY.md) includes a pinned downloadable test build,
+judge instructions, sponsor feedback, change disclosure and a timed recording
+script. Video recording/upload and entrant submission remain pending. Paid
+hosting is unnecessary for the planned download-and-run test-build route.
 
-## 90-second demo script
+## Recording and application materials
 
 The [sanitized NVIDIA live report](verification/nvidia-live-2026-10-06.json)
 records the resolved Super model, a 4.55-second attack/correction/execution run,
 3,638 input and 472 output tokens, and separate held intent/limit cases. It is
 one enforcement trace, not a claim of model accuracy or stable hosted latency.
 
-1. **0–15s:** Explain the customer's exact request and the wrong transaction a
-   tool call could target despite passing schema validation.
-2. **15–40s:** Run the wrong-target drill in live mode. Open the first decision's
-   evidence: semantic scope/policy refusal, no handler invocation.
-3. **40–65s:** Show Nemotron's corrected proposal, the allowed exact action,
-   consumed permit and separate sandbox execution record.
-4. **65–80s:** Show the rejected replay and ledger: only `txn_5512` was refunded.
-5. **80–90s:** Run the amount-limit scenario. State that code owns authority,
-   the model supplies evidence, and the sample moves no real money.
+Use the [2:40 shot list](submission/VIDEO.md) and complete
+[voiceover](submission/VOICEOVER.txt) for the submission video. The planned
+walkthrough uses offline fixtures and separately presents recorded Nebius
+verification, avoiding extra inference spending during takes. The
+[judge walkthrough](submission/JUDGING.md) covers all four cases. Run
+`pnpm hackathon:prepare` to assemble local application materials and a source
+test-build ZIP; `pnpm hackathon:check` reports unfilled entrant/video fields.

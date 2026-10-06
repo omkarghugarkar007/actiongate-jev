@@ -52,6 +52,8 @@
     "demo:nvidia:live": "DEMO_BACKEND=nvidia tsx demos/nvidia-nebius/src/server.ts",
     "demo:nebius": "DEMO_BACKEND=nebius tsx demos/nvidia-nebius/src/server.ts",
     "demo:nvidia:run": "tsx demos/nvidia-nebius/src/cli.ts",
+    "hackathon:prepare": "tsx scripts/prepare-hackathon-submission.ts",
+    "hackathon:check": "tsx scripts/prepare-hackathon-submission.ts --check",
     "test:nemotron:live": "RUN_LIVE_NEMOTRON_TESTS=true vitest run --config vitest.live.config.ts apps/api/test/nemotron.live.test.ts demos/nvidia-nebius/test/nemotron.live.test.ts",
     "test:nebius:live": "RUN_LIVE_NEMOTRON_TESTS=true NEMOTRON_LIVE_BACKEND=nebius vitest run --config vitest.live.config.ts apps/api/test/nemotron.live.test.ts demos/nvidia-nebius/test/nemotron.live.test.ts",
     "cost:track": "tsx scripts/track-openrouter-cost.ts",

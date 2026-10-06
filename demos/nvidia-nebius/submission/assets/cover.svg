@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title description">
+  <title id="title">ActionGate: permits for agent actions</title>
+  <desc id="description">An agent proposal passes through server-owned policy and an exact-action permit, then consumption permits a private sandbox refund. The local walkthrough uses offline fixtures; separate recorded verification uses NVIDIA Nemotron through Nebius Token Factory.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#080d12"/><stop offset="1" stop-color="#17342e"/></linearGradient>
+    <linearGradient id="accent"><stop stop-color="#b1ed6b"/><stop offset="1" stop-color="#66c7a1"/></linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#background)"/>
+  <path d="M1410 0V1080M1580 0V1080M1750 0V1080M0 850H1920" stroke="#315248" stroke-opacity=".25" fill="none"/>
+  <rect x="112" y="105" width="48" height="48" rx="12" fill="#b1ed6b"/>
+  <path d="M127 128l7 7 12-15" stroke="#173020" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="180" y="142" fill="#edf4f2" font-family="Arial, sans-serif" font-size="37" font-weight="700">ActionGate</text>
+  <text x="112" y="264" fill="#b1ed6b" font-family="Arial, sans-serif" font-size="23" letter-spacing="5">FROM PROPOSAL TO PERMISSION</text>
+  <text x="108" y="380" fill="#edf4f2" font-family="Arial, sans-serif" font-size="98" font-weight="700">An agent can act.</text>
+  <text x="108" y="498" fill="url(#accent)" font-family="Arial, sans-serif" font-size="98" font-weight="700">Every action needs a permit.</text>
+  <text x="112" y="570" fill="#a9beb7" font-family="Arial, sans-serif" font-size="30">Exact action. Expiring permit. Consume before execution.</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="112" y="653" width="380" height="138" rx="17" fill="#101c20" stroke="#35544b"/>
+    <text x="143" y="695" fill="#b1ed6b" font-size="17" letter-spacing="2">01 / PROPOSE</text>
+    <text x="143" y="743" fill="#edf4f2" font-size="29">Agent chooses a refund</text>
+    <path d="M508 721h42m-11-10l11 10-11 10" fill="none" stroke="#b1ed6b" stroke-width="3"/>
+    <rect x="570" y="653" width="540" height="138" rx="17" fill="#162822" stroke="#b1ed6b"/>
+    <text x="601" y="695" fill="#b1ed6b" font-size="17" letter-spacing="2">02 / AUTHORIZE + CONSUME</text>
+    <text x="601" y="743" fill="#edf4f2" font-size="29">Server policy + bound permit</text>
+    <path d="M1126 721h42m-11-10l11 10-11 10" fill="none" stroke="#b1ed6b" stroke-width="3"/>
+    <rect x="1188" y="653" width="620" height="138" rx="17" fill="#101c20" stroke="#35544b"/>
+    <text x="1219" y="695" fill="#b1ed6b" font-size="17" letter-spacing="2">03 / EXECUTE</text>
+    <text x="1219" y="743" fill="#edf4f2" font-size="29">Private sandbox handler · replay denied</text>
+  </g>
+  <text x="112" y="919" fill="#edf4f2" font-family="Arial, sans-serif" font-size="28">NVIDIA Nemotron through Nebius Token Factory · recorded live verification</text>
+  <text x="112" y="971" fill="#a9beb7" font-family="Arial, sans-serif" font-size="23">Offline walkthrough available without keys · sandbox only · no real money moves</text>
+  <text x="112" y="1024" fill="#a9beb7" font-family="Arial, sans-serif" font-size="21">github.com/omkarghugarkar007/actiongate-jev</text>
+</svg>

@@ -77,7 +77,9 @@ pnpm demo:nvidia:live  # live NVIDIA planner + evidence; uses NVIDIA_API_KEY
 live authorization and agent tests have passed. The bounded Nebius trial batch
 used an estimated $0.00219; see the [verification record](demos/nvidia-nebius/verification/nebius-live-2026-10-06.json).
 Live commands consume inference credits; check the available trial balance first.
-The demo is local; a hosted test build and submission video remain to be made.
+The demo is local. [APPLY.md](APPLY.md) contains the application kit, a pinned
+downloadable test build, judge instructions and a 2:40 video script. The video
+still needs recording/upload; no entry has been submitted.
 Nemotron scores are self-reported estimates, not calibrated probabilities.
 
 For live decisions, choose either direct TypeSafe or OpenRouter:
