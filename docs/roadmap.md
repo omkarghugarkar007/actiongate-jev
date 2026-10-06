@@ -4,7 +4,7 @@ ActionGate is developed in public. Work is ordered around durable identity and e
 
 The destination is a hub with a connector catalog: a small core that owns identity, policy, and enforcement, surrounded by thin connectors that any application can add in minutes. Breadth is only worth building once the boundary it plugs into is real, which is why enforcement leads and the catalog follows.
 
-Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron evidence and a sandbox agent that consumes permits before execution. NVIDIA and Nebius live authorization/agent checks pass; the bounded Nebius batch used an estimated $0.00219 of observed trial credit. Existing P0 controls retain their regression gates; the current OpenRouter key returns HTTP 401, so the latest Jev live rerun is blocked by authentication. ActionGate remains an early public release.
+Last reconciled: **2026-10-07**. The NVIDIA refund lab adds live Nemotron evidence and a sandbox agent that consumes permits before execution. NVIDIA and Nebius live authorization/agent checks pass; the bounded Nebius batch used an estimated $0.00219 of observed trial credit. Existing P0 controls retain their regression gates; the refreshed OpenRouter key now passes all five Jev live regression checks and the new guarded research gate. ActionGate remains an early public release.
 
 ## NVIDIA × Nebius delivery
 
@@ -21,7 +21,8 @@ Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron eviden
 - [x] Publish and verify the read-only workbench on free GitHub Pages; anonymous desktop/mobile checks match all twelve source records.
 - [x] Freeze twelve refund cases and prepare a blind independent-review packet; generated labels remain excluded from quality claims.
 - [ ] Record/upload the public video and complete entrant declarations and submission.
-- [ ] Add guarded Tavily research after confirming its free account/key; evaluate AI Cloud only with separate eligible promotional credits. [Scope and prerequisites](../demos/nvidia-nebius/SERVICE_EXPANSION.md). AWS/hardware remain conditional, not shipped.
+- [x] Add guarded Tavily research, offline rehearsal and actual Tavily/Nebius/Jev verification with bounded promotional credit.
+- [ ] Evaluate AI Cloud only with separate eligible promotional credits. [Scope and prerequisites](../demos/nvidia-nebius/SERVICE_EXPANSION.md). AWS/hardware remain conditional, not shipped.
 
 The [application kit](../APPLY.md) and [demo plan](../demos/nvidia-nebius/PLAN.md)
 record the free-only submission route and remaining work. The

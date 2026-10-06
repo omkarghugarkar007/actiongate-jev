@@ -54,7 +54,7 @@ The owner also proposed additional services. The
 [service expansion assessment](SERVICE_EXPANSION.md) prioritizes a guarded
 Tavily research stage on its free plan, with AI Cloud conditional on separate
 credits. AWS and hardware remain conditional on an actual workflow/resources.
-No additional service is implemented or claimed as used yet. Independent
+Tavily now has a guarded workflow, offline rehearsal and [live records](verification/TAVILY.md). Four free basic searches and $0.0030396 additional Nebius estimate verify the research stage. Independent
 semantic review remains necessary and is not replaced by sponsor breadth.
 
 1. Freeze a small refund-focused corpus: supported requests, target swaps,
@@ -92,7 +92,7 @@ sponsor feedback with reproducible budget and structured-response observations.
 - Budget exhaustion/dependency loss cannot produce an executed unconsumed action.
 - Run the relevant lint, type, unit/integration and desktop/mobile checks.
 - Exercise the guarded capture against real Nebius before reporting live success.
-- Keep the unresolved Jev/OpenRouter HTTP 401 separate from passing Nebius evidence.
+- The refreshed Jev/OpenRouter key now passes five live regression checks and the new research gate; preserve the earlier HTTP 401 as historical evidence.
 
 ## Status
 

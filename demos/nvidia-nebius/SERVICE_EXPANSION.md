@@ -1,8 +1,9 @@
 # Additional services: scope and free-credit plan
 
-Assessed October 6, 2026. No additional Tavily, Nebius AI Cloud or AWS
-account or device is configured for this entry yet. This is an implementation
-plan, not a record of using these services. The working Token Factory entry,
+Updated October 7, 2026. Tavily is now implemented and verified on its free
+Researcher plan with paid overflow confirmed disabled. The [runtime record](verification/TAVILY.md)
+includes four searches and real Nebius/Jev authorization. Nebius AI Cloud, AWS
+and hardware remain conditional; no resources or purchases were created. The working Token Factory entry,
 published evidence, original live records and offline default stay available.
 
 ## Selection
@@ -85,8 +86,8 @@ and live NVIDIA-model attribution, usage and enforcement. Test failed search,
 unknown billing, budget exhaustion, query mutation, disallowed/private queries,
 raw credential absence, replay and consume-before-dispatch. A seeded malicious
 snippet should not become authority. Follow the repository's live-provider
-gate when model context changes; the existing Jev/OpenRouter HTTP 401 remains
-an unresolved prerequisite for that regression, not a passing or skipped check.
+gate when model context changes; the refreshed Jev/OpenRouter key now passes the five-check regression and the
+new research gate. The earlier HTTP 401 remains in historical records.
 Do not merge an unverified change to the decision path as a completed feature.
 
 ## Prospective video segment and application changes
@@ -102,9 +103,9 @@ returned malicious text.
 
 Add only the actually implemented service to `APPLICATION.md`, `CHANGES.md`,
 `FEEDBACK.md`, `VIDEO.md`, the media captions and `APPLY.md`. Include actual
-runtime dates, returned sources, request count, usage and failures. Until then,
-the existing statement that Tavily is not used remains accurate. Do not select
-a bonus category based only on this plan or a mocked result.
+runtime dates, returned sources, request count, usage and failures. The runtime is now verified and the application/video materials reflect actual
+Tavily use. A bonus selection is supported by that functional record, not by
+this plan or the offline fixture alone.
 
 ## Nebius AI Cloud: bounded deployment candidate
 
@@ -150,10 +151,11 @@ track adds its own genuine physical/robotics workflow and demonstration work.
 
 - [x] Compare requirements, prize relevance, credit scope and current pricing.
 - [x] Prepare the Tavily workflow, enforcement contract and prospective demo.
-- [ ] Owner creates the free Tavily account and adds `TAVILY_API_KEY` locally.
-- [ ] Confirm free-only usage state; implement/test the connector and run a bounded live check.
+- [x] Owner creates the free Tavily account and adds `TAVILY_API_KEY` locally.
+- [x] Confirm free-only usage state; implement/test the guarded workflow and verify Tavily/Nebius/Jev.
 - [ ] Check separate AI Cloud promotional eligibility before deciding on a deployment.
 - [ ] Reconsider AWS/hardware only with a concrete workflow and available free resources.
 
-No new account, cloud resource, purchase, billable API call or submission was
-created while preparing this plan.
+The original October 6 planning step made no billable calls. The October 7
+implementation used four free Tavily searches and bounded promotional inference.
+No cloud resource, purchase or submission was created.

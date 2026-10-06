@@ -122,3 +122,20 @@ This is **at-most-once authorization**, not exactly-once business execution. If 
 - Independently reviewed semantic labels and an external security review remain outstanding. Restore/failover evidence is local reference evidence, not a managed-service availability guarantee.
 
 Read the [threat model](threat-model.md), [product plan](PLANNING.md), and [roadmap](roadmap.md) before deploying high-impact tools.
+
+## Optional public-documentation research
+
+The local research workflow registers `research_refund_docs` with a fixed public
+query, `docs.stripe.com` restriction, basic search and three-result limit.
+Authenticated server context owns identity; the registry and versioned policy
+own operation/risk/schema. The private executor consumes the exact search grant
+before its billable Tavily call and records success/failure separately. Returned
+HTTPS titles, URLs and snippets are bounded and treated as untrusted planner
+context. They do not reach deterministic fact providers or semantic refund-gate
+state. A separate refund grant protects the existing ledger mutation.
+
+The free-credit batch persists reservations before dispatch and closes on unknown
+usage without retry. Memory control-plane state still resets per workflow; its
+credit ledger is a one-shot local crash lock, not resumable durable authorization
+or account-wide billing control. `pnpm demo:research` is always offline; the
+explicit capture command is the live path. See [Tavily verification](../demos/nvidia-nebius/verification/TAVILY.md).

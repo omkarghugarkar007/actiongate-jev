@@ -1,0 +1,24 @@
+{
+  "name": "actiongate-tavily-research-lab",
+  "version": "0.1.0",
+  "level": "guard",
+  "summary": "Optional public-documentation search and sandbox refund workflow with separate consumed permits; offline rehearsal and bounded live capture.",
+  "protects": "The private Tavily credential and billable search handler, followed by a separate private sandbox refund handler.",
+  "bypass": [
+    "Privileged host code can import or alter this in-process implementation; it is a local Guard, not network isolation.",
+    "Other clients using the same provider account are outside the local credit batch; this does not enforce account-wide billing.",
+    "Memory authorization state resets per workflow; the credit ledger blocks reuse but does not resume authorization after restart."
+  ],
+  "requires": { "providerKey": false, "redis": false, "postgres": false, "minimumTier": 0 },
+  "tools": [{ "name": "research_refund_docs", "operation": "search" }, { "name": "refund_payment", "operation": "refund" }],
+  "facts": [],
+  "setup": { "steps": 3, "requiredSettings": 0, "presetName": "offline-research-lab" },
+  "negativeTests": [
+    "Changed actor refuses consumption before search; replay refuses a second consumption",
+    "Private queries, foreign domains, advanced depth and extra arguments fail before dispatch",
+    "Unknown billing, paid usage and insufficient free headroom fail before search",
+    "Unknown search cost retains reservation and closes the batch without retry",
+    "Source instructions cannot supply trusted ledger facts or raise the amount ceiling",
+    "The offline browser lab rejects cross-origin runs and never activates keys"
+  ]
+}

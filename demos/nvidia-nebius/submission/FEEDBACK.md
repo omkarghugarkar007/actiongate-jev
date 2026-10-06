@@ -85,3 +85,16 @@ limit. For Nemotron, schema-constrained decision examples and guidance on
 self-reported confidence would help developers separate evidence from authority.
 Standardized gateway cost metadata would improve accounting. We did not use
 Nebius AI Cloud compute and have no firsthand feedback on it.
+
+## Tavily Search
+
+Basic search returned relevant Stripe API references with titles, URLs and
+snippets. An explicit domain restriction and disabled automatic parameters let
+us keep queries public and budget one free credit per call. The usage endpoint
+was useful for checking the actual Researcher allowance before each search.
+Its null pay-as-you-go limit was insufficient to establish disabled paid
+overflow, so we required owner confirmation. Search snippets included navigation
+and long examples; a bounded evidence normalizer kept the planner context small.
+We would welcome an explicit paid-overflow enabled flag in the usage response
+and clearer documentation of null limits. Four genuine basic searches were used;
+we did not exercise advanced search, extract, crawl or Research.

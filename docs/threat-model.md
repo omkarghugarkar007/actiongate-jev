@@ -78,3 +78,22 @@ Before high-impact use:
 10. audit the pinned supply-chain dependencies and complete an external security review.
 
 See [architecture.md](architecture.md) for the trust flow and [PLANNING.md](PLANNING.md) for remaining work.
+
+## Public research boundary
+
+Tavily search uses only a finite server-owned documentation query; ticket text,
+customer intent, transaction IDs and ledger data cannot become vendor query
+parameters. Results are size-bounded, HTTPS-only and restricted to the approved
+host without credentials/ports; URLs are never fetched automatically. The planner
+receives snippets as untrusted context, separate from trusted facts and policy.
+A cited page can still mislead a model; the synthetic injection drill is not a
+semantic-quality benchmark. The search grant is consumed before dispatch, failure
+is recorded after consumption, replay is rejected, and a failed search stops the
+refund workflow. Secrets/raw grants remain in the executor.
+
+The offline-only browser server uses loopback and Host/Origin checks. Live capture
+also requires owner confirmation of disabled paid overflow, a verified free
+Researcher plan, sufficient plan/key headroom and a persistent reservation cap.
+Null billing limits are never interpreted as zero. Other clients can consume the
+same account credits, and privileged host code can bypass the in-process Guard;
+this is not a production isolation or account billing guarantee.

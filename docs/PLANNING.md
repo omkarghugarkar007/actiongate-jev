@@ -2,7 +2,7 @@
 
 > Living strategy, architecture, and delivery checklist. Update this file whenever a capability, limitation, or acceptance gate changes.
 
-Last reconciled: **2026-10-06**. NVIDIA hackathon work adds a local sandbox agent and experimental Nemotron evidence without changing the authorization core.
+Last reconciled: **2026-10-07**. NVIDIA hackathon work adds a local sandbox agent and experimental Nemotron evidence without changing the authorization core.
 
 ## North star
 
@@ -43,7 +43,7 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Production operations | Not complete | Telemetry, quotas, failover drills, signed exports, SBOM, and release provenance ship; independent label review and an external security review remain. |
 | Adoption friction | Holding budget | Tier 0 runs with no key, no database, and no container; tiers 1-3 are additive. Registry naming is deliberately unresolved, so clone/workspace use is the supported path. |
 | Live provider evidence | Partial | `pnpm test:jev:live` exercises authorize, grant issue, single-use consume, and replay rejection against real OpenRouter. The equivalent direct TypeSafe gate is implemented but cannot be called verified until a `TYPESAFE_API_KEY` is available. |
-| NVIDIA × Nebius hackathon | Working local demo; both gateways live verified; application kit prepared | NVIDIA and Nebius Nemotron authorization/refund-agent gates pass. The bounded Nebius trial batch used an estimated $0.00219. Offline fixtures require no key. [APPLY.md](../APPLY.md) includes a downloadable test build, judge setup, application drafts, feedback, change disclosure and video scripts. The repeated Nebius batch retains 12 runs, including one safe clarification, with a $0.0089817 estimate; a static evidence workbench and reusable batch guard are tested. Final video, entrant declarations and submission remain outstanding. The current OpenRouter credential returns HTTP 401 on the regression gate. |
+| NVIDIA × Nebius hackathon | Working local demo; both gateways live verified; application kit prepared | NVIDIA and Nebius Nemotron authorization/refund-agent gates pass. The bounded Nebius trial batch used an estimated $0.00219. Offline fixtures require no key. [APPLY.md](../APPLY.md) includes a downloadable test build, judge setup, application drafts, feedback, change disclosure and video scripts. The repeated Nebius batch retains 12 runs, including one safe clarification, with a $0.0089817 estimate; a static evidence workbench and reusable batch guard are tested. Final video, entrant declarations and submission remain outstanding. The refreshed OpenRouter key passes five live checks. Optional Guard-level Tavily research has an offline rehearsal, exact-query consumption and real Tavily/Nebius/Jev records; four basic searches and $0.0030396 additional Nebius estimate. It adds no mandatory Tier 0 configuration. |
 
 **Production-ready claim: no.** P0/P1 engineering controls and most P2 operational tooling are complete, but independently reviewed semantic evidence and an external security review are still required for high-impact production use.
 

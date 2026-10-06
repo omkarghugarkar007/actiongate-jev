@@ -178,3 +178,17 @@ verification, avoiding extra inference spending during takes. The
 [judge walkthrough](submission/JUDGING.md) covers all four cases. Run
 `pnpm hackathon:prepare` to assemble local application materials and a source
 test-build ZIP; `pnpm hackathon:check` reports unfilled entrant/video fields.
+
+## Cited research before refund
+
+Run `pnpm demo:research` and open `http://127.0.0.1:8097`. It always uses offline
+fixtures, even when keys exist, and shows separate search/refund permits, cited
+sources and a seeded malicious snippet. The original lab stays available.
+
+The optional live capture uses a private Tavily key, fixed public documentation
+query and domain restrictions. It consumes before search, treats snippets as
+untrusted planner guidance and stops after search failure. Real Nebius planning
+cited a returned source without changing the requested transaction; a second
+run preserved the amount ceiling. Both the ordinary Jev regression and the new
+research gate passed against OpenRouter. [Reproduction and costs](verification/TAVILY.md).
+This is Guard-level in-process execution; host code remains privileged.

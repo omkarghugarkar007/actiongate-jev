@@ -60,3 +60,12 @@ zero provider requests and equality with all twelve source records. The new
 from a clean directory with no `.env`: frozen install, four offline scenarios,
 browser walkthrough, static build and blind review preparation all worked. See
 [public access verification](public-access-2026-10-06.json).
+
+## October 7: guarded research and restored Jev access
+
+The refreshed OpenRouter key passes all five enabled `pnpm test:jev:live`
+checks; the earlier HTTP 401 table is historical. The new research gate passes
+against real Jev and real Tavily. [TAVILY.md](TAVILY.md) retains all four basic
+searches, two Nebius runs (one refund and one hard hold), resolved models,
+latency, tokens, funding confirmations and cost limits. Original October 6
+records remain unchanged.

@@ -91,6 +91,7 @@ The catalog is only useful if adding a connector is cheaper than hand-rolling th
 | Credential broker | Isolate | Shipped | Exchanges a consumed grant for a short-lived signed request bound to the exact action |
 | Trusted fact providers | Govern | Shipped | Function and HTTP adapters resolve RBAC, spend, and duplicate facts server-side |
 | NVIDIA × Nebius refund lab | Guard | NVIDIA and Nebius live verified | Private sandbox ledger changes only after authenticated authorization and consumption; no payment credential or durable run state |
+| Tavily public-refund research lab | Guard | Real Tavily, Nebius and Jev verified | Fixed public query/domain, server-owned registry, consume before billable search, bounded untrusted sources, private key; memory authorization and privileged-host bypass remain. Zero-config offline rehearsal; live capture needs two keys and free-credit confirmations. |
 | Recorded Nebius evidence walkthrough | Advisory / read-only | Static playback of 12 actual live runs | No credentials, provider calls, grants or executor. Hypothetical first-proposal ledger is explicitly separate from recorded guarded results; exercise the local lab for real enforcement |
 
 `pnpm hackathon:workbench` opens the recording locally without a model key.

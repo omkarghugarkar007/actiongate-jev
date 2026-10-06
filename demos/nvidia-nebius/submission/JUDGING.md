@@ -111,5 +111,17 @@ integration: privileged host code could bypass an in-process boundary.
 State is in memory, payments are fixtures and model scores are uncalibrated.
 We claim at-most-once authorization, not exactly-once external side effects.
 The project is an early public release without an external security review.
-The independent Jev/OpenRouter gate currently returns HTTP 401; it is not
-counted as a passing provider regression.
+The refreshed key now passes all five enabled Jev/OpenRouter regression checks
+and the new guarded research gate; resolved Jev is `typesafe/jev-1.13-20260917`.
+
+## Optional research walkthrough
+
+From a current source checkout run `pnpm demo:research`, then open
+`http://127.0.0.1:8097`. This server always uses scripted source/model fixtures,
+including when `.env` contains live keys. Choose the requested refund, keep the
+snippet drill checked and run. Inspect the separate search decision, actor
+mutation refusal, consumption before sources, citation, refund consumption and
+both replay refusals. Select the $250 limit case: no transaction changes.
+No external search/inference occurs. The [dated runtime records](../verification/TAVILY.md)
+prove actual sponsor use separately. The original public workbench retains its
+original twelve runs; it does not silently substitute research captures.

@@ -25,14 +25,14 @@ on October 6, 2026. Recheck them before submitting.
 | Submission material | Ready-to-use file |
 |---|---|
 | Title, tagline, project story, technology and sponsor usage | [APPLICATION.md](demos/nvidia-nebius/submission/APPLICATION.md) |
-| 2:40 video: shots, timing, recording steps, upload title and description | [VIDEO.md](demos/nvidia-nebius/submission/VIDEO.md) |
+| 2:50 video: shots, timing, recording steps, upload title and description | [VIDEO.md](demos/nvidia-nebius/submission/VIDEO.md) |
 | Complete narration | [VOICEOVER.txt](demos/nvidia-nebius/submission/VOICEOVER.txt) |
 | Demo/test-build link and judge walkthrough | [JUDGING.md](demos/nvidia-nebius/submission/JUDGING.md) |
 | Nebius and NVIDIA feedback | [FEEDBACK.md](demos/nvidia-nebius/submission/FEEDBACK.md) |
 | Significant changes to the existing project | [CHANGES.md](demos/nvidia-nebius/submission/CHANGES.md) |
 | Gallery images, captions and video cover | [MEDIA.md](demos/nvidia-nebius/submission/MEDIA.md) |
 | Frozen refund cases and independent-review instructions | [REVIEW.md](demos/nvidia-nebius/submission/REVIEW.md) |
-| Additional-service assessment and prospective Tavily demo | [SERVICE_EXPANSION.md](demos/nvidia-nebius/SERVICE_EXPANSION.md) — planned, not implemented |
+| Additional-service assessment and prospective Tavily demo | [SERVICE_EXPANSION.md](demos/nvidia-nebius/SERVICE_EXPANSION.md), [Tavily runtime/cost evidence](demos/nvidia-nebius/verification/TAVILY.md) — guarded research implemented |
 | Links and remaining entrant fields | [submission.json](demos/nvidia-nebius/submission/submission.json) |
 | Live model, boundary and credit evidence | [Verification record](demos/nvidia-nebius/verification/README.md) |
 | Interactive recorded evidence and iteration plan | [Repeated batch](demos/nvidia-nebius/verification/WORKBENCH.md), [improvement plan](demos/nvidia-nebius/IMPROVEMENT_PLAN.md) |
@@ -113,5 +113,11 @@ do not accept legal terms, upload media or submit an entry.
   before execution; this provides at-most-once authorization.
 - Nemotron confidence is self-reported and uncalibrated. These checks establish
   specific boundary behavior, not semantic accuracy or production readiness.
-- The separate Jev/OpenRouter regression rerun is still blocked by HTTP 401.
-  Nebius AI Cloud, Tavily, physical hardware and AWS are not used in this entry.
+- The refreshed Jev/OpenRouter key passes all five enabled regression checks and the new Tavily research gate. Tavily used four free basic credits; the two Nebius research captures cost an estimated $0.0030396.
+- Nebius AI Cloud, physical hardware and AWS are not used in this entry.
+
+The video now includes the optional research lab: `pnpm demo:research` at
+`127.0.0.1:8097`, always offline. It shows a permit consumed before a cited
+source fixture and a separate permit consumed before refund execution. Actual
+Tavily/Nebius/Jev usage is documented separately; choose the Tavily bonus only
+with that functional runtime record, subject to the final form and rules.

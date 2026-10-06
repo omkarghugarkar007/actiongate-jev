@@ -20,3 +20,9 @@ The cover is 1920×1080. The preparation command copies its PNG and the lab PNG
 into `submission/dist/` alongside the text drafts and test-build ZIP. Use the
 supplied screenshot's offline caption even if a new video also shows past live
 evidence. A still image is not evidence of a fresh live call.
+
+The new [research-lab.png](assets/research-lab.png) shows an offline fixture
+source, separate search/refund permit stages, actor mutation refusal, replay and
+one sandbox refund. Caption: **Offline research rehearsal · scripted evidence ·
+real permit boundaries · zero credits**. It does not depict a live Tavily request.
+Use [TAVILY.md](../verification/TAVILY.md) for the separate actual-call record.
