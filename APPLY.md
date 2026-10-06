@@ -32,6 +32,7 @@ on October 6, 2026. Recheck them before submitting.
 | Significant changes to the existing project | [CHANGES.md](demos/nvidia-nebius/submission/CHANGES.md) |
 | Gallery images, captions and video cover | [MEDIA.md](demos/nvidia-nebius/submission/MEDIA.md) |
 | Frozen refund cases and independent-review instructions | [REVIEW.md](demos/nvidia-nebius/submission/REVIEW.md) |
+| Additional-service assessment and prospective Tavily demo | [SERVICE_EXPANSION.md](demos/nvidia-nebius/SERVICE_EXPANSION.md) — planned, not implemented |
 | Links and remaining entrant fields | [submission.json](demos/nvidia-nebius/submission/submission.json) |
 | Live model, boundary and credit evidence | [Verification record](demos/nvidia-nebius/verification/README.md) |
 | Interactive recorded evidence and iteration plan | [Repeated batch](demos/nvidia-nebius/verification/WORKBENCH.md), [improvement plan](demos/nvidia-nebius/IMPROVEMENT_PLAN.md) |

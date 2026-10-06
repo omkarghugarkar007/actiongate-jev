@@ -50,6 +50,13 @@ automatic recharge change, GPU provisioning or paid hosting is planned.
 
 ## Iteration 2 — semantic evidence with independent review
 
+The owner also proposed additional services. The
+[service expansion assessment](SERVICE_EXPANSION.md) prioritizes a guarded
+Tavily research stage on its free plan, with AI Cloud conditional on separate
+credits. AWS and hardware remain conditional on an actual workflow/resources.
+No additional service is implemented or claimed as used yet. Independent
+semantic review remains necessary and is not replaced by sponsor breadth.
+
 1. Freeze a small refund-focused corpus: supported requests, target swaps,
    inquiries, ambiguous references, malicious retrieved instructions and
    paraphrases. Record provenance and proposed labels as unreviewed.

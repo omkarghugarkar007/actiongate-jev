@@ -21,6 +21,7 @@ Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron eviden
 - [x] Publish and verify the read-only workbench on free GitHub Pages; anonymous desktop/mobile checks match all twelve source records.
 - [x] Freeze twelve refund cases and prepare a blind independent-review packet; generated labels remain excluded from quality claims.
 - [ ] Record/upload the public video and complete entrant declarations and submission.
+- [ ] Add guarded Tavily research after confirming its free account/key; evaluate AI Cloud only with separate eligible promotional credits. [Scope and prerequisites](../demos/nvidia-nebius/SERVICE_EXPANSION.md). AWS/hardware remain conditional, not shipped.
 
 The [application kit](../APPLY.md) and [demo plan](../demos/nvidia-nebius/PLAN.md)
 record the free-only submission route and remaining work. The

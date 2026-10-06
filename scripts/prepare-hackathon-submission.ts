@@ -46,6 +46,7 @@ const materials = [
   "demos/nvidia-nebius/assets/refund-lab.png",
   ...["README.md", "WORKBENCH.md", "public-access-2026-10-06.json", "nebius-workbench-2026-10-06.json", "nebius-live-2026-10-06.json", "nvidia-live-2026-10-06.json"].map((file) => `demos/nvidia-nebius/verification/${file}`),
   "demos/nvidia-nebius/IMPROVEMENT_PLAN.md",
+  "demos/nvidia-nebius/SERVICE_EXPANSION.md",
   "packages/evals/datasets/hackathon-refund-v1.json"
 ];
 for (const path of materials) await readFile(resolve(root, path));
