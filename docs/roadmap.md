@@ -4,7 +4,7 @@ ActionGate is developed in public. Work is ordered around durable identity and e
 
 The destination is a hub with a connector catalog: a small core that owns identity, policy, and enforcement, surrounded by thin connectors that any application can add in minutes. Breadth is only worth building once the boundary it plugs into is real, which is why enforcement leads and the catalog follows.
 
-Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron evidence and a sandbox agent that consumes permits before execution. Nebius awaits a key and live verification. Existing P0 controls retain their regression gates; the current OpenRouter key returns HTTP 401, so the latest Jev live rerun is blocked by authentication. ActionGate remains an early public release.
+Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron evidence and a sandbox agent that consumes permits before execution. NVIDIA and Nebius live authorization/agent checks pass; the bounded Nebius batch used an estimated $0.00219 of observed trial credit. Existing P0 controls retain their regression gates; the current OpenRouter key returns HTTP 401, so the latest Jev live rerun is blocked by authentication. ActionGate remains an early public release.
 
 ## NVIDIA × Nebius delivery
 
@@ -13,7 +13,7 @@ Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron eviden
 - [x] Verify NVIDIA authorization, exact-action mutation refusal, consume and replay against the live gateway.
 - [x] Run a live support agent through wrong-target refusal, model-planned correction and one sandbox refund.
 - [x] Keep a working offline demo, sanitized action trace and private payment handler.
-- [ ] Run the Nebius live gate with a Token Factory key.
+- [x] Run the Nebius live gate with a Token Factory key and record bounded trial-credit usage.
 - [ ] Freeze an independently reviewed semantic suite; self-reported scores are not calibration.
 - [ ] Publish a controlled hosted test build and record a video under three minutes.
 

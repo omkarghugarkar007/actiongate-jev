@@ -1,0 +1,101 @@
+{
+  "version": "1",
+  "date": "2026-10-06",
+  "provider": "nebius",
+  "resolvedModel": "nvidia/nemotron-3-super-120b-a12b",
+  "dimension": "live enforcement verification; not semantic accuracy",
+  "liveTests": {
+    "passed": 3,
+    "files": 2,
+    "sourceFiles": [
+      "apps/api/test/nemotron.live.test.ts",
+      "demos/nvidia-nebius/test/nemotron.live.test.ts"
+    ],
+    "execution": "Same live suite with a local fetch guard and serialized workers; no retries"
+  },
+  "creditAccounting": {
+    "trialBalanceObservedBeforeUsd": 1,
+    "trialDaysRemainingObservedBefore": 29,
+    "paidBalanceObservedBeforeUsd": 0,
+    "billingStatusObservedBefore": "Suspended",
+    "observationSource": "User-provided billing screenshot",
+    "modelCatalogHttpStatus": 200,
+    "inferenceCallsIncludingConnectivity": 5,
+    "inputTokens": 5218,
+    "outputTokens": 697,
+    "estimatedUsageUsd": 0.0021927,
+    "pricingUsdPerToken": {
+      "input": 3e-07,
+      "output": 9e-07
+    },
+    "pricingSource": "Authenticated GET https://api.tokenfactory.nebius.com/v1/models?verbose=true",
+    "sessionReserveCapUsd": 0.5,
+    "conservativeReservedUsd": 0.4006464,
+    "reservationMethod": "Full 262144-token model context plus requested output cap reserved before each call; failed or unknown calls retain reservations; maximum 6 requests including connectivity",
+    "estimatedCostNote": "Token-rate estimate, not a billing invoice or a post-run wallet read",
+    "batchClosed": true
+  },
+  "verifiedBoundaries": [
+    "Live Nebius attribution and resolved model",
+    "Exact-action mutation rejected before consumption",
+    "Consumption succeeds once and replay returns 409",
+    "Trusted RBAC denial blocks despite caller permission claims",
+    "Seeded wrong-target refund blocked; model correction allowed; one sandbox execution; wrong transaction unchanged"
+  ],
+  "requests": [
+    {
+      "maximumUsd": 0.0787008,
+      "maxOutputTokens": 64,
+      "httpStatus": 200,
+      "resolvedModel": "nvidia/nemotron-3-super-120b-a12b",
+      "inputTokens": 26,
+      "outputTokens": 6,
+      "estimatedUsageUsd": 1.32e-05,
+      "status": "completed"
+    },
+    {
+      "maximumUsd": 0.0804864,
+      "maxOutputTokens": 2048,
+      "status": "completed",
+      "httpStatus": 200,
+      "latencyMs": 1632,
+      "resolvedModel": "nvidia/nemotron-3-super-120b-a12b",
+      "inputTokens": 1598,
+      "outputTokens": 204,
+      "estimatedUsageUsd": 0.000663
+    },
+    {
+      "maximumUsd": 0.0804864,
+      "maxOutputTokens": 2048,
+      "status": "completed",
+      "httpStatus": 200,
+      "latencyMs": 922,
+      "resolvedModel": "nvidia/nemotron-3-super-120b-a12b",
+      "inputTokens": 471,
+      "outputTokens": 64,
+      "estimatedUsageUsd": 0.00019889999999999998
+    },
+    {
+      "maximumUsd": 0.0804864,
+      "maxOutputTokens": 2048,
+      "status": "completed",
+      "httpStatus": 200,
+      "latencyMs": 1567,
+      "resolvedModel": "nvidia/nemotron-3-super-120b-a12b",
+      "inputTokens": 1598,
+      "outputTokens": 214,
+      "estimatedUsageUsd": 0.000672
+    },
+    {
+      "maximumUsd": 0.0804864,
+      "maxOutputTokens": 2048,
+      "status": "completed",
+      "httpStatus": 200,
+      "latencyMs": 1818,
+      "resolvedModel": "nvidia/nemotron-3-super-120b-a12b",
+      "inputTokens": 1525,
+      "outputTokens": 209,
+      "estimatedUsageUsd": 0.0006456
+    }
+  ]
+}

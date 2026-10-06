@@ -3,7 +3,7 @@
 Verified on Node.js 22.21.1 and pnpm 10.27.0. The baseline includes dependency
 PRs #12–#17 and the independently verified security-fix PR #20.
 The development-dependency update #18 remains unmerged because TypeScript 7
-fails the installed lint tooling. It supersedes #11.
+fails the installed lint tooling. It superseded #11 and was closed during branch cleanup.
 
 | Check | Result |
 |---|---|
@@ -20,13 +20,19 @@ fails the installed lint tooling. It supersedes #11.
 | `pnpm audit --prod`, `pnpm audit` | No known vulnerabilities after `source-map-js` 1.2.2 and `shell-quote` 1.11.0 overrides |
 | `pnpm test:nemotron:live` | 3 tests pass against the actual NVIDIA gateway |
 | `pnpm test:jev:live` | Fails: existing OpenRouter credential returns HTTP 401 |
-| Nebius live gate | Not run: `NEBIUS_API_KEY` unavailable |
+| Nebius live gate | 3 tests pass using the existing suite with a local reservation guard and serialized workers |
 
 The [sanitized NVIDIA trace](nvidia-live-2026-10-06.json) records actual model
 resolution, timing, tokens, held decisions, one sandbox execution and replay
 rejection. Raw permits and credentials are excluded. This verifies specific
 enforcement cases, not model accuracy, calibration or stable production latency.
 
-The [delivery plan](../PLAN.md) tracks Nebius verification, controlled hosting
-and the public submission video separately. No production readiness or complete
+The [Nebius record](nebius-live-2026-10-06.json) includes gateway attribution,
+the resolved model, per-call timing and tokens, and a bounded trial-credit session.
+Five requests including connectivity used an estimated $0.0021927 of the observed
+$1 trial credit; the $0.50 conservative reservation cap was enforced locally and
+the batch was closed. This estimate is separate from a provider billing invoice.
+
+The [delivery plan](../PLAN.md) tracks controlled hosting and the public submission
+video separately. No production readiness or complete
 provider-regression pass is claimed while these gates remain outstanding.

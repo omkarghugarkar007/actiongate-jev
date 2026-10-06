@@ -43,7 +43,7 @@ ActionGate must remain useful if Jev is replaced by another conforming decision 
 | Production operations | Not complete | Telemetry, quotas, failover drills, signed exports, SBOM, and release provenance ship; independent label review and an external security review remain. |
 | Adoption friction | Holding budget | Tier 0 runs with no key, no database, and no container; tiers 1-3 are additive. Registry naming is deliberately unresolved, so clone/workspace use is the supported path. |
 | Live provider evidence | Partial | `pnpm test:jev:live` exercises authorize, grant issue, single-use consume, and replay rejection against real OpenRouter. The equivalent direct TypeSafe gate is implemented but cannot be called verified until a `TYPESAFE_API_KEY` is available. |
-| NVIDIA × Nebius hackathon | Working local demo | NVIDIA Nemotron live authorization and refund-agent gates pass. Offline fixtures require no key. Nebius live verification, hosted demo and video remain outstanding; see [delivery plan](../demos/nvidia-nebius/PLAN.md). The current OpenRouter credential returns HTTP 401 on the regression gate. |
+| NVIDIA × Nebius hackathon | Working local demo; both gateways live verified | NVIDIA and Nebius Nemotron authorization/refund-agent gates pass. The bounded Nebius trial batch used an estimated $0.00219. Offline fixtures require no key. Hosted demo and video remain outstanding; see [delivery plan](../demos/nvidia-nebius/PLAN.md). The current OpenRouter credential returns HTTP 401 on the regression gate. |
 
 **Production-ready claim: no.** P0/P1 engineering controls and most P2 operational tooling are complete, but independently reviewed semantic evidence and an external security review are still required for high-impact production use.
 
