@@ -94,7 +94,7 @@ sponsor feedback with reproducible budget and structured-response observations.
 - [x] Confirm the account balance is free credit.
 - [x] Capture and evaluate repeated live runs without hiding failures: [12 records, 20 calls, $0.0089817 estimate](verification/WORKBENCH.md); one safe clarification retained.
 - [x] Build/test the static evidence walkthrough, including desktop/mobile playback and zero provider traffic.
-- [ ] Publish the static walkthrough and verify anonymous access.
+- [x] Publish the static walkthrough and verify anonymous desktop/mobile access: [public page](https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2), [access record](verification/public-access-2026-10-06.json).
 - [x] Refresh submission copy and video script with actual results.
 - [x] Freeze 12 draft refund cases and prepare a blind independent-review packet.
 - [ ] Obtain independent human labels before semantic accuracy claims.

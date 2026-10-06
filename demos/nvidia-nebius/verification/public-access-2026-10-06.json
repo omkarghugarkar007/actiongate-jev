@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "dimension": "public artifact access and offline setup; no semantic accuracy claim",
+  "page": {
+    "url": "https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2",
+    "sourceCommit": "df8df4cd3443d839281bbb77d8a607dc3ac66663",
+    "checkedAt": "2026-10-06T18:09:42.211Z",
+    "desktop": true,
+    "mobile": true,
+    "recordMatchesSource": true,
+    "providerRequests": 0
+  },
+  "sourceTestBuild": {
+    "sourceCommit": "df8df4cd3443d839281bbb77d8a607dc3ac66663",
+    "anonymousZip": true,
+    "privateEnvFiles": false,
+    "frozenInstall": true,
+    "offlineScenarios": 4,
+    "browser": true,
+    "modelCalls": 0
+  },
+  "pagesWorkflow": "https://github.com/omkarghugarkar007/actiongate-jev/actions/runs/37508996264",
+  "ciWorkflow": "https://github.com/omkarghugarkar007/actiongate-jev/actions/runs/37508663253",
+  "unitTests": 337,
+  "apiIntegrationTests": 74,
+  "browserTests": 7,
+  "modelCallsForAccessChecks": 0
+}

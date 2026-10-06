@@ -19,7 +19,7 @@ and run the source below to exercise the actual enforcement code.
 
 Public source test build:
 
-https://github.com/omkarghugarkar007/actiongate-jev/archive/c03a5d3cbda5d6ff0e9eb001ecdcfc7c73353949.zip
+https://github.com/omkarghugarkar007/actiongate-jev/archive/df8df4cd3443d839281bbb77d8a607dc3ac66663.zip
 
 Extract the archive, open a terminal in its root directory and run:
 

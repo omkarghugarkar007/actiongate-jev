@@ -91,7 +91,9 @@ records the execution outcome separately and attempts replay afterward.
 Live verification had a $1 trial-credit constraint. We checked the catalog,
 reserved a conservative maximum before each request, serialized the batch and
 stopped it after verification. Cost figures below are token-rate estimates;
-ordinary live demo commands do not inherit that one-off guard.
+ordinary live demo commands do not inherit that original one-off guard. The
+later repeated batch uses a reusable, persisted capture guard under a separate
+$1 cap; it does not change account-wide billing.
 
 ## Accomplishments
 
@@ -111,6 +113,9 @@ ordinary live demo commands do not inherit that one-off guard.
 - A key-free browser workbench compares the hypothetical first-proposal ledger
   with each recorded guarded outcome. It has no executor and makes no model
   calls, so judges can inspect evidence after trial credits expire.
+- A frozen twelve-case refund corpus and blind JSON/CSV packet prepare genuine
+  independent review. Draft labels remain generated, and no semantic quality
+  result is claimed from them.
 - Existing regression checks covered unit/integration behavior, Redis,
   PostgreSQL, Python, package exports and desktop/mobile UI. Results and the
   unresolved Jev authentication gate are published in the verification record.
@@ -163,7 +168,7 @@ those services are not required for this refund test build.
 
 - Repository: https://github.com/omkarghugarkar007/actiongate-jev
 - Interactive recorded evidence: https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2
-- Test build: https://github.com/omkarghugarkar007/actiongate-jev/archive/c03a5d3cbda5d6ff0e9eb001ecdcfc7c73353949.zip
+- Test build: https://github.com/omkarghugarkar007/actiongate-jev/archive/df8df4cd3443d839281bbb77d8a607dc3ac66663.zip
 - Setup/walkthrough: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/submission/JUDGING.md
 - Actual Nebius calls: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/verification/nebius-live-2026-10-06.json
 - Broader check results: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/verification/README.md

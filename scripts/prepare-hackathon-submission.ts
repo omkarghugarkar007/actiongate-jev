@@ -44,7 +44,7 @@ const materials = [
   "APPLY.md",
   ...["APPLICATION.md", "JUDGING.md", "VIDEO.md", "VOICEOVER.txt", "FEEDBACK.md", "CHANGES.md", "MEDIA.md", "REVIEW.md", "submission.json", "assets/cover.svg", "assets/cover.png", "assets/evidence-workbench.png"].map((file) => `demos/nvidia-nebius/submission/${file}`),
   "demos/nvidia-nebius/assets/refund-lab.png",
-  ...["README.md", "WORKBENCH.md", "nebius-workbench-2026-10-06.json", "nebius-live-2026-10-06.json", "nvidia-live-2026-10-06.json"].map((file) => `demos/nvidia-nebius/verification/${file}`),
+  ...["README.md", "WORKBENCH.md", "public-access-2026-10-06.json", "nebius-workbench-2026-10-06.json", "nebius-live-2026-10-06.json", "nvidia-live-2026-10-06.json"].map((file) => `demos/nvidia-nebius/verification/${file}`),
   "demos/nvidia-nebius/IMPROVEMENT_PLAN.md",
   "packages/evals/datasets/hackathon-refund-v1.json"
 ];

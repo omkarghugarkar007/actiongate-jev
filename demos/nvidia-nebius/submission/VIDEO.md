@@ -22,8 +22,8 @@ video. The public YouTube URL remains empty until an actual upload exists.
 2. Check that the badge reads **OFFLINE · SCRIPTED FIXTURES**. Use this mode for
    every take. Keep the badge in view at the start, and add the persistent caption
    **Offline walkthrough · scripted model evidence · real permit boundary**.
-3. Open the public Nebius JSON record in a second tab. Show the date, provider,
-   resolved model, three passing tests, token totals and estimate. Caption it
+3. Open the public recorded workbench in a second tab. Show the date, provider,
+   resolved model, twelve outcomes, token totals and estimate. Caption it
    **Recorded live Nebius verification · 2026-10-06**.
 4. Rehearse the clicks in [JUDGING.md](JUDGING.md). Expand only the relevant
    evidence panels; use browser zoom/crops so IDs and decisions remain legible.

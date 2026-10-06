@@ -18,7 +18,8 @@ Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron eviden
 - [x] Prepare application copy, sponsor feedback, change disclosure, media, judge instructions and a downloadable source test build.
 - [x] Add a persistent per-batch Nebius budget and record all 12 repeated runs, including a safe clarification; 20 calls cost an estimated $0.0089817.
 - [x] Build a static evidence workbench with hypothetical/recorded ledger comparison and desktop/mobile playback checks.
-- [ ] Publish and verify the read-only workbench on free GitHub Pages.
+- [x] Publish and verify the read-only workbench on free GitHub Pages; anonymous desktop/mobile checks match all twelve source records.
+- [x] Freeze twelve refund cases and prepare a blind independent-review packet; generated labels remain excluded from quality claims.
 - [ ] Record/upload the public video and complete entrant declarations and submission.
 
 The [application kit](../APPLY.md) and [demo plan](../demos/nvidia-nebius/PLAN.md)
