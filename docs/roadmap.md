@@ -15,9 +15,11 @@ Last reconciled: **2026-10-06**. The NVIDIA refund lab adds live Nemotron eviden
 - [x] Keep a working offline demo, sanitized action trace and private payment handler.
 - [x] Run the Nebius live gate with a Token Factory key and record bounded trial-credit usage.
 - [ ] Freeze an independently reviewed semantic suite; self-reported scores are not calibration.
-- [ ] Publish a controlled hosted test build and record a video under three minutes.
+- [x] Prepare application copy, sponsor feedback, change disclosure, media, judge instructions and a downloadable source test build.
+- [ ] Record/upload the public video and complete entrant declarations and submission.
 
-The [demo plan](../demos/nvidia-nebius/PLAN.md) records the submission requirements and remaining work.
+The [application kit](../APPLY.md) and [demo plan](../demos/nvidia-nebius/PLAN.md)
+record the free-only submission route and remaining work.
 
 ## Standing constraints
 

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "projectName": "ActionGate — permits for agent actions",
+  "tagline": "Give agents an exact-action, single-use permit before they change anything.",
+  "eventUrl": "https://nebiusglobalaihackathon.devpost.com/",
+  "track": "Best Apps and Agents",
+  "repositoryUrl": "https://github.com/omkarghugarkar007/actiongate-jev",
+  "testBuild": {
+    "commit": "c03a5d3cbda5d6ff0e9eb001ecdcfc7c73353949",
+    "url": "https://github.com/omkarghugarkar007/actiongate-jev/archive/c03a5d3cbda5d6ff0e9eb001ecdcfc7c73353949.zip",
+    "mode": "local application with offline model fixtures; past live Nebius evidence is separate"
+  },
+  "video": {
+    "url": null,
+    "durationSeconds": null
+  },
+  "entrant": {
+    "displayName": null,
+    "devpostProfileUrl": null,
+    "teamMembers": [],
+    "eligibilityConfirmed": false,
+    "ownershipConfirmed": false
+  },
+  "publicAccess": {
+    "repositoryCheckedSignedOut": true,
+    "testBuildCheckedSignedOut": true,
+    "videoCheckedSignedOut": false
+  },
+  "submittedProjectUrl": null
+}

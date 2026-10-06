@@ -39,10 +39,13 @@ visible; a real model plans its correction. The demonstration moves no money.
    $1 trial credit. Five requests used an estimated $0.0021927; the batch is closed.
    The [record](verification/nebius-live-2026-10-06.json) separates token-rate
    estimates from account billing evidence.
-5. **Finish the submission — pending.** Host a controlled test build and record
-   a public video under three minutes. The local demo is
-   deliberately not a production server; public hosting needs authentication or
-   restricted access, shared spend limits and an explicit deployment boundary.
+5. **Prepare submission materials — complete; final entry pending.**
+   [APPLY.md](../../APPLY.md) links application copy, sponsor feedback,
+   existing-project disclosure, media, a timed video script and judge instructions.
+   A pinned public source-test-build download avoids paid hosting and model calls
+   during judging. Video recording/upload, entrant declarations and Devpost
+   submission remain. The local server is not a public deployment; do not expose
+   it as one. Confirm the download-and-run format in the final submission form.
 
 ## Acceptance gates
 

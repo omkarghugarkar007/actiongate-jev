@@ -33,6 +33,6 @@ Five requests including connectivity used an estimated $0.0021927 of the observe
 $1 trial credit; the $0.50 conservative reservation cap was enforced locally and
 the batch was closed. This estimate is separate from a provider billing invoice.
 
-The [delivery plan](../PLAN.md) tracks controlled hosting and the public submission
-video separately. No production readiness or complete
-provider-regression pass is claimed while these gates remain outstanding.
+The [application kit](../../../APPLY.md) tracks the downloadable test build,
+video and final entrant submission separately. No production readiness or
+complete provider-regression pass is claimed while these gates remain outstanding.
