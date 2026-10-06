@@ -16,7 +16,7 @@ fails the installed lint tooling. It supersedes #11.
 | `pnpm e2e` | 5 tests pass, including existing UI and desktop/mobile refund-lab scenarios |
 | `pnpm build:packages`, `pnpm packages:check` | Pass for all eight published package surfaces |
 | Manifests, API/client generation, cross-language conformance | Pass; recorded generated contracts unchanged |
-| `pnpm audit --prod` | No known vulnerabilities after the `source-map-js` 1.2.2 override |
+| `pnpm audit --prod`, `pnpm audit` | No known vulnerabilities after `source-map-js` 1.2.2 and `shell-quote` 1.11.0 overrides |
 | `pnpm test:nemotron:live` | 3 tests pass against the actual NVIDIA gateway |
 | `pnpm test:jev:live` | Fails: existing OpenRouter credential returns HTTP 401 |
 | Nebius live gate | Not run: `NEBIUS_API_KEY` unavailable |
