@@ -46,7 +46,7 @@ Personal eligibility and ownership declarations belong to the entrant.
 
 ## Free-only submission route
 
-Use the [pinned public test-build download](https://github.com/omkarghugarkar007/actiongate-jev/archive/df8df4cd3443d839281bbb77d8a607dc3ac66663.zip)
+Use the [pinned public test-build download](https://github.com/omkarghugarkar007/actiongate-jev/archive/45450584121597b228c7556d347a4c7664a79568.zip)
 and the instructions in `JUDGING.md`. It is a source test build that runs locally
 with scripted evidence and no credentials. No paid hosting or always-on inference
 is needed. The rules allow a test-build URL; confirm that this download-and-run
@@ -121,3 +121,8 @@ The video now includes the optional research lab: `pnpm demo:research` at
 source fixture and a separate permit consumed before refund execution. Actual
 Tavily/Nebius/Jev usage is documented separately; choose the Tavily bonus only
 with that functional runtime record, subject to the final form and rules.
+
+The pinned test build now includes the research lab. Its anonymous ZIP was
+downloaded, installed with the frozen lockfile and exercised without `.env`: a
+desktop refund, mobile amount hold, permit checks and no external browser calls.
+[Public-access check](demos/nvidia-nebius/verification/tavily-public-access-2026-10-07.json).

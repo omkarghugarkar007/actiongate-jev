@@ -86,3 +86,9 @@ It requires genuine keys, sufficient free Tavily headroom and a provider-enforce
 OpenRouter key limit of at most $5; it fails instead of skipping when selected
 without prerequisites. It uses a scripted planner and two actual Jev decisions.
 Ordinary tests and either rehearsal server never activate it automatically.
+
+The [pinned-build access check](tavily-public-access-2026-10-07.json) verifies
+an anonymous fresh ZIP install and key-free desktop/mobile execution. The code
+was merged in [PR #26](https://github.com/omkarghugarkar007/actiongate-jev/pull/26)
+after CI, Redis/PostgreSQL, Python, package/API contracts, browser checks and
+CodeQL passed. The static public twelve-run workbench remains unchanged.

@@ -264,8 +264,8 @@ The boundary is strict; the on-ramp is not. Each tier is additive.
 
 | Tier | You add | You get |
 |---|---|---|
-| 0 | `pnpm dev` or `ActionGate.embedded()` | Decisions, permits and dashboard, or guarded in-process tools; no key or database |
-| 1 | A provider key | Jev through TypeSafe/OpenRouter, or experimental Nemotron through NVIDIA/Nebius |
+| 0 | `pnpm dev` or `ActionGate.embedded()` | Decisions, permits, dashboard, guarded tools and offline research lab; no key or database |
+| 1 | A provider key; optional Tavily key | Jev through TypeSafe/OpenRouter or Nemotron through NVIDIA/Nebius; guarded public research with Tavily |
 | 2 | Redis | Restart-safe runtime state and cross-replica grant consumption |
 | 3 | PostgreSQL and key rings | Durable tenants, registry, reviews and encrypted audit with rotation |
 

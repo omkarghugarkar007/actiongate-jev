@@ -19,7 +19,7 @@ and run the source below to exercise the actual enforcement code.
 
 Public source test build:
 
-https://github.com/omkarghugarkar007/actiongate-jev/archive/df8df4cd3443d839281bbb77d8a607dc3ac66663.zip
+https://github.com/omkarghugarkar007/actiongate-jev/archive/45450584121597b228c7556d347a4c7664a79568.zip
 
 Extract the archive, open a terminal in its root directory and run:
 
@@ -116,7 +116,7 @@ and the new guarded research gate; resolved Jev is `typesafe/jev-1.13-20260917`.
 
 ## Optional research walkthrough
 
-From a current source checkout run `pnpm demo:research`, then open
+From the pinned source test build run `pnpm demo:research`, then open
 `http://127.0.0.1:8097`. This server always uses scripted source/model fixtures,
 including when `.env` contains live keys. Choose the requested refund, keep the
 snippet drill checked and run. Inspect the separate search decision, actor

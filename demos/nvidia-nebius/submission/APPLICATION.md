@@ -170,7 +170,7 @@ those services are not required for this refund test build.
 
 - Repository: https://github.com/omkarghugarkar007/actiongate-jev
 - Interactive recorded evidence: https://omkarghugarkar007.github.io/actiongate-jev/?run=injection-r2
-- Test build: https://github.com/omkarghugarkar007/actiongate-jev/archive/df8df4cd3443d839281bbb77d8a607dc3ac66663.zip
+- Test build: https://github.com/omkarghugarkar007/actiongate-jev/archive/45450584121597b228c7556d347a4c7664a79568.zip
 - Setup/walkthrough: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/submission/JUDGING.md
 - Actual Nebius calls: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/verification/nebius-live-2026-10-06.json
 - Broader check results: https://github.com/omkarghugarkar007/actiongate-jev/blob/main/demos/nvidia-nebius/verification/README.md
