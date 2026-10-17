@@ -53,6 +53,12 @@ Changes must preserve these security properties:
 
 Provider-contract or threshold changes should include adversarial cases and explain their expected effect on false-allow and review rates.
 
+## Dependency updates
+
+Dependabot checks routine npm and GitHub Actions updates monthly. npm updates stay in separate production and development batches, with at most two open version-update PRs; GitHub Actions updates share one batch, with at most one open version-update PR. This reduces maintenance friction while keeping development-tool failures separate from runtime updates.
+
+npm security updates use a separate group and can arrive outside the monthly schedule. Version-update PR limits do not limit security PRs. Review security fixes promptly, and investigate failed checks before merging any batch, especially one containing major upgrades. The configuration lives in [dependabot.yml](dependabot.yml); setting an ecosystem's `open-pull-requests-limit` to `0` pauses its routine version updates while retaining security updates.
+
 ## Pull requests
 
 Keep pull requests focused and explain:

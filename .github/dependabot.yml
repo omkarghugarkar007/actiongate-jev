@@ -3,15 +3,25 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       production-dependencies:
         dependency-type: production
       development-dependencies:
         dependency-type: development
-    open-pull-requests-limit: 10
+      security-dependencies:
+        applies-to: security-updates
+        patterns:
+          - "*"
+    # Version-update limits do not delay security updates.
+    open-pull-requests-limit: 2
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 1
 
