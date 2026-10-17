@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@actiongate/core": "workspace:*",
-    "zod": "^4.1.8"
+    "zod": "^4.6.7"
   },
   "description": "Decision evidence adapters for ActionGate: TypeSafe Jev, OpenRouter, and experimental NVIDIA/Nebius Nemotron.",
   "license": "Apache-2.0",
