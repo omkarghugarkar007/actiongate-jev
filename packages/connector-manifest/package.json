@@ -10,7 +10,7 @@
     }
   },
   "dependencies": {
-    "zod": "^4.1.8"
+    "zod": "^4.6.7"
   },
   "description": "Schema and validator for ActionGate connector manifests.",
   "license": "Apache-2.0",
